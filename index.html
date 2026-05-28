@@ -1,0 +1,2999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Tracker · CA Inter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script id="__DATA__" type="application/json">{}</script>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0E0E0E; --dc:#161614; --faint:#1A1816; --void:#060604;
+  --ink:#EDEAE3; --dim:#5A5750; --muted:#2A2825;
+  --lime:#D6FF4B; --lime-ink:#0E0E0E;
+  --rose:#FF4D6D; --sky:#D0E8FF; --sky-ink:#0E1820;
+  --sand:#F0E6D0; --sand-ink:#1A1410;
+  --amber:#FFB84D; --purple:#C4B5FD; --green:#4ADE80; --blue:#93C5FD;
+  --serif:'DM Serif Display',serif;
+  --sans:'Instrument Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+/* ═══ RESET ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-size:13px;line-height:1.5}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:inherit;outline:none;border:none;transition:all .15s;font-size:inherit}
+input,select,textarea{font-family:inherit;font-size:13px;background:var(--faint);border:1px solid var(--muted);border-radius:8px;color:var(--ink);padding:10px 12px;width:100%;outline:none;transition:border-color .15s;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--lime)}
+input[type="date"],input[type="time"],input[type="number"]{color-scheme:dark}
+input[type="checkbox"]{width:auto;cursor:pointer;accent-color:var(--lime)}
+input[type="radio"]{width:auto;cursor:pointer;accent-color:var(--lime)}
+select option{background:var(--faint);color:var(--ink)}
+textarea{resize:vertical;min-height:70px;line-height:1.55;font-family:var(--sans)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:#3A3835}
+::placeholder{color:#3A3835}
+a{color:var(--lime);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ═══ TOPBAR ═══ */
+.top{display:flex;align-items:center;justify-content:space-between;padding:11px 22px;border-bottom:1px solid var(--muted);position:sticky;top:0;z-index:100;background:var(--bg);gap:14px;min-height:50px}
+.brand{display:flex;align-items:baseline;gap:7px;flex-shrink:0;cursor:default}
+.brand-name{font-family:var(--serif);font-size:19px;color:var(--ink);letter-spacing:-.02em;font-style:italic;line-height:1}
+.brand-by{font-size:8.5px;color:var(--dim);font-family:var(--mono);letter-spacing:.06em;opacity:.6}
+.nav{display:flex;border:1px solid var(--muted);border-radius:8px;overflow:hidden;overflow-x:auto;scrollbar-width:none;flex-shrink:1;min-width:0}
+.nav::-webkit-scrollbar{display:none}
+.nb{font-size:10px;font-weight:700;padding:7px 11px;color:var(--dim);background:transparent;border:none;border-right:1px solid var(--muted);letter-spacing:.04em;text-transform:uppercase;transition:all .12s;white-space:nowrap;flex-shrink:0;font-family:var(--mono)}
+.nb:last-child{border-right:none}
+.nb:hover{color:var(--ink);background:var(--faint)}
+.nb.on{color:var(--bg);background:var(--ink)}
+.top-right{display:flex;align-items:center;gap:12px;flex-shrink:0;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.tb-timer{display:flex;align-items:center;gap:6px;color:var(--amber);cursor:pointer}
+.tb-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 1.4s ease infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.sync-i{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--dim);font-family:var(--mono);transition:color .14s}
+.sync-i:hover{color:var(--ink)}
+.sync-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.s-ok{background:var(--green)}
+.s-err{background:var(--rose)}
+.s-ing{background:var(--amber);animation:pulse 1s infinite}
+.s-off{background:var(--dim)}
+
+/* ═══ PAGES ═══ */
+.pg{display:none}
+.pg.on{display:block;animation:pgIn .18s ease}
+@keyframes pgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pw{padding:14px 22px 40px}
+.p2l{display:grid;grid-template-columns:300px 1fr;gap:12px;padding:14px 22px 40px;align-items:start}
+.p3{display:grid;grid-template-columns:260px 1fr 260px;gap:12px;padding:14px 22px 40px;align-items:start}
+
+/* ═══ BENTO CARDS (the design DNA from v2 dashboard) ═══ */
+.bc{border-radius:13px;padding:18px 20px;position:relative;transition:transform .18s,box-shadow .18s}
+.bc:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.bc-dark{background:var(--dc);border:1px solid var(--muted);color:var(--ink)}
+.bc-void{background:var(--void);border:1px solid var(--muted);color:var(--ink)}
+.bc-lime{background:var(--lime);color:var(--lime-ink)}
+.bc-rose{background:var(--rose);color:#fff}
+.bc-sky{background:var(--sky);color:var(--sky-ink)}
+.bc-sand{background:var(--sand);color:var(--sand-ink)}
+.bc-amber{background:#1C1200;border:1px solid #382400;color:var(--amber)}
+.bc-purple{background:#0E0A1C;border:1px solid #241848;color:var(--purple)}
+.bc-green{background:#041208;border:1px solid #0A2E18;color:var(--green)}
+.bc-blue{background:#06101C;border:1px solid #122545;color:var(--blue)}
+.blbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px}
+.bc-dark .blbl,.bc-void .blbl{color:var(--dim)}
+.bc-lime .blbl,.bc-rose .blbl,.bc-sky .blbl,.bc-sand .blbl{opacity:.5}
+.bc-amber .blbl,.bc-purple .blbl,.bc-green .blbl,.bc-blue .blbl{opacity:.55}
+.bnum{font-family:var(--serif);line-height:.88;letter-spacing:-.03em;display:block;margin-top:4px;font-style:italic}
+.bn-xl{font-size:78px} .bn-lg{font-size:56px} .bn-md{font-size:42px} .bn-sm{font-size:30px} .bn-xs{font-size:22px}
+.bsub{font-size:10px;opacity:.55;margin-top:6px;font-weight:500;display:block;line-height:1.4;font-family:var(--mono);letter-spacing:.03em}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.bgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bgrid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:720px){.bgrid3,.bgrid4{grid-template-columns:repeat(2,1fr)}}
+
+/* ═══ GENERIC CARD ═══ */
+.card{background:var(--dc);border:1px solid var(--muted);border-radius:13px;padding:18px 20px;transition:border-color .14s}
+.card:hover{border-color:#3A3835}
+.card-flat{background:var(--dc);border:1px solid var(--muted);border-radius:13px;overflow:hidden}
+.card-amber{background:#0F0900;border:1px solid #2D1F00}
+.card-rose{background:#1B0A10;border:1px solid #3D1620}
+
+/* ═══ TYPE ═══ */
+.stitle{font-family:var(--serif);font-size:24px;color:var(--ink);font-style:italic;line-height:1.1;letter-spacing:-.01em}
+.stitle-sm{font-family:var(--serif);font-size:18px;color:var(--ink);font-style:italic;line-height:1.1}
+.slbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;justify-content:space-between}
+.ssub{font-size:12px;color:var(--dim)}
+.mono{font-family:var(--mono)} .muted{color:var(--dim)}
+.sm{font-size:12px} .xs{font-size:10px} .xxs{font-size:9px}
+.fw5{font-weight:500} .fw6{font-weight:600} .fw7{font-weight:700} .fwb{font-weight:800}
+.tc{text-align:center} .tr{text-align:right}
+.dn{display:none!important} .f1{flex:1}
+.ovh{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ital{font-style:italic}
+
+/* ═══ SPACING ═══ */
+.mb2{margin-bottom:2px} .mb4{margin-bottom:4px} .mb6{margin-bottom:6px} .mb8{margin-bottom:8px}
+.mb10{margin-bottom:10px} .mb12{margin-bottom:12px} .mb14{margin-bottom:14px} .mb16{margin-bottom:16px}
+.mb20{margin-bottom:20px} .mb24{margin-bottom:24px}
+.mt4{margin-top:4px} .mt6{margin-top:6px} .mt8{margin-top:8px} .mt10{margin-top:10px}
+.mt12{margin-top:12px} .mt14{margin-top:14px} .mt16{margin-top:16px} .mt20{margin-top:20px} .mt24{margin-top:24px}
+
+/* ═══ FLEX ═══ */
+.row{display:flex;align-items:center;gap:8px}
+.rowb{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rowg{display:flex;align-items:flex-start;gap:10px}
+.col{display:flex;flex-direction:column;gap:8px}
+.divider{height:1px;background:var(--muted);margin:14px 0}
+
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 15px;border-radius:9px;border:1px solid var(--muted);background:var(--faint);color:var(--ink);font-weight:600;font-size:12px;white-space:nowrap;cursor:pointer;transition:all .15s;font-family:var(--sans);line-height:1}
+.btn:hover{border-color:#444;background:var(--dc)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-p{background:var(--lime)!important;border-color:var(--lime)!important;color:var(--lime-ink)!important;font-weight:700}
+.btn-p:hover{background:#c8f03a!important;box-shadow:0 0 18px rgba(214,255,75,.28)}
+.btn-suc{background:rgba(74,222,128,.1)!important;border-color:rgba(74,222,128,.3)!important;color:var(--green)!important}
+.btn-suc:hover{background:rgba(74,222,128,.18)!important}
+.btn-warn{background:rgba(255,184,77,.1)!important;border-color:rgba(255,184,77,.3)!important;color:var(--amber)!important}
+.btn-warn:hover{background:rgba(255,184,77,.18)!important}
+.btn-dan{background:rgba(255,77,109,.1)!important;border-color:rgba(255,77,109,.3)!important;color:var(--rose)!important}
+.btn-dan:hover{background:rgba(255,77,109,.18)!important}
+.btn-ghost{background:transparent!important;border-color:transparent!important;color:var(--dim)!important}
+.btn-ghost:hover{color:var(--ink)!important;background:rgba(255,255,255,.04)!important}
+.btn-sm{padding:6px 12px!important;font-size:11px!important;border-radius:7px!important}
+.btn-xs{padding:4px 9px!important;font-size:10px!important;border-radius:6px!important}
+.btn-block{width:100%}
+.btn-icon{padding:7px 9px!important;min-width:32px}
+
+/* ═══ BADGES ═══ */
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase;font-family:var(--mono);white-space:nowrap;line-height:1.5}
+.bg-lime{background:rgba(214,255,75,.1);color:var(--lime);border:1px solid rgba(214,255,75,.22)}
+.bg-rose{background:rgba(255,77,109,.1);color:var(--rose);border:1px solid rgba(255,77,109,.22)}
+.bg-gray{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--muted)}
+.bg-amber{background:rgba(255,184,77,.1);color:var(--amber);border:1px solid rgba(255,184,77,.22)}
+.bg-blue{background:rgba(147,197,253,.1);color:var(--blue);border:1px solid rgba(147,197,253,.22)}
+.bg-green{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.22)}
+.bg-purple{background:rgba(196,181,253,.1);color:var(--purple);border:1px solid rgba(196,181,253,.22)}
+
+/* ═══ SUBJECT CHIP ═══ */
+.schip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;font-family:var(--mono);letter-spacing:.05em;white-space:nowrap;line-height:1.4}
+.schip-dot{width:6px;height:6px;border-radius:50%}
+
+/* ═══ FORMS ═══ */
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fld:last-child{margin-bottom:0}
+.fld label{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono)}
+.fld .hint{font-size:11px;color:var(--dim);margin-top:-2px;line-height:1.5}
+.fld2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.fld3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.fld2 .fld,.fld3 .fld{margin-bottom:0}
+@media(max-width:520px){.fld2,.fld3{grid-template-columns:1fr}}
+
+/* ═══ SEGMENTED CONTROL ═══ */
+.seg{display:inline-flex;border:1px solid var(--muted);border-radius:8px;overflow:hidden;background:var(--faint)}
+.seg-btn{padding:8px 14px;background:transparent;color:var(--dim);font-size:11px;font-weight:600;border:none;border-right:1px solid var(--muted);font-family:var(--sans)}
+.seg-btn:last-child{border-right:none}
+.seg-btn:hover:not(.on){color:var(--ink)}
+.seg-btn.on{background:var(--ink);color:var(--bg)}
+.seg-block{display:flex;width:100%}
+.seg-block .seg-btn{flex:1}
+
+/* ═══ ALERTS ═══ */
+.alert{border-radius:9px;padding:10px 13px;font-size:12px;margin-bottom:12px;line-height:1.55}
+.al-lime{background:rgba(214,255,75,.05);border:1px solid rgba(214,255,75,.18);color:var(--lime)}
+.al-amber{background:rgba(255,184,77,.05);border:1px solid rgba(255,184,77,.18);color:var(--amber)}
+.al-rose{background:rgba(255,77,109,.05);border:1px solid rgba(255,77,109,.18);color:var(--rose)}
+.al-blue{background:rgba(147,197,253,.05);border:1px solid rgba(147,197,253,.14);color:var(--blue)}
+.al-green{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.18);color:var(--green)}
+.al-dim{background:rgba(255,255,255,.025);border:1px solid var(--muted);color:var(--dim)}
+
+/* ═══ TIMER (session live view) ═══ */
+.t-display{font-family:var(--serif);font-size:88px;line-height:1;letter-spacing:-.02em;text-align:center;font-style:italic;color:var(--lime);transition:color .3s}
+.t-display.amber{color:var(--amber)}
+.t-display.rose{color:var(--rose)}
+.t-phase{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-align:center;color:var(--dim);text-transform:uppercase;margin-top:6px}
+.t-ref{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;margin-top:14px}
+.t-ref-v{color:var(--ink);font-weight:600}
+
+/* ═══ FULLSCREEN TIMER ═══ */
+.fso{position:fixed;inset:0;background:#000;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0;pointer-events:none;transition:opacity .2s;padding:24px}
+.fso.show{opacity:1;pointer-events:all}
+.fs-big{font-family:var(--serif);font-size:min(22vw,180px);line-height:1;letter-spacing:-.02em;font-style:italic;text-align:center;color:var(--lime);transition:color .3s}
+.fs-big.amber{color:var(--amber)} .fs-big.rose{color:var(--rose)}
+.fs-sub{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.1em;text-align:center;text-transform:uppercase}
+.fs-phase{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center;letter-spacing:.08em;text-transform:uppercase}
+.fs-ref{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center}
+
+/* ═══ MODAL ═══ */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:flex;align-items:center;justify-content:center;padding:18px;animation:pgIn .14s ease;backdrop-filter:blur(4px)}
+.modal-box{background:#181614;border:1px solid var(--muted);border-radius:14px;padding:24px 26px;max-width:520px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 28px 80px rgba(0,0,0,.8)}
+.modal-md .modal-box{max-width:600px}
+.modal-lg .modal-box{max-width:760px}
+.modal-h{font-family:var(--serif);font-size:20px;font-style:italic;margin-bottom:18px;color:var(--ink);letter-spacing:-.01em}
+.modal-close{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:var(--sans)}
+.modal-close:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+
+/* ═══ TOAST ═══ */
+.toast{background:#181614;border:1px solid var(--muted);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:auto;animation:tIn .18s ease;max-width:320px}
+.toast-ok{border-color:rgba(74,222,128,.4)}
+.toast-err{border-color:rgba(255,77,109,.4)}
+@keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* ═══ SETUP SCREEN ═══ */
+#setup{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.su-box{width:100%;max-width:580px}
+.su-sec{background:var(--dc);border:1px solid var(--muted);border-radius:14px;padding:22px 24px;margin-bottom:11px}
+.su-sec-title{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;font-family:var(--mono);display:flex;align-items:center;justify-content:space-between}
+.grp-pick{display:flex;gap:8px;margin-bottom:12px}
+.grp-btn{flex:1;padding:11px 8px;border-radius:9px;border:1px solid var(--muted);background:var(--faint);color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;font-family:var(--sans)}
+.grp-btn.on{background:var(--lime);border-color:var(--lime);color:var(--lime-ink)}
+.grp-btn:hover:not(.on){border-color:#555;color:var(--ink)}
+
+/* ═══ EXEMPTION CHIPS ═══ */
+.exch{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--muted);border-radius:9px;background:var(--faint);font-size:11px;cursor:pointer;transition:all .15s;color:var(--ink)}
+.exch:hover{border-color:#555}
+.exch.on{border-color:var(--lime);background:rgba(214,255,75,.06);color:var(--lime)}
+.exch-meta{font-size:9px;color:var(--dim);font-family:var(--mono);margin-left:auto}
+
+/* ═══ TABLES ═══ */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--muted);white-space:nowrap;font-family:var(--mono);background:#0A0A08}
+.tbl td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:rgba(255,255,255,.02)}
+
+/* ═══ LECTURE ROW ═══ */
+.lec-grp-h{padding:10px 16px;background:#0A0A08;border-bottom:1px solid var(--muted);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--mono);display:flex;align-items:center;justify-content:space-between}
+.lec-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .12s}
+.lec-row:last-child{border-bottom:none}
+.lec-row:hover{background:rgba(255,255,255,.02)}
+.lec-num{font-family:var(--mono);font-size:10px;color:var(--dim);width:28px;flex-shrink:0;text-align:center}
+.lec-info{flex:1;min-width:0}
+.lec-title{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lec-meta{font-size:10px;color:var(--dim);margin-top:2px;font-family:var(--mono);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lec-prog{font-family:var(--mono);font-size:10px;color:var(--amber);font-weight:600}
+.lec-actions{display:flex;gap:5px;flex-shrink:0}
+
+/* ═══ SUBJECT TABS ═══ */
+.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.stab{padding:6px 14px;border-radius:20px;border:1px solid var(--muted);background:transparent;color:var(--dim);font-size:11px;font-weight:600;transition:all .14s;cursor:pointer;font-family:var(--sans);display:inline-flex;align-items:center;gap:6px}
+.stab:hover:not(.on){border-color:#555;color:var(--ink)}
+.stab-dot{width:6px;height:6px;border-radius:50%}
+
+/* ═══ ACTIVITY PICKER ═══ */
+.act-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px}
+.act-card{padding:18px 16px;border-radius:11px;border:1px solid var(--muted);background:var(--faint);color:var(--ink);text-align:center;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:8px;align-items:center}
+.act-card:hover{border-color:#555;transform:translateY(-1px)}
+.act-card.on{border-color:var(--lime);background:rgba(214,255,75,.05)}
+.act-card.dis{opacity:.4;cursor:not-allowed;filter:grayscale(.5)}
+.act-card.dis:hover{transform:none;border-color:var(--muted)}
+.act-ico{font-size:28px;line-height:1}
+.act-lbl{font-size:12px;font-weight:600}
+.act-sub{font-size:10px;color:var(--dim);font-family:var(--mono)}
+
+/* ═══ SESSION CONTROL ═══ */
+.sess-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+
+/* ═══ TIMELINE BLOCK ═══ */
+.tl-day{margin-bottom:18px}
+.tl-day-h{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--mono);margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+.tl-block{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--dc);border:1px solid var(--muted);border-radius:9px;margin-bottom:6px;transition:border-color .12s}
+.tl-block:hover{border-color:#3A3835}
+.tl-time{font-family:var(--mono);font-size:10px;color:var(--dim);width:110px;flex-shrink:0}
+.tl-mid{flex:1;min-width:0}
+.tl-act{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-meta{font-size:10px;color:var(--dim);margin-top:2px;font-family:var(--mono)}
+.tl-dur{font-family:var(--mono);font-size:11px;color:var(--ink);font-weight:600;flex-shrink:0}
+
+/* ═══ CHAPTER EDITOR ═══ */
+.chap-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--faint);border:1px solid var(--muted);border-radius:8px;margin-bottom:5px}
+.chap-row .grip{cursor:grab;color:var(--dim);font-family:var(--mono);font-size:11px;user-select:none;width:18px;text-align:center}
+.chap-row.drag{opacity:.4}
+.chap-name{flex:1;background:transparent;border:none;padding:4px 0;font-size:12px;color:var(--ink)}
+.chap-name:focus{border:none;outline:none}
+
+/* ═══ POMODORO PHASE ═══ */
+.pomo-phase{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-top:8px}
+.pomo-work{color:var(--lime)}
+.pomo-break{color:var(--sky)}
+
+/* ═══ EMPTY STATE ═══ */
+.empty{padding:40px 24px;text-align:center;color:var(--dim);font-size:12px;line-height:1.6}
+.empty-big{font-family:var(--serif);font-size:22px;font-style:italic;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em}
+
+/* ═══ STUB ═══ */
+.stub{padding:60px 24px;text-align:center}
+.stub-big{font-family:var(--serif);font-size:32px;font-style:italic;color:var(--ink);margin-bottom:8px}
+.stub-sub{font-size:13px;color:var(--dim);max-width:420px;margin:0 auto;line-height:1.6}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1140px){.p3{grid-template-columns:1fr}.p2l{grid-template-columns:1fr}}
+@media(max-width:900px){
+  .top{flex-wrap:wrap;padding:9px 14px;gap:8px}
+  .nav{max-width:100%;order:3;width:100%;border-radius:7px}
+  .top-right{margin-left:auto}
+  .p3,.p2l,.pw{padding:10px 14px 28px}
+  .bc{padding:14px 16px}
+  .modal-box{padding:18px 20px}
+  .t-display{font-size:64px}
+  .stitle{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SETUP SCREEN
+═══════════════════════════════════════════════════════════ -->
+<div id="setup" style="display:none">
+  <div class="su-box">
+    <div style="text-align:center;margin-bottom:30px">
+      <div style="font-family:var(--serif);font-size:42px;font-style:italic;color:var(--ink);letter-spacing:-.02em;line-height:1">Tracker</div>
+      <div style="font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:.12em;margin-top:6px">CA INTER PREP</div>
+    </div>
+
+    <div class="su-sec">
+      <div class="su-sec-title">Your Details</div>
+      <div class="fld2">
+        <div class="fld"><label>Your Name</label><input id="su-name" placeholder="e.g. Shreyash Jain" autocomplete="off"></div>
+        <div class="fld"><label>First Exam Date</label><input id="su-exam" type="date"></div>
+      </div>
+    </div>
+
+    <div class="su-sec">
+      <div class="su-sec-title">Appearing For</div>
+      <div class="grp-pick">
+        <button class="grp-btn" id="sg1" type="button">Group 1 Only</button>
+        <button class="grp-btn" id="sg2" type="button">Group 2 Only</button>
+        <button class="grp-btn on" id="sgb" type="button">Both Groups</button>
+      </div>
+      <div id="gprev" class="xs muted" style="line-height:1.6"></div>
+    </div>
+
+    <div class="su-sec">
+      <div class="su-sec-title">Exemptions
+        <span class="xs muted" style="text-transform:none;letter-spacing:0;font-family:var(--sans);font-weight:500">papers already cleared</span>
+      </div>
+      <div id="su-exempt" class="col" style="gap:6px"></div>
+      <div class="xs muted mt8" style="line-height:1.55">
+        <strong style="color:var(--amber)">Standard:</strong> 3-attempt validity. Need 40% in each remaining paper + 50% aggregate.<br>
+        <strong style="color:var(--purple)">Permanent:</strong> Forever. Need 50% in each remaining paper.
+      </div>
+    </div>
+
+    <div class="su-sec">
+      <div class="su-sec-title">Revision Schedule
+        <span class="xs muted" style="text-transform:none;letter-spacing:0;font-family:var(--sans);font-weight:500">days after first reading</span>
+      </div>
+      <div id="su-rev" class="row" style="flex-wrap:wrap;gap:6px"></div>
+      <div class="xs muted mt8">After completing a chapter chunk, revisions auto-schedule on these day-offsets.</div>
+    </div>
+
+    <button class="btn btn-p btn-block" style="padding:14px;font-size:14px;border-radius:11px;margin-top:6px" id="su-go" type="button">
+      Begin Tracking →
+    </button>
+    <div class="tc xxs muted mt12" style="font-family:var(--mono)">Slice 0.1 · Lectures + Sessions</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════════════ -->
+<div id="app" class="dn">
+  <div class="top">
+    <div class="brand">
+      <span class="brand-name">Tracker</span>
+      <span class="brand-by">CA INTER</span>
+    </div>
+    <div class="nav" id="nav">
+      <button class="nb on" data-p="today">Today</button>
+      <button class="nb" data-p="session">Session</button>
+      <button class="nb" data-p="lectures">Lectures</button>
+      <button class="nb" data-p="syllabus">Syllabus</button>
+      <button class="nb" data-p="revisions">Revisions</button>
+      <button class="nb" data-p="tests">Tests</button>
+      <button class="nb" data-p="flashpoints">Flashpoints</button>
+      <button class="nb" data-p="dashboard">Dashboard</button>
+      <button class="nb" data-p="timeline">Timeline</button>
+      <button class="nb" data-p="settings">Settings</button>
+      <button class="nb" data-p="help">Help</button>
+    </div>
+    <div class="top-right">
+      <div class="tb-timer dn" id="tb-timer">
+        <div class="tb-dot"></div>
+        <span id="tb-tv" class="mono fw7">00:00:00</span>
+      </div>
+      <span id="tb-days" class="mono">—</span>
+      <span id="tb-streak" class="mono" title="Current streak">— 🔥</span>
+      <span class="sync-i" id="sync-i" title="Sync status">
+        <span class="sync-dot s-off" id="sync-dot"></span>
+        <span id="sync-txt">local</span>
+      </span>
+    </div>
+  </div>
+  <div id="pages">
+    <div class="pg on" id="pg-today"></div>
+    <div class="pg" id="pg-session"></div>
+    <div class="pg" id="pg-lectures"></div>
+    <div class="pg" id="pg-syllabus"></div>
+    <div class="pg" id="pg-revisions"></div>
+    <div class="pg" id="pg-tests"></div>
+    <div class="pg" id="pg-flashpoints"></div>
+    <div class="pg" id="pg-dashboard"></div>
+    <div class="pg" id="pg-timeline"></div>
+    <div class="pg" id="pg-settings"></div>
+    <div class="pg" id="pg-help"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FULLSCREEN TIMER
+═══════════════════════════════════════════════════════════ -->
+<div class="fso" id="fso">
+  <div class="fs-sub" id="fs-sub"></div>
+  <div class="fs-big" id="fs-big">00:00:00</div>
+  <div class="fs-phase" id="fs-phase"></div>
+  <div class="fs-ref" id="fs-ref"></div>
+  <div class="sess-controls" id="fs-controls"></div>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root" style="position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:340px"></div>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════════════════════ */
+var SYL = {
+  aa:   {name:"Advanced Accounting",     short:"AA",  group:1, paper:'p1', color:"#A78BFA",
+    chapters:["Framework & Presentation of FS","Applicability of Accounting Standards","AS 1 – Accounting Policies","AS 2 – Valuation of Inventory","AS 3 – Cash Flow Statement","AS 4 – Contingencies & Events After B/S","AS 5 – Net Profit / Loss & Prior Period Items","AS 7 – Construction Contracts","AS 9 – Revenue Recognition","AS 10 – Property, Plant & Equipment","AS 11 – Foreign Exchange Rates","AS 12 – Government Grants","AS 13 – Accounting for Investments","AS 14 – Amalgamations","AS 15 – Employee Benefits","AS 16 – Borrowing Costs","AS 17 – Segment Reporting","AS 18 – Related Party Disclosures","AS 19 – Leases","AS 20 – Earnings Per Share","AS 21 – Consolidated FS","AS 22 – Taxes on Income","AS 23 – Investment in Associates","AS 24 – Discontinuing Operations","AS 25 – Interim Financial Reporting","AS 26 – Intangible Assets","AS 27 – Joint Ventures","AS 28 – Impairment of Assets","AS 29 – Provisions, Contingent Liabilities","Preparation of FS (Practical)","Cash Flow (Advanced)","Buyback of Securities","Amalgamation of Companies","Internal Reconstruction","Branch Accounting"]},
+  law:  {name:"Corporate & Other Laws",  short:"LAW", group:1, paper:'p2', color:"#34D399",
+    chapters:["Preliminary","Incorporation of Company","Prospectus","Share Capital & Debentures","Acceptance of Deposits","Registration of Charges","Management & Administration","Declaration & Payment of Dividend","Accounts of Companies","Audit & Auditors","Companies Incorporated Outside India","LLP Act 2008","General Clauses Act 1897","Interpretation of Statutes","FEMA 1999"]},
+  it:   {name:"Income Tax",              short:"IT",  group:1, paper:'p3', color:"#FB923C",
+    chapters:["Basic Concepts","Residence & Scope","Salaries","Income from House Property","PGBP","Capital Gains","Income from Other Sources","Clubbing of Income","Set-Off & Carry Forward","Deductions from GTI","Advance Tax, TDS & TCS","Return Filing & Self-Assessment","Computation of Tax Liability"]},
+  gst:  {name:"GST",                     short:"GST", group:1, paper:'p3', color:"#22D3EE",
+    chapters:["GST Introduction","Supply under GST","Charge of GST","Exemptions","Place of Supply","Time of Supply","Value of Supply","Input Tax Credit","Registration","Tax Invoice, Credit & Debit Notes","Accounts & Records","E-Way Bill","Payment of Tax","TDS & TCS under GST","Returns under GST"]},
+  cma:  {name:"Cost & Mgmt. Accounting", short:"CMA", group:2, paper:'p4', color:"#F472B6",
+    chapters:["Introduction to Cost Accounting","Material Cost","Employee Cost & Direct Expenses","Overheads – Absorption Costing","Activity Based Costing","Cost Sheet & Unit Costing","Job Costing & Batch Costing","Process & Operation Costing","Joint Products & By-Products","Service / Operating Costing","Standard Costing & Variance Analysis","Marginal Costing","Budget & Budgetary Control"]},
+  audit:{name:"Auditing & Ethics",       short:"AUD", group:2, paper:'p5', color:"#FBBF24",
+    chapters:["Nature, Objectives & Scope","Engagement Letter (SA 210)","Quality Control – SQC 1 / SA 220","Audit Strategy, Planning & Programme","Audit Documentation (SA 230)","Risk Assessment (SA 315/330)","Audit Evidence (SA 500 series)","Analytical Procedures (SA 520)","Audit Sampling (SA 530)","Verification of Assets & Liabilities","Company Audit – Companies Act","Audit Report (SA 700 series)","Special Audits","Code of Ethics"]},
+  fm:   {name:"Financial Management",    short:"FM",  group:2, paper:'p6', color:"#60A5FA",
+    chapters:["FM Scope & Objectives","Time Value of Money","Financial Analysis & Ratio Analysis","Working Capital Management","Cash & Liquidity Management","Receivables Management","Inventory Management","Sources of Finance","Cost of Capital","Capital Structure Decisions","Leverages","Capital Budgeting","Dividend Decisions"]},
+  sm:   {name:"Strategic Management",    short:"SM",  group:2, paper:'p6', color:"#E879F9",
+    chapters:["Introduction to Strategic Management","Dynamics of Competitive Strategy","Strategic Management Process","Corporate Level Strategies","Business Level Strategies","Functional Level Strategies","Business Policy & Functional Strategy","Strategic Analysis & Planning","Organisational Structures","Strategic Implementation","Digital Strategy & Business Models","Startup & Entrepreneurship"]}
+};
+
+var PAPERS = [
+  {id:'p1', name:'Advanced Accounting',     subjects:['aa'],         group:1},
+  {id:'p2', name:'Corporate & Other Laws',  subjects:['law'],        group:1},
+  {id:'p3', name:'Taxation (IT + GST)',     subjects:['it','gst'],   group:1},
+  {id:'p4', name:'Cost & Mgmt. Accounting', subjects:['cma'],        group:2},
+  {id:'p5', name:'Auditing & Ethics',       subjects:['audit'],      group:2},
+  {id:'p6', name:'FM & Strategic Mgmt.',    subjects:['fm','sm'],    group:2}
+];
+
+// Activity types available in slice 0.1
+var ACT_LABELS = {
+  'lecture':          {icon:'🎓', label:'Lecture',          desc:'Watch a main course lecture',     enabled:true},
+  'revision-lecture': {icon:'📺', label:'Revision Lecture', desc:'Watch a revision video / refresher', enabled:true},
+  'first-reading':    {icon:'📖', label:'First Reading',    desc:'Coming in slice 0.2',              enabled:false},
+  'revision':         {icon:'🔁', label:'Revision',         desc:'Coming in slice 0.3',              enabled:false},
+  'questions':        {icon:'✍️',  label:'Questions',         desc:'Coming in slice 0.5',              enabled:false},
+  'test':             {icon:'🎯', label:'Test',             desc:'Coming in slice 0.4',              enabled:false},
+  'homework':         {icon:'📝', label:'Homework',         desc:'Coming in slice 0.5',              enabled:false}
+};
+
+var STORAGE_KEY = 'ca_tracker_v01';
+var DATA_VERSION = '0.1.0';
+
+/* ═══════════════════════════════════════════════════════════
+   APP STATE
+═══════════════════════════════════════════════════════════ */
+var APP = null;
+
+function freshState(){
+  return {
+    cfg: {
+      name: '',
+      examDate: '',
+      group: 'both',                   // '1' | '2' | 'both'
+      exemptions: {},                   // {p1: 'standard'|'permanent'}
+      revOffsets: [1, 7, 30, 60, 90],
+      pomoDefault: {workMin:25, breakMin:5, longBreakEvery:4, longBreakMin:15},
+      setupDone: false
+    },
+    chapters: {},                       // {aa: ['ch1', 'ch2', ...]} — overrides SYL when present
+    subjectLectureMode: {},             // {aa: 'recorded'|'live'}
+    subjectLectureTotal: {},            // {aa: {mainCount: 47, mainHours: 95, revCount: 8, revHours: 12}} — only for recorded
+    lectures: [],                       // backlog
+    timeEntries: [],                    // the spine
+    activeSession: null,                // live session in progress
+    meta: {
+      savedAt: null,
+      version: DATA_VERSION,
+      lastSyncAt: null,
+      lastSyncStatus: null              // 'ok'|'err'|null
+    }
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function pad(n){return String(n).padStart(2,'0');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,9);}
+
+function today(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function nowHM(){var d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes());}
+function isValidDate(s){return typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(new Date(s+'T12:00:00').getTime());}
+function addD(d,n){if(!isValidDate(d))return today();var dt=new Date(d+'T12:00:00');dt.setDate(dt.getDate()+n);return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());}
+function diffD(a,b){if(!isValidDate(a)||!isValidDate(b))return 0;return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);}
+
+function fmtMin(min){
+  if(!min||min<0)return '0m';
+  min=Math.round(min);
+  var h=Math.floor(min/60), m=min%60;
+  if(h<=0)return m+'m';
+  if(m===0)return h+'h';
+  return h+'h '+m+'m';
+}
+function fmtHMS(sec){
+  if(!sec||sec<0)sec=0;
+  sec=Math.floor(sec);
+  var h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  return pad(h)+':'+pad(m)+':'+pad(s);
+}
+function fmtDate(d){
+  if(!isValidDate(d))return d||'';
+  var dt=new Date(d+'T12:00:00');
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return dt.getDate()+' '+months[dt.getMonth()]+' '+dt.getFullYear();
+}
+function fmtDateLong(d){
+  if(!isValidDate(d))return d||'';
+  var dt=new Date(d+'T12:00:00');
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return days[dt.getDay()]+', '+fmtDate(d);
+}
+function relDay(d){
+  if(!isValidDate(d))return d||'';
+  var dd=diffD(today(), d);
+  if(dd===0)return 'Today';
+  if(dd===-1)return 'Yesterday';
+  if(dd===1)return 'Tomorrow';
+  if(dd<0&&dd>=-6)return -dd+'d ago';
+  if(dd>0&&dd<=6)return 'in '+dd+'d';
+  return fmtDate(d);
+}
+function chapName(subId, idx){
+  var list = (APP.chapters && APP.chapters[subId]) || (SYL[subId] && SYL[subId].chapters) || [];
+  return list[idx] || '(unknown chapter)';
+}
+function chapList(subId){
+  return (APP.chapters && APP.chapters[subId]) || (SYL[subId] && SYL[subId].chapters && SYL[subId].chapters.slice()) || [];
+}
+function activeSubjects(){
+  var ex = (APP.cfg && APP.cfg.exemptions) || {};
+  var out = [];
+  PAPERS.forEach(function(p){
+    if(APP.cfg.group === '1' && p.group !== 1) return;
+    if(APP.cfg.group === '2' && p.group !== 2) return;
+    if(ex[p.id]) return;
+    p.subjects.forEach(function(sid){ out.push(sid); });
+  });
+  return out;
+}
+function subjectBadge(subId){
+  var s = SYL[subId] || {short:'?', color:'#999'};
+  return '<span class="schip" style="background:'+s.color+'22;color:'+s.color+';border:1px solid '+s.color+'44">'+s.short+'</span>';
+}
+function subjectColor(subId){
+  return (SYL[subId] && SYL[subId].color) || '#999';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
+function toast(msg, type){
+  var el = document.createElement('div');
+  el.className = 'toast' + (type==='ok'?' toast-ok':type==='err'?' toast-err':'');
+  el.textContent = msg;
+  $('toast-root').appendChild(el);
+  setTimeout(function(){
+    el.style.transition='opacity .25s';
+    el.style.opacity='0';
+    setTimeout(function(){el.remove();}, 250);
+  }, type==='err'?4000:2400);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════════ */
+function modal(opts){
+  // opts: {title, body, size: 'sm'|'md'|'lg', actions: [{label, kind, onClick}]}
+  var size = opts.size || 'sm';
+  var sizeClass = size==='lg'?'modal-lg':size==='md'?'modal-md':'';
+  var actionsHtml = '';
+  if(opts.actions && opts.actions.length){
+    actionsHtml = '<div class="row mt20" style="justify-content:flex-end;gap:8px;flex-wrap:wrap">';
+    opts.actions.forEach(function(a, i){
+      var cls = 'btn ' + (a.kind==='primary'?'btn-p':a.kind==='danger'?'btn-dan':a.kind==='ghost'?'btn-ghost':'');
+      actionsHtml += '<button class="'+cls+'" data-mi="'+i+'">'+esc(a.label)+'</button>';
+    });
+    actionsHtml += '</div>';
+  }
+  var html = '<div class="modal-ov '+sizeClass+'"><div class="modal-box" style="position:relative">'+
+    '<button class="modal-close" data-close>×</button>'+
+    (opts.title?'<div class="modal-h">'+esc(opts.title)+'</div>':'')+
+    '<div class="modal-body">'+(opts.body||'')+'</div>'+
+    actionsHtml+
+    '</div></div>';
+  var root = $('modal-root');
+  root.innerHTML = html;
+  var ov = root.querySelector('.modal-ov');
+  function close(){ root.innerHTML=''; if(opts.onClose) opts.onClose(); }
+  root.querySelector('[data-close]').onclick = close;
+  ov.onclick = function(e){ if(e.target===ov) close(); };
+  if(opts.actions){
+    opts.actions.forEach(function(a, i){
+      root.querySelector('[data-mi="'+i+'"]').onclick = function(){
+        var keepOpen = a.onClick && a.onClick(close, root);
+        if(!keepOpen) close();
+      };
+    });
+  }
+  return {close: close, root: root};
+}
+function confirmDlg(msg, onYes, opts){
+  opts = opts || {};
+  modal({
+    title: opts.title || 'Confirm',
+    body: '<div style="font-size:13px;line-height:1.6;color:var(--ink)">'+esc(msg)+'</div>',
+    actions: [
+      {label: opts.cancelLabel || 'Cancel', kind:'ghost'},
+      {label: opts.yesLabel || 'Yes', kind: opts.danger?'danger':'primary', onClick: function(close){ onYes(); }}
+    ]
+  });
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════════════════════ */
+var _saveDebounce = null;
+var _cloudDebounce = null;
+var _cloudSyncing = false;
+var _cloudDirty = false;
+
+function save(immediate){
+  if(!APP) return;
+  APP.meta.savedAt = Date.now();
+  // localStorage write (synchronous, immediate)
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
+  }catch(e){
+    if(e && (e.name==='QuotaExceededError' || e.name==='NS_ERROR_DOM_QUOTA_REACHED')){
+      toast('Storage quota exceeded. Export your data from Settings.', 'err');
+    }
+    console.error('Save failed:', e);
+  }
+  // Debounced cloud sync
+  if(GIST_TOKEN && GIST_ID){
+    if(_cloudDebounce) clearTimeout(_cloudDebounce);
+    _cloudDebounce = setTimeout(function(){ syncToCloud(); }, immediate?100:2000);
+  }
+}
+
+function load(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      // Migrate / fill defaults
+      var fresh = freshState();
+      APP = mergeDefault(parsed, fresh);
+      return true;
+    }
+  }catch(e){ console.error('Load failed:', e); }
+  APP = freshState();
+  return false;
+}
+
+function mergeDefault(loaded, fresh){
+  // Shallow merge: any missing top-level keys from fresh fill in
+  Object.keys(fresh).forEach(function(k){
+    if(loaded[k] === undefined || loaded[k] === null){
+      loaded[k] = fresh[k];
+    } else if(typeof fresh[k] === 'object' && !Array.isArray(fresh[k]) && fresh[k] !== null){
+      // recurse one level for objects
+      Object.keys(fresh[k]).forEach(function(sk){
+        if(loaded[k][sk] === undefined) loaded[k][sk] = fresh[k][sk];
+      });
+    }
+  });
+  return loaded;
+}
+
+function exportJSON(){
+  var data = JSON.stringify(APP, null, 2);
+  var blob = new Blob([data], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'ca-tracker-backup-' + today() + '.json';
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  toast('Exported backup', 'ok');
+}
+
+function importJSON(file){
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var parsed = JSON.parse(e.target.result);
+      if(!parsed || !parsed.cfg) throw new Error('Invalid backup file');
+      confirmDlg('Replace ALL current data with this backup? Cannot be undone.', function(){
+        APP = mergeDefault(parsed, freshState());
+        save(true);
+        toast('Backup restored', 'ok');
+        setTimeout(function(){ location.reload(); }, 600);
+      }, {danger:true, yesLabel:'Replace'});
+    }catch(err){
+      toast('Invalid backup: '+err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function nukeAll(){
+  confirmDlg('PERMANENTLY delete ALL data? Sessions, lectures, settings — everything. Cannot be undone.', function(){
+    confirmDlg('Are you really sure? Last chance.', function(){
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('ca_gist_token');
+      localStorage.removeItem('ca_gist_id');
+      location.reload();
+    }, {danger:true, yesLabel:'Delete everything'});
+  }, {danger:true, yesLabel:'Delete'});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GITHUB GIST SYNC (with the 4 fixes)
+   1. Auto-pull on startup before any input
+   2. Dirty-flag re-queue if change fires during in-flight sync
+   3. 2 sec debounce on cloud writes (in save() above)
+   4. "Last synced X ago" shown in topbar
+═══════════════════════════════════════════════════════════ */
+var GIST_TOKEN = null;
+var GIST_ID = null;
+
+function loadGistCreds(){
+  GIST_TOKEN = localStorage.getItem('ca_gist_token') || null;
+  GIST_ID = localStorage.getItem('ca_gist_id') || null;
+}
+function saveGistCreds(){
+  if(GIST_TOKEN) localStorage.setItem('ca_gist_token', GIST_TOKEN); else localStorage.removeItem('ca_gist_token');
+  if(GIST_ID) localStorage.setItem('ca_gist_id', GIST_ID); else localStorage.removeItem('ca_gist_id');
+}
+
+function updateSyncUI(state, msg){
+  var dot = $('sync-dot'), txt = $('sync-txt');
+  if(!dot || !txt) return;
+  dot.className = 'sync-dot ' + (state==='ok'?'s-ok':state==='err'?'s-err':state==='ing'?'s-ing':'s-off');
+  txt.textContent = msg || (state==='ok'?'synced':state==='err'?'error':state==='ing'?'syncing…':GIST_TOKEN?'idle':'local');
+  if(state==='ok' && APP && APP.meta.lastSyncAt){
+    $('sync-i').title = 'Last synced: ' + relTime(APP.meta.lastSyncAt);
+  } else {
+    $('sync-i').title = state==='err'?'Sync error — click Settings':GIST_TOKEN?'Cloud sync configured':'Local only — set up cloud sync in Settings';
+  }
+}
+
+function relTime(ts){
+  if(!ts) return 'never';
+  var diff = (Date.now() - ts) / 1000;
+  if(diff < 60) return 'just now';
+  if(diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if(diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+async function syncToCloud(){
+  if(!GIST_TOKEN){ updateSyncUI('off'); return; }
+  // Fix #2: dirty-flag re-queue
+  if(_cloudSyncing){ _cloudDirty = true; return; }
+  _cloudSyncing = true;
+  updateSyncUI('ing');
+  try{
+    var payload = JSON.stringify({...APP, _ts: Date.now()});
+    var url = GIST_ID ? 'https://api.github.com/gists/'+GIST_ID : 'https://api.github.com/gists';
+    var method = GIST_ID ? 'PATCH' : 'POST';
+    var body = {
+      files: {'tracker-data.json': {content: payload}},
+      description: 'CA Inter Tracker Data',
+      public: false
+    };
+    var res = await fetch(url, {
+      method: method,
+      headers: {'Authorization':'token '+GIST_TOKEN, 'Content-Type':'application/json', 'Accept':'application/vnd.github+json'},
+      body: JSON.stringify(body)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var json = await res.json();
+    if(!GIST_ID){
+      GIST_ID = json.id;
+      saveGistCreds();
+    }
+    APP.meta.lastSyncAt = Date.now();
+    APP.meta.lastSyncStatus = 'ok';
+    updateSyncUI('ok');
+  }catch(e){
+    console.error('syncToCloud failed:', e);
+    APP.meta.lastSyncStatus = 'err';
+    updateSyncUI('err');
+    toast('Cloud sync failed: '+e.message, 'err');
+  }finally{
+    _cloudSyncing = false;
+    if(_cloudDirty){
+      _cloudDirty = false;
+      setTimeout(syncToCloud, 100);
+    }
+  }
+}
+
+async function syncFromCloud(silent){
+  if(!GIST_TOKEN || !GIST_ID){
+    if(!silent) toast('No cloud connected. Set up in Settings.', 'err');
+    return false;
+  }
+  if(!silent) updateSyncUI('ing', 'pulling…');
+  try{
+    var res = await fetch('https://api.github.com/gists/'+GIST_ID, {
+      headers: {'Authorization':'token '+GIST_TOKEN, 'Accept':'application/vnd.github+json'}
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var json = await res.json();
+    var content = json.files && json.files['tracker-data.json'] && json.files['tracker-data.json'].content;
+    if(!content) throw new Error('No data in gist');
+    var cloud = JSON.parse(content);
+    var cloudTs = cloud._ts || 0;
+    var localTs = (APP && APP.meta && APP.meta.savedAt) || 0;
+
+    if(cloudTs <= localTs && !silent){
+      toast('Local data is up to date', 'ok');
+      updateSyncUI('ok');
+      return true;
+    }
+
+    // Cloud is newer — merge time entries by id, replace other collections wholesale
+    var localEntryIds = {};
+    (APP.timeEntries||[]).forEach(function(e){ localEntryIds[e.id] = e; });
+    var mergedEntries = (APP.timeEntries||[]).slice();
+    (cloud.timeEntries||[]).forEach(function(e){
+      if(!localEntryIds[e.id]) mergedEntries.push(e);
+      else{
+        // keep newer
+        if((e.updatedAt||0) > (localEntryIds[e.id].updatedAt||0)){
+          var idx = mergedEntries.findIndex(function(x){return x.id===e.id;});
+          if(idx>=0) mergedEntries[idx] = e;
+        }
+      }
+    });
+
+    ['cfg','chapters','subjectLectureMode','subjectLectureTotal','lectures'].forEach(function(k){
+      if(cloud[k] !== undefined) APP[k] = cloud[k];
+    });
+    APP.timeEntries = mergedEntries;
+    APP.meta.lastSyncAt = Date.now();
+    APP.meta.lastSyncStatus = 'ok';
+    delete APP._ts;
+    save(true);
+    updateSyncUI('ok');
+    if(!silent) toast('Synced from cloud', 'ok');
+    return true;
+  }catch(e){
+    console.error('syncFromCloud failed:', e);
+    updateSyncUI('err');
+    if(!silent) toast('Pull failed: '+e.message, 'err');
+    return false;
+  }
+}
+
+async function connectGist(token){
+  if(!token || token.length < 10){ toast('Token looks invalid', 'err'); return; }
+  toast('Verifying token…');
+  try{
+    var r = await fetch('https://api.github.com/user', {headers:{'Authorization':'token '+token, 'Accept':'application/vnd.github+json'}});
+    if(!r.ok) throw new Error('Invalid token (HTTP '+r.status+')');
+    var u = await r.json();
+    GIST_TOKEN = token;
+    GIST_ID = null;
+    saveGistCreds();
+    toast('Connected as '+u.login, 'ok');
+    updateSyncUI('ing','connecting…');
+    await syncToCloud(); // creates the gist
+    renderSettings();
+    updateSyncUI('ok');
+  }catch(e){
+    GIST_TOKEN = null;
+    saveGistCreds();
+    toast('Connection failed: '+e.message, 'err');
+    updateSyncUI('err');
+  }
+}
+
+function disconnectGist(){
+  confirmDlg('Disconnect cloud sync? Your data stays on this device. The cloud copy is preserved on GitHub.', function(){
+    GIST_TOKEN = null;
+    GIST_ID = null;
+    saveGistCreds();
+    updateSyncUI('off');
+    renderSettings();
+    toast('Disconnected', 'ok');
+  });
+}
+
+async function reconnectGistWithExistingId(token, gistId){
+  if(!token || !gistId){ toast('Token and Gist ID required', 'err'); return; }
+  try{
+    var r = await fetch('https://api.github.com/gists/'+gistId, {headers:{'Authorization':'token '+token}});
+    if(!r.ok) throw new Error('Cannot access gist (HTTP '+r.status+')');
+    GIST_TOKEN = token;
+    GIST_ID = gistId;
+    saveGistCreds();
+    toast('Connected. Pulling data…', 'ok');
+    var ok = await syncFromCloud();
+    if(ok){
+      renderSettings();
+      showPage(currentPage);
+    }
+  }catch(e){
+    toast('Reconnect failed: '+e.message, 'err');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SETUP FLOW
+═══════════════════════════════════════════════════════════ */
+var _setupGroup = 'both';
+var _setupExempt = {};                  // {p1: 'standard'|'permanent'}
+var _setupRev = [1, 7, 30, 60, 90];
+
+function renderSetupExemptions(){
+  var html = '';
+  PAPERS.forEach(function(p){
+    if(_setupGroup === '1' && p.group !== 1) return;
+    if(_setupGroup === '2' && p.group !== 2) return;
+    var current = _setupExempt[p.id];
+    html += '<div class="rowb" style="background:var(--faint);border:1px solid var(--muted);border-radius:9px;padding:10px 12px">'+
+      '<div>'+
+        '<div class="sm fw6">'+esc(p.name)+'</div>'+
+        '<div class="xs muted mono mt2">Group '+p.group+' · '+p.id.toUpperCase()+'</div>'+
+      '</div>'+
+      '<div class="row">'+
+        '<button class="exch '+(current==='standard'?'on':'')+'" data-paper="'+p.id+'" data-type="standard" type="button">Standard</button>'+
+        '<button class="exch '+(current==='permanent'?'on':'')+'" data-paper="'+p.id+'" data-type="permanent" type="button">Permanent</button>'+
+        (current?'<button class="btn btn-xs btn-ghost" data-paper="'+p.id+'" data-type="clear" type="button">×</button>':'')+
+      '</div>'+
+    '</div>';
+  });
+  if(!html) html = '<div class="xs muted">No papers in selected group(s).</div>';
+  $('su-exempt').innerHTML = html;
+  $('su-exempt').querySelectorAll('button').forEach(function(b){
+    b.onclick = function(){
+      var p = b.dataset.paper, t = b.dataset.type;
+      if(t==='clear') delete _setupExempt[p];
+      else _setupExempt[p] = t;
+      renderSetupExemptions();
+    };
+  });
+}
+
+function renderSetupRev(){
+  var html = '';
+  _setupRev.forEach(function(d, i){
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px">'+
+      '<input type="number" min="1" max="365" value="'+d+'" data-i="'+i+'" style="width:62px;text-align:center;font-family:var(--mono);padding:6px 4px">'+
+      '<div class="xxs muted mono">R'+(i+1)+'</div>'+
+    '</div>';
+  });
+  html += '<div class="row" style="gap:4px;margin-left:6px">'+
+    '<button class="btn btn-xs btn-ghost" id="su-rev-add" type="button">+</button>'+
+    (_setupRev.length>1?'<button class="btn btn-xs btn-ghost" id="su-rev-rm" type="button">−</button>':'')+
+  '</div>';
+  $('su-rev').innerHTML = html;
+  $('su-rev').querySelectorAll('input').forEach(function(inp){
+    inp.oninput = function(){
+      var v = parseInt(inp.value, 10);
+      if(!isNaN(v) && v>0) _setupRev[parseInt(inp.dataset.i, 10)] = v;
+    };
+  });
+  if($('su-rev-add')) $('su-rev-add').onclick = function(){
+    var last = _setupRev[_setupRev.length-1] || 30;
+    _setupRev.push(last + 30);
+    renderSetupRev();
+  };
+  if($('su-rev-rm')) $('su-rev-rm').onclick = function(){
+    if(_setupRev.length>1){ _setupRev.pop(); renderSetupRev(); }
+  };
+}
+
+function pickSetupGroup(g){
+  _setupGroup = g;
+  ['sg1','sg2','sgb'].forEach(function(id){ $(id).classList.remove('on'); });
+  $(g==='1'?'sg1':g==='2'?'sg2':'sgb').classList.add('on');
+  // Drop exemptions for papers no longer in scope
+  Object.keys(_setupExempt).forEach(function(pid){
+    var paper = PAPERS.find(function(p){return p.id===pid;});
+    if(g==='1' && paper.group!==1) delete _setupExempt[pid];
+    if(g==='2' && paper.group!==2) delete _setupExempt[pid];
+  });
+  // Update preview
+  var subs = [];
+  PAPERS.forEach(function(p){
+    if(g==='1' && p.group!==1) return;
+    if(g==='2' && p.group!==2) return;
+    if(_setupExempt[p.id]) return;
+    p.subjects.forEach(function(sid){ subs.push(SYL[sid].short); });
+  });
+  $('gprev').innerHTML = subs.length ? '<strong style="color:var(--ink)">Subjects to track:</strong> ' + subs.join(' · ') : '<em>No subjects (everything exempted)</em>';
+  renderSetupExemptions();
+}
+
+function startSetup(){
+  $('setup').style.display = 'flex';
+  $('app').classList.add('dn');
+  $('su-name').value = '';
+  $('su-exam').value = '';
+  pickSetupGroup('both');
+  renderSetupRev();
+  $('sg1').onclick = function(){ pickSetupGroup('1'); };
+  $('sg2').onclick = function(){ pickSetupGroup('2'); };
+  $('sgb').onclick = function(){ pickSetupGroup('both'); };
+  $('su-go').onclick = doSetup;
+}
+
+function doSetup(){
+  var name = $('su-name').value.trim();
+  var exam = $('su-exam').value;
+  if(!name){ toast('Enter your name', 'err'); $('su-name').focus(); return; }
+  if(!exam || !isValidDate(exam)){ toast('Pick a valid exam date', 'err'); $('su-exam').focus(); return; }
+  if(diffD(today(), exam) < 0){
+    return confirmDlg('Exam date is in the past. Continue anyway?', function(){
+      finishSetup(name, exam);
+    });
+  }
+  finishSetup(name, exam);
+}
+
+function finishSetup(name, exam){
+  APP.cfg.name = name;
+  APP.cfg.examDate = exam;
+  APP.cfg.group = _setupGroup;
+  APP.cfg.exemptions = JSON.parse(JSON.stringify(_setupExempt));
+  APP.cfg.revOffsets = _setupRev.slice();
+  APP.cfg.setupDone = true;
+  // Initialize chapters from SYL for active subjects
+  activeSubjects().forEach(function(sid){
+    if(!APP.chapters[sid]) APP.chapters[sid] = SYL[sid].chapters.slice();
+  });
+  save(true);
+  $('setup').style.display = 'none';
+  $('app').classList.remove('dn');
+  showPage('today');
+  toast('Welcome, ' + name.split(' ')[0] + '!', 'ok');
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   APP INIT (with auto-pull on startup — sync fix #1)
+═══════════════════════════════════════════════════════════ */
+var currentPage = 'today';
+
+async function init(){
+  loadGistCreds();
+  load();
+
+  if(!APP.cfg.setupDone){
+    startSetup();
+    return;
+  }
+
+  // Fix #1: auto-pull on startup if cloud is configured
+  if(GIST_TOKEN && GIST_ID){
+    updateSyncUI('ing','syncing…');
+    await syncFromCloud(true); // silent — only toast if error
+  } else {
+    updateSyncUI(GIST_TOKEN?'idle':'off');
+  }
+
+  $('setup').style.display = 'none';
+  $('app').classList.remove('dn');
+
+  // Wire nav
+  document.querySelectorAll('#nav .nb').forEach(function(b){
+    b.onclick = function(){ showPage(b.dataset.p); };
+  });
+
+  // Topbar timer click → fullscreen
+  $('tb-timer').onclick = function(){ openFullscreen(); };
+
+  // Sync indicator click → settings (but if syncing, skip)
+  $('sync-i').onclick = function(){ showPage('settings'); };
+
+  showPage('today');
+  refreshTopbar();
+  setInterval(refreshTopbar, 30000); // refresh days/streak every 30s
+  resumeActiveSession();
+}
+
+function showPage(p){
+  currentPage = p;
+  document.querySelectorAll('#nav .nb').forEach(function(b){
+    b.classList.toggle('on', b.dataset.p === p);
+  });
+  document.querySelectorAll('.pg').forEach(function(el){
+    el.classList.toggle('on', el.id === 'pg-'+p);
+  });
+  switch(p){
+    case 'today':       renderToday(); break;
+    case 'session':     renderSession(); break;
+    case 'lectures':    renderLectures(); break;
+    case 'syllabus':    renderStub('syllabus', 'Syllabus', 'First-reading tracking with day-grouped chunks. Coming in slice 0.2.'); break;
+    case 'revisions':   renderStub('revisions', 'Revisions', 'Auto-scheduled R1/R7/R30 revision queue. Coming in slice 0.3.'); break;
+    case 'tests':       renderStub('tests', 'Tests', 'Full-syllabus + chapterwise tests with dual-phase timer. Coming in slice 0.4.'); break;
+    case 'flashpoints': renderStub('flashpoints', 'Flashpoints', 'Tricky points captured for quick revision. Coming in slice 0.5.'); break;
+    case 'dashboard':   renderStub('dashboard', 'Dashboard', 'All your stats in one bento grid. Coming in slice 0.6.'); break;
+    case 'timeline':    renderTimeline(); break;
+    case 'settings':    renderSettings(); break;
+    case 'help':        renderHelp(); break;
+  }
+}
+
+function refreshTopbar(){
+  if(APP.cfg.examDate){
+    var d = diffD(today(), APP.cfg.examDate);
+    $('tb-days').textContent = d>=0 ? d+'d to exam' : Math.abs(d)+'d past exam';
+    $('tb-days').style.color = d<0?'var(--rose)':d<=30?'var(--amber)':'var(--dim)';
+  } else {
+    $('tb-days').textContent = '— set exam date';
+  }
+  $('tb-streak').textContent = computeStreak() + ' 🔥';
+}
+
+function computeStreak(){
+  if(!APP.timeEntries.length) return 0;
+  var byDate = {};
+  APP.timeEntries.forEach(function(e){
+    if(e.elapsedMin > 0) byDate[e.date] = true;
+  });
+  var streak = 0;
+  var d = today();
+  while(byDate[d]){ streak++; d = addD(d, -1); }
+  // Allow today to be empty if yesterday had study (don't break streak before midnight)
+  if(streak === 0 && byDate[addD(today(), -1)]){
+    var d2 = addD(today(), -1);
+    while(byDate[d2]){ streak++; d2 = addD(d2, -1); }
+  }
+  return streak;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TIMER ENGINE
+   - drift-free (uses Date.now())
+   - persists active session to localStorage every save()
+   - handles pause/resume + pomodoro phase transitions
+═══════════════════════════════════════════════════════════ */
+var _timerInterval = null;
+
+function startTimerLoop(){
+  if(_timerInterval) clearInterval(_timerInterval);
+  _timerInterval = setInterval(timerTick, 1000);
+  timerTick();
+}
+function stopTimerLoop(){
+  if(_timerInterval) clearInterval(_timerInterval);
+  _timerInterval = null;
+}
+
+function timerTick(){
+  if(!APP.activeSession) return;
+  var s = APP.activeSession;
+  var nowTs = Date.now();
+  var elapsedSec;
+  if(s.paused){
+    elapsedSec = (s.pausedAt - s.startedAt - s.totalPausedMs) / 1000;
+  } else {
+    elapsedSec = (nowTs - s.startedAt - s.totalPausedMs) / 1000;
+  }
+  if(elapsedSec < 0) elapsedSec = 0;
+
+  // Pomodoro phase transitions
+  if(s.mode === 'pomodoro' && !s.paused){
+    var pc = s.pomoConfig;
+    var phaseElapsed = (nowTs - s.phaseStartedAt) / 1000;
+    var phaseDur = (s.phase === 'work' ? pc.workMin : (s.phase === 'longBreak' ? pc.longBreakMin : pc.breakMin)) * 60;
+    if(phaseElapsed >= phaseDur){
+      // Phase complete — flip
+      if(s.phase === 'work'){
+        s.workCount = (s.workCount || 0) + 1;
+        var isLong = pc.longBreakEvery > 0 && s.workCount % pc.longBreakEvery === 0;
+        s.phase = isLong ? 'longBreak' : 'break';
+        toast(isLong ? 'Long break — '+pc.longBreakMin+' min' : 'Break — '+pc.breakMin+' min', 'ok');
+      } else {
+        s.phase = 'work';
+        toast('Back to work — '+pc.workMin+' min', 'ok');
+      }
+      s.phaseStartedAt = nowTs;
+      // beep (browser-dependent — silent fallback)
+      try{ if(window.AudioContext){
+        var ctx = new (window.AudioContext||window.webkitAudioContext)();
+        var o = ctx.createOscillator(); var g = ctx.createGain();
+        o.frequency.value = s.phase==='work'?880:550;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.2, ctx.currentTime+.02);
+        g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+.4);
+        o.start(); o.stop(ctx.currentTime+.4);
+      }}catch(e){}
+    }
+  }
+
+  s.elapsedSec = Math.floor(elapsedSec);
+  // Render
+  var hms = fmtHMS(s.elapsedSec);
+  $('tb-tv').textContent = hms;
+  var bigEl = $('s-timer-big');
+  if(bigEl) bigEl.textContent = hms;
+  var fsBig = $('fs-big');
+  if(fsBig.textContent !== hms) fsBig.textContent = hms;
+  // Reference time color
+  if(s.referenceMin && s.referenceMin > 0){
+    var ratio = (s.elapsedSec/60) / s.referenceMin;
+    var color = ratio < 1 ? '' : ratio < 1.5 ? 'amber' : 'rose';
+    if(bigEl){ bigEl.classList.remove('amber','rose'); if(color) bigEl.classList.add(color); }
+    fsBig.classList.remove('amber','rose'); if(color) fsBig.classList.add(color);
+  }
+  // Pomodoro phase label
+  var phaseEl = $('s-pomo-phase');
+  if(phaseEl){
+    if(s.mode === 'pomodoro'){
+      var pc = s.pomoConfig;
+      var phaseDur = (s.phase==='work'?pc.workMin:s.phase==='longBreak'?pc.longBreakMin:pc.breakMin) * 60;
+      var phaseEl_secs = ((s.paused?s.pausedAt:Date.now()) - s.phaseStartedAt) / 1000;
+      var remaining = Math.max(0, phaseDur - phaseEl_secs);
+      phaseEl.innerHTML = '<span class="'+(s.phase==='work'?'pomo-work':'pomo-break')+'">'+
+        (s.phase==='work'?'Work':s.phase==='longBreak'?'Long Break':'Break')+
+        ' · '+fmtHMS(remaining)+' left'+
+        '</span>';
+    } else {
+      phaseEl.innerHTML = '';
+    }
+  }
+  $('fs-phase').innerHTML = phaseEl ? phaseEl.innerHTML : '';
+  // Periodic save (every 15 sec) so we don't lose progress on a crash
+  if(!s._lastSavedAt || Date.now() - s._lastSavedAt > 15000){
+    s._lastSavedAt = Date.now();
+    save();
+  }
+}
+
+function pauseSession(){
+  var s = APP.activeSession;
+  if(!s || s.paused) return;
+  s.paused = true;
+  s.pausedAt = Date.now();
+  save(true);
+  renderSession();
+  if($('fso').classList.contains('show')) renderFullscreenControls();
+}
+function resumeSession(){
+  var s = APP.activeSession;
+  if(!s || !s.paused) return;
+  var pauseDur = Date.now() - s.pausedAt;
+  s.totalPausedMs += pauseDur;
+  s.paused = false;
+  s.pausedAt = null;
+  // For pomodoro, shift phaseStartedAt forward by the pause duration
+  // so the phase doesn't auto-flip due to wall-clock time during the pause
+  if(s.mode === 'pomodoro'){
+    s.phaseStartedAt += pauseDur;
+  }
+  s._lastResumeAt = Date.now();
+  save(true);
+  renderSession();
+  if($('fso').classList.contains('show')) renderFullscreenControls();
+}
+
+function startSession(activity, params){
+  // params: {subjectId, chapterIdx, lectureId?, source?, mode: 'live'|'pomodoro', pomoConfig?, referenceMin?}
+  var nowTs = Date.now();
+  APP.activeSession = {
+    id: uid(),
+    activityType: activity,
+    subjectId: params.subjectId,
+    chapterIdx: params.chapterIdx,
+    lectureId: params.lectureId || null,
+    source: params.source || '',
+    mode: params.mode || 'live',
+    pomoConfig: params.mode==='pomodoro' ? params.pomoConfig : null,
+    startedAt: nowTs,
+    phase: 'work',
+    phaseStartedAt: nowTs,
+    paused: false,
+    pausedAt: null,
+    totalPausedMs: 0,
+    workCount: 0,
+    elapsedSec: 0,
+    date: today(),
+    startTime: nowHM(),
+    referenceMin: params.referenceMin || 0,
+    _lastResumeAt: nowTs
+  };
+  // If lecture is selected and was in-progress, carry over its prior contentDoneMin
+  save(true);
+  $('tb-timer').classList.remove('dn');
+  startTimerLoop();
+  renderSession();
+}
+
+function resumeActiveSession(){
+  if(APP.activeSession){
+    $('tb-timer').classList.remove('dn');
+    startTimerLoop();
+  }
+}
+
+function endSession(status){
+  // status: 'complete' | 'partial' | 'cancel'
+  var s = APP.activeSession;
+  if(!s) return;
+  if(status === 'cancel'){
+    confirmDlg('Cancel this session? It will not be logged.', function(){
+      APP.activeSession = null;
+      stopTimerLoop();
+      $('tb-timer').classList.add('dn');
+      closeFullscreen();
+      save(true);
+      renderSession();
+    }, {danger:true, yesLabel:'Cancel session'});
+    return;
+  }
+  // Open the end form
+  closeFullscreen();
+  showEndForm(status);
+}
+
+function showEndForm(status){
+  var s = APP.activeSession;
+  if(!s) return;
+  var act = ACT_LABELS[s.activityType];
+  var subj = SYL[s.subjectId];
+  var chap = chapName(s.subjectId, s.chapterIdx);
+  var elapsedMin = Math.round(s.elapsedSec / 60);
+  if(elapsedMin < 1) elapsedMin = 1;
+
+  var lectureRow = '';
+  if(s.activityType === 'lecture' && s.lectureId){
+    var lec = APP.lectures.find(function(l){return l.id===s.lectureId;});
+    if(lec){
+      lectureRow =
+        '<div class="fld">'+
+          '<label>Content Covered (lecture minutes)</label>'+
+          '<div class="row" style="gap:8px">'+
+            '<input type="number" id="ef-content" min="0" value="'+elapsedMin+'" style="flex:1">'+
+            '<span class="xs muted mono">of '+(lec.plannedMin||'?')+'m planned</span>'+
+          '</div>'+
+          '<div class="hint">Clock time was '+elapsedMin+'m. If note-taking ate some, enter the actual lecture content covered (e.g. 40 of 60).</div>'+
+        '</div>'+
+        '<div class="fld">'+
+          '<label class="row" style="gap:6px"><input type="checkbox" id="ef-hw"> Homework was given</label>'+
+        '</div>'+
+        '<div class="fld dn" id="ef-hw-wrap">'+
+          '<label>What homework?</label>'+
+          '<textarea id="ef-hw-text" placeholder="e.g. Practice problems 12.4 to 12.10"></textarea>'+
+        '</div>';
+    }
+  }
+
+  var statusLabel = status === 'complete' ? 'Mark Complete' : 'Save as Partial';
+  var statusBadge = status === 'complete'
+    ? '<span class="badge bg-green">Complete</span>'
+    : '<span class="badge bg-amber">Partial</span>';
+
+  modal({
+    size: 'md',
+    title: 'End Session — '+statusLabel,
+    body:
+      '<div class="alert al-dim mb16" style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div>'+
+          '<div class="sm fw6">'+act.icon+' '+act.label+'</div>'+
+          '<div class="xs muted mono mt2">'+subj.short+' · '+esc(chap)+' · '+s.startTime+'–'+nowHM()+'</div>'+
+        '</div>'+
+        '<div class="row">'+
+          '<span class="mono fw7" style="color:var(--ink);font-size:14px">'+fmtMin(elapsedMin)+'</span>'+
+          statusBadge+
+        '</div>'+
+      '</div>'+
+      lectureRow+
+      '<div class="fld">'+
+        '<label>What did you cover today?</label>'+
+        '<textarea id="ef-note" placeholder="e.g. Started Operating Lease section, reached till example 4"></textarea>'+
+        '<div class="hint">Free-text. Picks up where you left off next time.</div>'+
+      '</div>',
+    actions: [
+      {label: 'Cancel session entirely', kind:'ghost', onClick: function(close){
+        confirmDlg('Discard the elapsed '+fmtMin(elapsedMin)+' entirely? It will not be logged.', function(){
+          APP.activeSession = null;
+          stopTimerLoop();
+          $('tb-timer').classList.add('dn');
+          save(true);
+          renderSession();
+        }, {danger:true, yesLabel:'Discard'});
+        return true; // confirmDlg already replaced the modal; don't auto-close it
+      }},
+      {label: statusLabel, kind:'primary', onClick: function(close){
+        finalizeSession(status);
+        return false;
+      }}
+    ]
+  });
+
+  // Wire homework checkbox
+  var hwBox = $('ef-hw');
+  if(hwBox){
+    hwBox.onchange = function(){
+      $('ef-hw-wrap').classList.toggle('dn', !hwBox.checked);
+    };
+  }
+}
+
+function finalizeSession(status){
+  var s = APP.activeSession;
+  if(!s) return;
+  var elapsedMin = Math.round(s.elapsedSec / 60);
+  if(elapsedMin < 1) elapsedMin = 1;
+  var contentMin = elapsedMin;
+  if(s.activityType === 'lecture' && $('ef-content')){
+    var v = parseInt($('ef-content').value, 10);
+    if(!isNaN(v) && v >= 0) contentMin = v;
+  }
+  var hwGiven = $('ef-hw') ? $('ef-hw').checked : false;
+  var hwText = $('ef-hw-text') ? $('ef-hw-text').value.trim() : '';
+  var note = $('ef-note') ? $('ef-note').value.trim() : '';
+
+  var endTimeStr = nowHM();
+  var entry = {
+    id: s.id,
+    createdAt: s.startedAt,
+    updatedAt: Date.now(),
+    date: s.date,
+    startTime: s.startTime,
+    endTime: endTimeStr,
+    elapsedMin: elapsedMin,
+    pauseMin: Math.round(s.totalPausedMs / 60000),
+    activityType: s.activityType,
+    subjectId: s.subjectId,
+    chapterIdx: s.chapterIdx,
+    lectureId: s.lectureId,
+    status: status,
+    mode: s.mode,
+    pomoConfig: s.pomoConfig,
+    contentMin: contentMin,
+    coveredNote: note,
+    payload: {}
+  };
+  if(s.activityType === 'lecture'){
+    entry.payload.homeworkGiven = hwGiven;
+    if(hwGiven) entry.payload.homeworkText = hwText;
+  }
+  if(s.activityType === 'revision-lecture' && s.source){
+    entry.payload.source = s.source;
+  }
+
+  APP.timeEntries.push(entry);
+
+  // Update lecture status if linked
+  if(s.lectureId){
+    var lec = APP.lectures.find(function(l){return l.id===s.lectureId;});
+    if(lec){
+      lec.contentDoneMin = (lec.contentDoneMin||0) + contentMin;
+      lec.lastNote = note;
+      lec.updatedAt = Date.now();
+      if(status === 'complete'){
+        lec.status = 'done';
+        lec.completedAt = Date.now();
+      } else {
+        lec.status = 'in-progress';
+      }
+      if(s.activityType === 'lecture'){
+        if(hwGiven){
+          lec.homeworkGiven = true;
+          if(hwText) lec.homeworkText = hwText;
+        }
+      }
+    }
+  }
+
+  APP.activeSession = null;
+  stopTimerLoop();
+  $('tb-timer').classList.add('dn');
+  save(true);
+  toast(status==='complete'?'Session logged · complete':'Session logged · partial — resume anytime', 'ok');
+  showPage('today');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FULLSCREEN TIMER
+═══════════════════════════════════════════════════════════ */
+function openFullscreen(){
+  if(!APP.activeSession) return;
+  $('fso').classList.add('show');
+  var s = APP.activeSession;
+  var act = ACT_LABELS[s.activityType];
+  var subj = SYL[s.subjectId];
+  var chap = chapName(s.subjectId, s.chapterIdx);
+  $('fs-sub').textContent = act.label + ' · ' + subj.short + ' · ' + chap;
+  if(s.referenceMin > 0){
+    $('fs-ref').textContent = 'Reference: ' + fmtMin(s.referenceMin);
+  } else {
+    $('fs-ref').textContent = '';
+  }
+  renderFullscreenControls();
+}
+function closeFullscreen(){
+  $('fso').classList.remove('show');
+}
+function renderFullscreenControls(){
+  var s = APP.activeSession;
+  if(!s) return;
+  var html = '';
+  if(s.paused){
+    html += '<button class="btn btn-suc" onclick="resumeSession()">▶ Resume</button>';
+  } else {
+    html += '<button class="btn btn-warn" onclick="pauseSession()">❚❚ Pause</button>';
+  }
+  html += '<button class="btn btn-suc" onclick="endSession(\'complete\')">✓ Complete</button>';
+  html += '<button class="btn btn-warn" onclick="endSession(\'partial\')">⏸ Partial</button>';
+  html += '<button class="btn btn-ghost" onclick="closeFullscreen()">Exit Fullscreen</button>';
+  html += '<button class="btn btn-dan" onclick="endSession(\'cancel\')">✕ Cancel</button>';
+  $('fs-controls').innerHTML = html;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: TODAY
+═══════════════════════════════════════════════════════════ */
+function renderToday(){
+  var dToExam = APP.cfg.examDate ? diffD(today(), APP.cfg.examDate) : null;
+  var streak = computeStreak();
+  var todayEntries = APP.timeEntries.filter(function(e){return e.date === today();});
+  var todayMin = todayEntries.reduce(function(a,e){return a + (e.elapsedMin||0);}, 0);
+  var weekStart = addD(today(), -6);
+  var weekMin = APP.timeEntries.filter(function(e){return e.date >= weekStart && e.date <= today();})
+    .reduce(function(a,e){return a + (e.elapsedMin||0);}, 0);
+
+  var inProgressLectures = APP.lectures.filter(function(l){return l.status === 'in-progress';});
+  var firstName = (APP.cfg.name||'').split(' ')[0] || 'there';
+  var greeting = (function(){
+    var h = new Date().getHours();
+    if(h < 5) return 'Up late';
+    if(h < 12) return 'Good morning';
+    if(h < 17) return 'Good afternoon';
+    if(h < 21) return 'Good evening';
+    return 'Good night';
+  })();
+
+  var html = '<div class="pw">';
+  // Greeting + bento stat row
+  html +=
+    '<div class="rowb mb16" style="flex-wrap:wrap;gap:12px">'+
+      '<div>'+
+        '<div class="stitle">'+greeting+', '+esc(firstName)+'.</div>'+
+        '<div class="ssub mono mt4">'+fmtDateLong(today())+'</div>'+
+      '</div>'+
+      '<div class="row">'+
+        (APP.activeSession
+          ? '<button class="btn btn-warn" onclick="showPage(\'session\')">▶ Session in progress</button>'
+          : '<button class="btn btn-p" onclick="showPage(\'session\')">+ Start Session</button>')+
+      '</div>'+
+    '</div>';
+
+  // Bento card grid
+  html += '<div class="bgrid4 mb16">';
+  // Days to exam
+  if(dToExam !== null){
+    var examColor = dToExam < 0 ? 'bc-rose' : dToExam <= 30 ? 'bc-amber' : dToExam <= 90 ? 'bc-sky' : 'bc-dark';
+    html += '<div class="bc '+examColor+'">'+
+      '<span class="blbl">Days to exam</span>'+
+      '<span class="bnum bn-lg">'+(dToExam>=0?dToExam:Math.abs(dToExam))+'</span>'+
+      '<span class="bsub">'+(dToExam<0?'past':dToExam===0?'today!':'remaining')+' · '+fmtDate(APP.cfg.examDate)+'</span>'+
+    '</div>';
+  }
+  // Today studied
+  html += '<div class="bc bc-lime">'+
+    '<span class="blbl">Today studied</span>'+
+    '<span class="bnum '+(todayMin<60?'bn-md':'bn-lg')+'">'+fmtMin(todayMin)+'</span>'+
+    '<span class="bsub">'+todayEntries.length+' session'+(todayEntries.length===1?'':'s')+'</span>'+
+  '</div>';
+  // Streak
+  html += '<div class="bc bc-dark">'+
+    '<span class="blbl">Streak</span>'+
+    '<span class="bnum bn-lg">'+streak+'</span>'+
+    '<span class="bsub">'+(streak>=1?'days running 🔥':'start one today')+'</span>'+
+  '</div>';
+  // 7-day total
+  html += '<div class="bc bc-purple">'+
+    '<span class="blbl">Last 7 days</span>'+
+    '<span class="bnum bn-md">'+fmtMin(weekMin)+'</span>'+
+    '<span class="bsub">avg '+fmtMin(Math.round(weekMin/7))+' / day</span>'+
+  '</div>';
+  html += '</div>';
+
+  // Resume strip
+  if(inProgressLectures.length){
+    html += '<div class="card mb16">'+
+      '<div class="slbl mb12">Resume in progress</div>';
+    inProgressLectures.slice(0, 5).forEach(function(l){
+      var subj = SYL[l.subjectId];
+      var pct = l.plannedMin ? Math.min(100, Math.round((l.contentDoneMin||0)/l.plannedMin*100)) : 0;
+      html += '<div class="lec-row" style="margin:0 -20px;padding-left:20px;padding-right:20px">'+
+        '<div class="lec-info">'+
+          '<div class="row" style="gap:8px;margin-bottom:2px">'+
+            subjectBadge(l.subjectId)+
+            '<span class="lec-title">'+esc(l.label||'Lecture')+'</span>'+
+          '</div>'+
+          '<div class="lec-meta">'+
+            '<span>'+esc(chapName(l.subjectId, l.chapterIdx))+'</span>'+
+            '<span class="lec-prog">'+fmtMin(l.contentDoneMin||0)+' / '+fmtMin(l.plannedMin||0)+(l.plannedMin?' · '+pct+'%':'')+'</span>'+
+            (l.lastNote?'<span style="color:var(--ink);opacity:.7">"'+esc(l.lastNote)+'"</span>':'')+
+          '</div>'+
+        '</div>'+
+        '<button class="btn btn-sm btn-suc" onclick="quickResumeLecture(\''+l.id+'\')">Resume</button>'+
+      '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Today's sessions
+  html += '<div class="card-flat mb16">'+
+    '<div style="padding:14px 20px;border-bottom:1px solid var(--muted);display:flex;justify-content:space-between;align-items:baseline">'+
+      '<div class="stitle-sm">Today\'s sessions</div>'+
+      '<div class="xs muted mono">'+fmtMin(todayMin)+' total</div>'+
+    '</div>';
+  if(!todayEntries.length){
+    html += '<div class="empty">'+
+      '<div class="empty-big">No sessions yet today</div>'+
+      '<div>Start one from the <a href="#" onclick="showPage(\'session\');return false">Session tab</a> or quick-complete one you did earlier</div>'+
+    '</div>';
+  } else {
+    todayEntries.sort(function(a,b){return (a.startTime||'').localeCompare(b.startTime||'');});
+    todayEntries.forEach(function(e){ html += renderEntryRow(e); });
+  }
+  html += '</div>';
+
+  html += '</div>'; // pw
+  $('pg-today').innerHTML = html;
+}
+
+function renderEntryRow(e){
+  var act = ACT_LABELS[e.activityType] || {icon:'•', label:e.activityType};
+  var subj = SYL[e.subjectId];
+  var chap = chapName(e.subjectId, e.chapterIdx);
+  var statusBadge = e.status==='complete'?'<span class="badge bg-green">complete</span>'
+    : e.status==='partial'?'<span class="badge bg-amber">partial</span>'
+    : '';
+  return '<div class="tl-block" style="border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,.04);background:transparent">'+
+    '<div class="tl-time">'+(e.startTime||'??:??')+' – '+(e.endTime||'??:??')+'</div>'+
+    '<div class="tl-mid">'+
+      '<div class="tl-act">'+act.icon+' '+esc(act.label)+' · '+esc(chap)+'</div>'+
+      '<div class="tl-meta">'+
+        subj.short+(e.coveredNote?' · "'+esc(e.coveredNote)+'"':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="row" style="gap:6px">'+
+      statusBadge+
+      '<span class="tl-dur">'+fmtMin(e.elapsedMin)+'</span>'+
+      '<button class="btn btn-xs btn-ghost" onclick="deleteEntry(\''+e.id+'\')" title="Delete">×</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function deleteEntry(id){
+  confirmDlg('Delete this session entry? Cannot be undone.', function(){
+    APP.timeEntries = APP.timeEntries.filter(function(e){return e.id !== id;});
+    save(true);
+    showPage(currentPage);
+    toast('Session deleted', 'ok');
+  }, {danger:true, yesLabel:'Delete'});
+}
+
+function quickResumeLecture(lectureId){
+  var lec = APP.lectures.find(function(l){return l.id===lectureId;});
+  if(!lec){ toast('Lecture not found', 'err'); return; }
+  showPage('session');
+  setTimeout(function(){
+    _sessPick = {activity:'lecture', subjectId:lec.subjectId, chapterIdx:lec.chapterIdx, lectureId:lec.id};
+    _sessStep = 'configure';
+    renderSession();
+  }, 50);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: SESSION
+═══════════════════════════════════════════════════════════ */
+var _sessStep = 'pick';   // 'pick' | 'configure' | 'running'
+var _sessPick = null;     // {activity, subjectId, chapterIdx, lectureId, source}
+
+function renderSession(){
+  if(APP.activeSession){
+    renderRunningSession();
+    return;
+  }
+  if(_sessStep === 'configure' && _sessPick){
+    renderConfigureSession();
+    return;
+  }
+  renderPickActivity();
+}
+
+function renderPickActivity(){
+  _sessStep = 'pick';
+  _sessPick = null;
+  var html = '<div class="pw">';
+  html += '<div class="rowb mb16" style="flex-wrap:wrap;gap:12px">'+
+    '<div><div class="stitle">Start a session</div>'+
+    '<div class="ssub mt4">Pick an activity. Date and start time fill in automatically.</div></div>'+
+    '<button class="btn btn-ghost btn-sm" onclick="quickCompleteFlow()">+ Quick Complete (log past session)</button>'+
+  '</div>';
+
+  html += '<div class="card mb16">'+
+    '<div class="slbl mb10">Activity</div>'+
+    '<div class="act-grid">';
+  Object.keys(ACT_LABELS).forEach(function(k){
+    var a = ACT_LABELS[k];
+    html += '<div class="act-card '+(a.enabled?'':'dis')+'" '+(a.enabled?'onclick="pickActivity(\''+k+'\')"':'')+'>'+
+      '<div class="act-ico">'+a.icon+'</div>'+
+      '<div class="act-lbl">'+esc(a.label)+'</div>'+
+      '<div class="act-sub">'+esc(a.desc)+'</div>'+
+    '</div>';
+  });
+  html += '</div></div>';
+
+  html += '</div>';
+  $('pg-session').innerHTML = html;
+}
+
+function pickActivity(activity){
+  _sessPick = {activity: activity};
+  _sessStep = 'configure';
+  renderSession();
+}
+
+function renderConfigureSession(){
+  var act = ACT_LABELS[_sessPick.activity];
+  var html = '<div class="pw">';
+  html += '<div class="rowb mb16" style="flex-wrap:wrap;gap:12px">'+
+    '<div>'+
+      '<div class="stitle">'+act.icon+' '+esc(act.label)+'</div>'+
+      '<div class="ssub mt4">Set up the session, then start.</div>'+
+    '</div>'+
+    '<button class="btn btn-ghost btn-sm" onclick="renderPickActivity()">← Change activity</button>'+
+  '</div>';
+
+  if(_sessPick.activity === 'lecture'){
+    html += renderLecturePicker();
+  } else if(_sessPick.activity === 'revision-lecture'){
+    html += renderRevisionLecturePicker();
+  }
+
+  html += '</div>';
+  $('pg-session').innerHTML = html;
+  wireConfigureSession();
+}
+
+function renderLecturePicker(){
+  var pendingLectures = APP.lectures.filter(function(l){return l.kind==='main' && l.status !== 'done';});
+  var subs = activeSubjects();
+  var html = '<div class="card mb12">'+
+    '<div class="slbl mb10">Pick a lecture</div>';
+  if(!pendingLectures.length){
+    html += '<div class="empty">'+
+      '<div class="empty-big">No lectures in your backlog yet</div>'+
+      '<div class="mb12">Add some from the <a href="#" onclick="showPage(\'lectures\');return false">Lectures tab</a> first.</div>'+
+      '<button class="btn btn-p btn-sm" onclick="showPage(\'lectures\')">Go to Lectures →</button>'+
+    '</div>';
+  } else {
+    // Group by subject + chapter
+    var grouped = {};
+    pendingLectures.forEach(function(l){
+      var k = l.subjectId + '|' + l.chapterIdx;
+      if(!grouped[k]) grouped[k] = [];
+      grouped[k].push(l);
+    });
+    Object.keys(grouped).sort().forEach(function(k){
+      var parts = k.split('|');
+      var subId = parts[0], chIdx = parseInt(parts[1], 10);
+      html += '<div class="lec-grp-h" style="margin:0 -20px;padding-left:20px;padding-right:20px">'+
+        '<span>'+subjectBadge(subId)+' '+esc(chapName(subId, chIdx))+'</span>'+
+        '<span>'+grouped[k].length+'</span>'+
+      '</div>';
+      grouped[k].forEach(function(l){
+        var pct = l.plannedMin ? Math.round((l.contentDoneMin||0)/l.plannedMin*100) : 0;
+        var statusB = l.status==='in-progress'
+          ? '<span class="badge bg-amber">in progress · '+pct+'%</span>'
+          : '<span class="badge bg-gray">pending</span>';
+        html += '<div class="lec-row" style="margin:0 -20px;padding-left:20px;padding-right:20px;cursor:pointer" onclick="pickLecture(\''+l.id+'\')">'+
+          '<div class="lec-num">L'+(l.lectureNumber||'')+'</div>'+
+          '<div class="lec-info">'+
+            '<div class="lec-title">'+esc(l.label||'Lecture')+'</div>'+
+            '<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'')+(l.contentDoneMin?' · '+fmtMin(l.contentDoneMin)+' done':'')+'</div>'+
+          '</div>'+
+          statusB+
+        '</div>';
+      });
+    });
+  }
+  html += '</div>';
+  return html + renderModeAndGo();
+}
+
+function pickLecture(lectureId){
+  var lec = APP.lectures.find(function(l){return l.id===lectureId;});
+  if(!lec) return;
+  _sessPick.lectureId = lectureId;
+  _sessPick.subjectId = lec.subjectId;
+  _sessPick.chapterIdx = lec.chapterIdx;
+  renderConfigureSession();
+}
+
+function renderRevisionLecturePicker(){
+  var subs = activeSubjects();
+  var subjectOpts = subs.map(function(sid){
+    return '<option value="'+sid+'" '+(_sessPick.subjectId===sid?'selected':'')+'>'+SYL[sid].name+'</option>';
+  }).join('');
+  var chapterOpts = '';
+  if(_sessPick.subjectId){
+    chapterOpts = chapList(_sessPick.subjectId).map(function(c, i){
+      return '<option value="'+i+'" '+(_sessPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';
+    }).join('');
+  }
+  var html = '<div class="card mb12">'+
+    '<div class="slbl mb10">Subject &amp; chapter</div>'+
+    '<div class="fld2">'+
+      '<div class="fld"><label>Subject</label>'+
+        '<select id="rl-subject"><option value="">— pick —</option>'+subjectOpts+'</select>'+
+      '</div>'+
+      '<div class="fld"><label>Chapter</label>'+
+        '<select id="rl-chapter" '+(_sessPick.subjectId?'':'disabled')+'>'+
+          (_sessPick.subjectId?'<option value="">— pick —</option>'+chapterOpts:'<option>(pick a subject first)</option>')+
+        '</select>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fld">'+
+      '<label>Source (optional)</label>'+
+      '<input type="text" id="rl-source" placeholder="e.g. CA Praveen Sharma YouTube · Faculty refresher Vol 2" value="'+esc(_sessPick.source||'')+'">'+
+    '</div>'+
+  '</div>';
+  return html + renderModeAndGo();
+}
+
+function renderModeAndGo(){
+  var canStart = !!(_sessPick.subjectId && _sessPick.chapterIdx !== undefined && _sessPick.chapterIdx !== null && _sessPick.chapterIdx !== '');
+  if(_sessPick.activity === 'lecture' && !_sessPick.lectureId) canStart = false;
+  var pomo = APP.cfg.pomoDefault || {workMin:25, breakMin:5, longBreakEvery:4, longBreakMin:15};
+  var html = '<div class="card mb12">'+
+    '<div class="slbl mb10">Timer mode</div>'+
+    '<div class="seg seg-block mb14">'+
+      '<button class="seg-btn on" data-mode="live" type="button">Live timer</button>'+
+      '<button class="seg-btn" data-mode="pomodoro" type="button">Pomodoro</button>'+
+    '</div>'+
+    '<div id="pomo-cfg" class="dn">'+
+      '<div class="fld3">'+
+        '<div class="fld"><label>Work (min)</label><input type="number" id="pc-work" min="1" value="'+pomo.workMin+'"></div>'+
+        '<div class="fld"><label>Break (min)</label><input type="number" id="pc-break" min="1" value="'+pomo.breakMin+'"></div>'+
+        '<div class="fld"><label>Long every</label><input type="number" id="pc-le" min="0" value="'+pomo.longBreakEvery+'"></div>'+
+      '</div>'+
+      '<div class="fld"><label>Long break (min)</label><input type="number" id="pc-lb" min="1" value="'+pomo.longBreakMin+'"></div>'+
+    '</div>'+
+  '</div>';
+
+  // Reference time hint
+  if(_sessPick.activity === 'lecture' && _sessPick.lectureId){
+    var lec = APP.lectures.find(function(l){return l.id===_sessPick.lectureId;});
+    if(lec && lec.plannedMin){
+      var remaining = Math.max(1, lec.plannedMin - (lec.contentDoneMin || 0));
+      var hint = remaining === lec.plannedMin
+        ? 'Reference time: <strong>'+fmtMin(lec.plannedMin)+'</strong> (planned lecture duration)'
+        : 'Reference time: <strong>'+fmtMin(remaining)+'</strong> remaining ('+fmtMin(lec.contentDoneMin||0)+' already done of '+fmtMin(lec.plannedMin)+')';
+      html += '<div class="alert al-blue">⏱ '+hint+'</div>';
+    }
+  }
+
+  html += '<div class="row" style="gap:10px;justify-content:flex-end;flex-wrap:wrap">'+
+    '<button class="btn btn-ghost" onclick="renderPickActivity()">Cancel</button>'+
+    '<button class="btn btn-p" id="start-btn" '+(canStart?'':'disabled')+'>Start session →</button>'+
+  '</div>';
+  return html;
+}
+
+function wireConfigureSession(){
+  var subEl = $('rl-subject'), chEl = $('rl-chapter');
+  if(subEl){
+    subEl.onchange = function(){
+      _sessPick.subjectId = subEl.value || null;
+      _sessPick.chapterIdx = null;
+      renderConfigureSession();
+    };
+  }
+  if(chEl){
+    chEl.onchange = function(){
+      _sessPick.chapterIdx = chEl.value === '' ? null : parseInt(chEl.value, 10);
+      var src = $('rl-source'); if(src) _sessPick.source = src.value;
+      var btn = $('start-btn'); if(btn) btn.disabled = (_sessPick.chapterIdx === null);
+    };
+  }
+  var srcEl = $('rl-source');
+  if(srcEl) srcEl.oninput = function(){ _sessPick.source = srcEl.value; };
+
+  // Mode toggle
+  document.querySelectorAll('[data-mode]').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('[data-mode]').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      $('pomo-cfg').classList.toggle('dn', b.dataset.mode !== 'pomodoro');
+    };
+  });
+
+  // Start
+  if($('start-btn')){
+    $('start-btn').onclick = function(){
+      var modeBtn = document.querySelector('[data-mode].on');
+      var mode = modeBtn ? modeBtn.dataset.mode : 'live';
+      var pomoConfig = null;
+      if(mode === 'pomodoro'){
+        pomoConfig = {
+          workMin: Math.max(1, parseInt($('pc-work').value, 10) || 25),
+          breakMin: Math.max(1, parseInt($('pc-break').value, 10) || 5),
+          longBreakEvery: Math.max(0, parseInt($('pc-le').value, 10) || 0),
+          longBreakMin: Math.max(1, parseInt($('pc-lb').value, 10) || 15)
+        };
+      }
+      var refMin = 0;
+      if(_sessPick.activity === 'lecture' && _sessPick.lectureId){
+        var lec = APP.lectures.find(function(l){return l.id===_sessPick.lectureId;});
+        if(lec && lec.plannedMin){
+          // Reference = REMAINING content for this lecture (not full planned)
+          // so resuming a partial shows a shorter, accurate target
+          refMin = Math.max(1, lec.plannedMin - (lec.contentDoneMin || 0));
+        }
+      }
+      startSession(_sessPick.activity, {
+        subjectId: _sessPick.subjectId,
+        chapterIdx: _sessPick.chapterIdx,
+        lectureId: _sessPick.lectureId,
+        source: _sessPick.source,
+        mode: mode,
+        pomoConfig: pomoConfig,
+        referenceMin: refMin
+      });
+    };
+  }
+}
+
+function renderRunningSession(){
+  var s = APP.activeSession;
+  var act = ACT_LABELS[s.activityType];
+  var subj = SYL[s.subjectId];
+  var chap = chapName(s.subjectId, s.chapterIdx);
+  var refLine = '';
+  if(s.referenceMin > 0){
+    refLine = '<div class="t-ref">Reference: <span class="t-ref-v">'+fmtMin(s.referenceMin)+'</span></div>';
+  }
+
+  var html = '<div class="pw" style="max-width:680px;margin:0 auto">';
+  html += '<div class="card" style="padding:30px 24px;text-align:center">'+
+    '<div class="row" style="justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">'+
+      subjectBadge(s.subjectId)+
+      '<span class="badge bg-gray">'+esc(chap)+'</span>'+
+      (s.mode==='pomodoro'?'<span class="badge bg-purple">Pomodoro</span>':'<span class="badge bg-blue">Live</span>')+
+    '</div>'+
+    '<div class="ssub mb10">'+act.icon+' '+esc(act.label)+(s.source?' · '+esc(s.source):'')+'</div>'+
+    '<div class="t-display" id="s-timer-big">'+fmtHMS(s.elapsedSec)+'</div>'+
+    '<div id="s-pomo-phase" class="pomo-phase"></div>'+
+    refLine+
+    '<div class="t-phase mt10">started at '+s.startTime+(s.paused?' · ⏸ paused':'')+'</div>'+
+    '<div class="sess-controls">'+
+      (s.paused
+        ? '<button class="btn btn-suc" onclick="resumeSession()">▶ Resume</button>'
+        : '<button class="btn btn-warn" onclick="pauseSession()">❚❚ Pause</button>')+
+      '<button class="btn btn-suc" onclick="endSession(\'complete\')">✓ Complete</button>'+
+      '<button class="btn btn-warn" onclick="endSession(\'partial\')">⏸ End as Partial</button>'+
+      '<button class="btn btn-ghost" onclick="openFullscreen()">⛶ Fullscreen</button>'+
+      '<button class="btn btn-dan" onclick="endSession(\'cancel\')">✕ Cancel</button>'+
+    '</div>'+
+  '</div>';
+  html += '</div>';
+  $('pg-session').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   QUICK COMPLETE (retroactive logging)
+═══════════════════════════════════════════════════════════ */
+function quickCompleteFlow(){
+  var subs = activeSubjects();
+  var subjectOpts = subs.map(function(sid){
+    return '<option value="'+sid+'">'+SYL[sid].name+'</option>';
+  }).join('');
+  modal({
+    size: 'md',
+    title: 'Quick Complete — log a past session',
+    body:
+      '<div class="alert al-blue mb14">For sessions you did before using the tracker, or ones you forgot to log live.</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Date</label><input type="date" id="qc-date" value="'+today()+'"></div>'+
+        '<div class="fld"><label>Activity</label><select id="qc-act"><option value="lecture">🎓 Lecture</option><option value="revision-lecture">📺 Revision Lecture</option></select></div>'+
+      '</div>'+
+      '<div class="fld3">'+
+        '<div class="fld"><label>Start time</label><input type="time" id="qc-start" value="09:00"></div>'+
+        '<div class="fld"><label>End time</label><input type="time" id="qc-end" value="10:00"></div>'+
+        '<div class="fld"><label>Status</label><select id="qc-status"><option value="complete">Complete</option><option value="partial">Partial</option></select></div>'+
+      '</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Subject</label><select id="qc-subject"><option value="">— pick —</option>'+subjectOpts+'</select></div>'+
+        '<div class="fld"><label>Chapter</label><select id="qc-chapter" disabled><option>(pick subject first)</option></select></div>'+
+      '</div>'+
+      '<div class="fld" id="qc-lecture-wrap" style="display:none">'+
+        '<label>Lecture from backlog (optional)</label>'+
+        '<select id="qc-lecture"><option value="">— none / not in backlog —</option></select>'+
+      '</div>'+
+      '<div class="fld">'+
+        '<label>What did you cover?</label>'+
+        '<textarea id="qc-note" placeholder="e.g. Watched intro to AS-19, reached till definitions"></textarea>'+
+      '</div>',
+    actions: [
+      {label: 'Cancel', kind:'ghost'},
+      {label: 'Log session', kind:'primary', onClick: function(close){
+        if(submitQuickComplete()){
+          close();
+        }
+        return true;
+      }}
+    ]
+  });
+  // Wire dynamic fields
+  $('qc-subject').onchange = function(){
+    var sid = $('qc-subject').value;
+    var chSel = $('qc-chapter');
+    var lecSel = $('qc-lecture');
+    if(!sid){ chSel.disabled = true; chSel.innerHTML = '<option>(pick subject first)</option>'; return; }
+    chSel.disabled = false;
+    chSel.innerHTML = '<option value="">— pick —</option>' + chapList(sid).map(function(c, i){
+      return '<option value="'+i+'">'+esc(c)+'</option>';
+    }).join('');
+    refreshQcLectures();
+  };
+  $('qc-chapter').onchange = refreshQcLectures;
+  $('qc-act').onchange = function(){
+    $('qc-lecture-wrap').style.display = $('qc-act').value === 'lecture' ? 'block' : 'none';
+    refreshQcLectures();
+  };
+  function refreshQcLectures(){
+    if($('qc-act').value !== 'lecture'){ $('qc-lecture-wrap').style.display = 'none'; return; }
+    var sid = $('qc-subject').value, chIdx = $('qc-chapter').value;
+    if(!sid || chIdx==='') return;
+    var lecs = APP.lectures.filter(function(l){
+      return l.kind==='main' && l.subjectId===sid && l.chapterIdx===parseInt(chIdx,10);
+    });
+    $('qc-lecture-wrap').style.display = 'block';
+    $('qc-lecture').innerHTML = '<option value="">— none / not in backlog —</option>' +
+      lecs.map(function(l){return '<option value="'+l.id+'">'+esc(l.label||'Lecture')+(l.lectureNumber?' (L'+l.lectureNumber+')':'')+'</option>';}).join('');
+  }
+  $('qc-lecture-wrap').style.display = $('qc-act').value === 'lecture' ? 'block' : 'none';
+}
+
+function submitQuickComplete(){
+  var date = $('qc-date').value;
+  var startT = $('qc-start').value;
+  var endT = $('qc-end').value;
+  var status = $('qc-status').value;
+  var act = $('qc-act').value;
+  var subjectId = $('qc-subject').value;
+  var chIdx = $('qc-chapter').value;
+  var lectureId = $('qc-lecture') ? $('qc-lecture').value : '';
+  var note = $('qc-note').value.trim();
+
+  if(!date || !isValidDate(date)){ toast('Invalid date', 'err'); return false; }
+  if(!startT || !endT){ toast('Enter start and end time', 'err'); return false; }
+  if(!subjectId){ toast('Pick a subject', 'err'); return false; }
+  if(chIdx === ''){ toast('Pick a chapter', 'err'); return false; }
+  // Compute elapsed
+  var startMin = parseInt(startT.split(':')[0],10)*60 + parseInt(startT.split(':')[1],10);
+  var endMin = parseInt(endT.split(':')[0],10)*60 + parseInt(endT.split(':')[1],10);
+  if(endMin < startMin) endMin += 24*60; // crosses midnight
+  var elapsedMin = endMin - startMin;
+  if(elapsedMin <= 0){ toast('End time must be after start', 'err'); return false; }
+
+  var entry = {
+    id: uid(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    date: date,
+    startTime: startT,
+    endTime: endT,
+    elapsedMin: elapsedMin,
+    pauseMin: 0,
+    activityType: act,
+    subjectId: subjectId,
+    chapterIdx: parseInt(chIdx,10),
+    lectureId: lectureId || null,
+    status: status,
+    mode: 'quick-complete',
+    pomoConfig: null,
+    contentMin: elapsedMin,
+    coveredNote: note,
+    payload: {}
+  };
+  APP.timeEntries.push(entry);
+  if(lectureId){
+    var lec = APP.lectures.find(function(l){return l.id===lectureId;});
+    if(lec){
+      lec.contentDoneMin = (lec.contentDoneMin||0) + elapsedMin;
+      lec.lastNote = note || lec.lastNote;
+      lec.updatedAt = Date.now();
+      if(status === 'complete'){ lec.status = 'done'; lec.completedAt = Date.now(); }
+      else lec.status = 'in-progress';
+    }
+  }
+  save(true);
+  toast('Logged · '+fmtMin(elapsedMin), 'ok');
+  showPage(currentPage);
+  return true;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: LECTURES
+═══════════════════════════════════════════════════════════ */
+var _lectActiveSub = null;
+
+function renderLectures(){
+  var subs = activeSubjects();
+  if(!subs.length){
+    $('pg-lectures').innerHTML = '<div class="pw"><div class="empty"><div class="empty-big">No subjects active</div><div>Configure your group / exemptions in Settings.</div></div></div>';
+    return;
+  }
+  if(!_lectActiveSub || subs.indexOf(_lectActiveSub) < 0) _lectActiveSub = subs[0];
+
+  var html = '<div class="pw">';
+  html += '<div class="rowb mb14" style="flex-wrap:wrap;gap:12px">'+
+    '<div><div class="stitle">Lectures</div>'+
+    '<div class="ssub mt4">Track main + revision lecture backlog per subject.</div></div>'+
+    '<button class="btn btn-p" onclick="addLectureFlow()">+ Add Lecture</button>'+
+  '</div>';
+
+  // Subject tabs
+  html += '<div class="stabs">';
+  subs.forEach(function(sid){
+    var s = SYL[sid];
+    var on = sid === _lectActiveSub;
+    var st = on ? 'background:'+s.color+';border-color:'+s.color+';color:#0E0E0E' : '';
+    html += '<button class="stab '+(on?'on':'')+'" style="'+st+'" onclick="_lectActiveSub=\''+sid+'\';renderLectures()">'+
+      '<span class="stab-dot" style="background:'+s.color+'"></span>'+s.short+'</button>';
+  });
+  html += '</div>';
+
+  html += renderLectureSubjectPanel(_lectActiveSub);
+  html += '</div>';
+  $('pg-lectures').innerHTML = html;
+}
+
+function renderLectureSubjectPanel(sid){
+  var subj = SYL[sid];
+  var mode = APP.subjectLectureMode[sid] || null; // null = not set yet
+  var totals = APP.subjectLectureTotal[sid] || {mainCount:0, mainHours:0, revCount:0, revHours:0};
+  var mainLec = APP.lectures.filter(function(l){return l.subjectId===sid && l.kind==='main';});
+  var revLec  = APP.lectures.filter(function(l){return l.subjectId===sid && l.kind==='revision';});
+
+  var html = '';
+  // Mode selector if not set
+  if(!mode){
+    html += '<div class="card mb14">'+
+      '<div class="stitle-sm mb8">Lecture mode for '+esc(subj.name)+'</div>'+
+      '<div class="ssub mb12">How are you watching lectures for this subject?</div>'+
+      '<div class="seg seg-block">'+
+        '<button class="seg-btn" onclick="setSubjectLectureMode(\''+sid+'\', \'recorded\')" type="button">📹 Recorded — I know how many lectures total</button>'+
+        '<button class="seg-btn" onclick="setSubjectLectureMode(\''+sid+'\', \'live\')" type="button">🎙 Live / F2F — I add as I go</button>'+
+      '</div>'+
+    '</div>';
+    return html;
+  }
+
+  // Stats card
+  var mainDone = mainLec.filter(function(l){return l.status==='done';}).length;
+  var mainProg = mainLec.filter(function(l){return l.status==='in-progress';}).length;
+  var totalMainMin = mainLec.reduce(function(a,l){return a+(l.plannedMin||0);},0);
+  var doneMainMin = mainLec.reduce(function(a,l){return a+(l.status==='done'?(l.plannedMin||0):(l.contentDoneMin||0));},0);
+  var pct = totalMainMin > 0 ? Math.round(doneMainMin/totalMainMin*100) : 0;
+
+  html += '<div class="rowb mb12" style="flex-wrap:wrap;gap:8px">'+
+    '<div class="row" style="gap:8px">'+
+      '<span class="badge bg-gray">'+(mode==='recorded'?'📹 Recorded':'🎙 Live')+'</span>'+
+      '<button class="btn btn-xs btn-ghost" onclick="changeSubjectLectureMode(\''+sid+'\')">change</button>'+
+    '</div>';
+  if(mode==='recorded'){
+    html += '<button class="btn btn-sm btn-ghost" onclick="editSubjectTotals(\''+sid+'\')">Edit totals: '+(totals.mainCount||'?')+' main · '+(totals.revCount||0)+' revision</button>';
+  }
+  html += '</div>';
+
+  html += '<div class="bgrid4 mb14">'+
+    '<div class="bc bc-dark"><span class="blbl">Main lectures</span>'+
+      '<span class="bnum bn-md">'+mainDone+(mode==='recorded'&&totals.mainCount?' / '+totals.mainCount:'')+'</span>'+
+      '<span class="bsub">'+mainProg+' in progress · '+(mainLec.length-mainDone-mainProg)+' pending</span></div>'+
+    '<div class="bc bc-dark"><span class="blbl">Hours (main)</span>'+
+      '<span class="bnum bn-md">'+fmtMin(doneMainMin)+(totalMainMin?' / '+fmtMin(totalMainMin):'')+'</span>'+
+      '<span class="bsub">'+pct+'% done</span></div>'+
+    '<div class="bc bc-purple"><span class="blbl">Revision lectures</span>'+
+      '<span class="bnum bn-md">'+revLec.filter(function(l){return l.status==='done';}).length+(mode==='recorded'&&totals.revCount?' / '+totals.revCount:'')+'</span>'+
+      '<span class="bsub">'+revLec.length+' added</span></div>'+
+    '<div class="bc bc-dark"><span class="blbl">Chapters covered</span>'+
+      '<span class="bnum bn-md">'+(new Set(mainLec.map(function(l){return l.chapterIdx;}))).size+'</span>'+
+      '<span class="bsub">of '+chapList(sid).length+'</span></div>'+
+  '</div>';
+
+  // Main lectures grouped by chapter
+  html += '<div class="card-flat mb14">'+
+    '<div class="lec-grp-h" style="border-bottom:1px solid var(--muted)">'+
+      '<span>Main lectures</span>'+
+      '<span>'+mainLec.length+'</span>'+
+    '</div>';
+  if(!mainLec.length){
+    html += '<div class="empty">'+
+      '<div class="empty-big">No main lectures yet</div>'+
+      '<div class="mb12">Add your first one to start tracking.</div>'+
+      '<button class="btn btn-p btn-sm" onclick="addLectureFlow(\''+sid+'\', \'main\')">+ Add Main Lecture</button>'+
+    '</div>';
+  } else {
+    var byChap = {};
+    mainLec.forEach(function(l){
+      if(!byChap[l.chapterIdx]) byChap[l.chapterIdx] = [];
+      byChap[l.chapterIdx].push(l);
+    });
+    Object.keys(byChap).sort(function(a,b){return parseInt(a,10)-parseInt(b,10);}).forEach(function(chIdx){
+      html += '<div class="lec-grp-h">'+esc(chapName(sid, parseInt(chIdx,10)))+'<span>'+byChap[chIdx].length+'</span></div>';
+      byChap[chIdx].sort(function(a,b){return (a.lectureNumber||999)-(b.lectureNumber||999);}).forEach(function(l){
+        html += renderLectureRow(l);
+      });
+    });
+  }
+  html += '</div>';
+
+  // Revision lectures
+  html += '<div class="card-flat">'+
+    '<div class="lec-grp-h" style="border-bottom:1px solid var(--muted)">'+
+      '<span>Revision lectures (optional, recorded only)</span>'+
+      '<span><button class="btn btn-xs btn-suc" onclick="addLectureFlow(\''+sid+'\', \'revision\')">+ Add</button></span>'+
+    '</div>';
+  if(!revLec.length){
+    html += '<div class="empty"><div>No revision lectures pre-added. Watch ad-hoc revision videos directly from the <a href="#" onclick="showPage(\'session\');return false">Session tab</a> — no need to add here.</div></div>';
+  } else {
+    revLec.forEach(function(l){ html += renderLectureRow(l); });
+  }
+  html += '</div>';
+
+  return html;
+}
+
+function renderLectureRow(l){
+  var statusBadge;
+  if(l.status === 'done') statusBadge = '<span class="badge bg-green">done</span>';
+  else if(l.status === 'in-progress'){
+    var pct = l.plannedMin ? Math.round((l.contentDoneMin||0)/l.plannedMin*100) : 0;
+    statusBadge = '<span class="badge bg-amber">'+pct+'% · '+fmtMin(l.contentDoneMin||0)+'</span>';
+  } else statusBadge = '<span class="badge bg-gray">pending</span>';
+  return '<div class="lec-row">'+
+    '<div class="lec-num">L'+(l.lectureNumber||'')+'</div>'+
+    '<div class="lec-info">'+
+      '<div class="lec-title">'+esc(l.label||'Lecture')+'</div>'+
+      '<div class="lec-meta">'+
+        (l.plannedMin?'<span>'+fmtMin(l.plannedMin)+'</span>':'')+
+        (l.homeworkGiven?'<span class="bg-amber" style="padding:1px 6px;border-radius:8px;font-size:9px">📝 HW</span>':'')+
+        (l.lastNote?'<span style="color:var(--ink);opacity:.7">"'+esc(l.lastNote)+'"</span>':'')+
+      '</div>'+
+    '</div>'+
+    statusBadge+
+    '<div class="lec-actions">'+
+      (l.status!=='done'?'<button class="btn btn-xs btn-suc" onclick="quickResumeLecture(\''+l.id+'\')" title="Start session">▶</button>':'')+
+      '<button class="btn btn-xs btn-ghost" onclick="editLectureFlow(\''+l.id+'\')" title="Edit">✎</button>'+
+      '<button class="btn btn-xs btn-ghost" onclick="deleteLecture(\''+l.id+'\')" title="Delete">×</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function setSubjectLectureMode(sid, mode){
+  APP.subjectLectureMode[sid] = mode;
+  if(mode === 'recorded'){
+    // Prompt for totals
+    setTimeout(function(){ editSubjectTotals(sid, true); }, 100);
+  }
+  save(true);
+  renderLectures();
+}
+
+function changeSubjectLectureMode(sid){
+  confirmDlg('Change lecture mode for this subject? Existing lectures stay.', function(){
+    delete APP.subjectLectureMode[sid];
+    save(true);
+    renderLectures();
+  });
+}
+
+function editSubjectTotals(sid, isFirstTime){
+  var totals = APP.subjectLectureTotal[sid] || {};
+  modal({
+    title: (isFirstTime?'Set':'Edit')+' lecture totals — '+SYL[sid].name,
+    body:
+      '<div class="ssub mb14">For recorded courses where you know the totals upfront. Leave blank if unknown.</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Main lecture count</label><input type="number" min="0" id="st-mc" value="'+(totals.mainCount||'')+'"></div>'+
+        '<div class="fld"><label>Total main hours</label><input type="number" min="0" step="0.5" id="st-mh" value="'+(totals.mainHours||'')+'"></div>'+
+      '</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Revision lecture count</label><input type="number" min="0" id="st-rc" value="'+(totals.revCount||'')+'"></div>'+
+        '<div class="fld"><label>Total revision hours</label><input type="number" min="0" step="0.5" id="st-rh" value="'+(totals.revHours||'')+'"></div>'+
+      '</div>',
+    actions: [
+      {label:'Cancel', kind:'ghost'},
+      {label:'Save', kind:'primary', onClick: function(close){
+        APP.subjectLectureTotal[sid] = {
+          mainCount: parseInt($('st-mc').value,10)||0,
+          mainHours: parseFloat($('st-mh').value)||0,
+          revCount:  parseInt($('st-rc').value,10)||0,
+          revHours:  parseFloat($('st-rh').value)||0
+        };
+        save(true);
+        renderLectures();
+      }}
+    ]
+  });
+}
+
+function addLectureFlow(presetSubject, presetKind){
+  var subs = activeSubjects();
+  if(!subs.length){ toast('No active subjects', 'err'); return; }
+  var subjectId = presetSubject || subs[0];
+  var nextLectureNum = function(sid, chIdx){
+    var existing = APP.lectures.filter(function(l){return l.subjectId===sid && l.chapterIdx===chIdx && l.kind==='main';});
+    var max = 0;
+    existing.forEach(function(l){ if((l.lectureNumber||0) > max) max = l.lectureNumber||0; });
+    return max + 1;
+  };
+  var subjectOpts = subs.map(function(sid){return '<option value="'+sid+'" '+(sid===subjectId?'selected':'')+'>'+SYL[sid].name+'</option>';}).join('');
+  var chapterOpts = chapList(subjectId).map(function(c, i){return '<option value="'+i+'">'+esc(c)+'</option>';}).join('');
+  modal({
+    size: 'md',
+    title: 'Add Lecture',
+    body:
+      '<div class="fld">'+
+        '<label>Kind</label>'+
+        '<div class="seg seg-block">'+
+          '<button class="seg-btn '+(presetKind!=='revision'?'on':'')+'" type="button" data-k="main">🎓 Main</button>'+
+          '<button class="seg-btn '+(presetKind==='revision'?'on':'')+'" type="button" data-k="revision">📺 Revision</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Subject</label><select id="al-subject">'+subjectOpts+'</select></div>'+
+        '<div class="fld"><label>Chapter</label><select id="al-chapter">'+chapterOpts+'</select></div>'+
+      '</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Label</label><input type="text" id="al-label" placeholder="e.g. Operating Lease — Part 1"></div>'+
+        '<div class="fld"><label>Number (optional)</label><input type="number" min="1" id="al-num" placeholder="auto"></div>'+
+      '</div>'+
+      '<div class="fld">'+
+        '<label>Planned duration (minutes)</label>'+
+        '<input type="number" min="1" id="al-min" placeholder="e.g. 90">'+
+        '<div class="hint">The actual length of the recorded lecture, if known. Leave empty if you don\'t know.</div>'+
+      '</div>',
+    actions: [
+      {label:'Cancel', kind:'ghost'},
+      {label:'Add', kind:'primary', onClick: function(close){
+        var kindBtn = document.querySelector('[data-k].on');
+        var kind = kindBtn ? kindBtn.dataset.k : 'main';
+        var sid = $('al-subject').value;
+        var chIdx = parseInt($('al-chapter').value, 10);
+        var label = $('al-label').value.trim();
+        var num = parseInt($('al-num').value, 10);
+        var min = parseInt($('al-min').value, 10);
+        if(!label){ toast('Label required', 'err'); return true; }
+        if(!num || isNaN(num)) num = nextLectureNum(sid, chIdx);
+        APP.lectures.push({
+          id: uid(),
+          subjectId: sid,
+          chapterIdx: chIdx,
+          label: label,
+          lectureNumber: num,
+          plannedMin: !isNaN(min) && min>0 ? min : null,
+          kind: kind,
+          status: 'pending',
+          contentDoneMin: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        save(true);
+        toast('Lecture added', 'ok');
+        renderLectures();
+      }}
+    ]
+  });
+  // Wire kind toggle
+  document.querySelectorAll('[data-k]').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('[data-k]').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+    };
+  });
+  // Subject change refreshes chapters
+  $('al-subject').onchange = function(){
+    $('al-chapter').innerHTML = chapList($('al-subject').value).map(function(c, i){return '<option value="'+i+'">'+esc(c)+'</option>';}).join('');
+  };
+}
+
+function editLectureFlow(id){
+  var l = APP.lectures.find(function(x){return x.id===id;});
+  if(!l) return;
+  var subs = activeSubjects();
+  var subjectOpts = subs.map(function(sid){return '<option value="'+sid+'" '+(sid===l.subjectId?'selected':'')+'>'+SYL[sid].name+'</option>';}).join('');
+  var chapterOpts = chapList(l.subjectId).map(function(c, i){return '<option value="'+i+'" '+(i===l.chapterIdx?'selected':'')+'>'+esc(c)+'</option>';}).join('');
+  modal({
+    size: 'md',
+    title: 'Edit Lecture',
+    body:
+      '<div class="fld2">'+
+        '<div class="fld"><label>Subject</label><select id="el-subject">'+subjectOpts+'</select></div>'+
+        '<div class="fld"><label>Chapter</label><select id="el-chapter">'+chapterOpts+'</select></div>'+
+      '</div>'+
+      '<div class="fld2">'+
+        '<div class="fld"><label>Label</label><input type="text" id="el-label" value="'+esc(l.label||'')+'"></div>'+
+        '<div class="fld"><label>Number</label><input type="number" id="el-num" value="'+(l.lectureNumber||'')+'"></div>'+
+      '</div>'+
+      '<div class="fld">'+
+        '<label>Planned duration (minutes)</label>'+
+        '<input type="number" id="el-min" value="'+(l.plannedMin||'')+'">'+
+      '</div>'+
+      '<div class="fld">'+
+        '<label>Status</label>'+
+        '<select id="el-status">'+
+          '<option value="pending" '+(l.status==='pending'?'selected':'')+'>Pending</option>'+
+          '<option value="in-progress" '+(l.status==='in-progress'?'selected':'')+'>In progress</option>'+
+          '<option value="done" '+(l.status==='done'?'selected':'')+'>Done</option>'+
+        '</select>'+
+      '</div>',
+    actions: [
+      {label:'Cancel', kind:'ghost'},
+      {label:'Save', kind:'primary', onClick: function(close){
+        l.subjectId = $('el-subject').value;
+        l.chapterIdx = parseInt($('el-chapter').value, 10);
+        l.label = $('el-label').value.trim();
+        l.lectureNumber = parseInt($('el-num').value, 10) || null;
+        var m = parseInt($('el-min').value, 10);
+        l.plannedMin = !isNaN(m) && m > 0 ? m : null;
+        l.status = $('el-status').value;
+        l.updatedAt = Date.now();
+        save(true);
+        renderLectures();
+        toast('Saved', 'ok');
+      }}
+    ]
+  });
+  $('el-subject').onchange = function(){
+    $('el-chapter').innerHTML = chapList($('el-subject').value).map(function(c, i){return '<option value="'+i+'">'+esc(c)+'</option>';}).join('');
+  };
+}
+
+function deleteLecture(id){
+  var l = APP.lectures.find(function(x){return x.id===id;});
+  if(!l) return;
+  confirmDlg('Delete "'+(l.label||'this lecture')+'"? Logged sessions for it stay in the timeline.', function(){
+    APP.lectures = APP.lectures.filter(function(x){return x.id !== id;});
+    save(true);
+    renderLectures();
+    toast('Lecture deleted', 'ok');
+  }, {danger:true, yesLabel:'Delete'});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: TIMELINE
+═══════════════════════════════════════════════════════════ */
+function renderTimeline(){
+  var html = '<div class="pw">';
+  html += '<div class="rowb mb14" style="flex-wrap:wrap;gap:12px">'+
+    '<div><div class="stitle">Timeline</div>'+
+    '<div class="ssub mt4">Every session, every day. Time spent is real clock time.</div></div>'+
+    '<button class="btn btn-ghost btn-sm" onclick="quickCompleteFlow()">+ Quick Complete</button>'+
+  '</div>';
+
+  if(!APP.timeEntries.length){
+    html += '<div class="empty">'+
+      '<div class="empty-big">No sessions logged yet</div>'+
+      '<div>Start one from the Session tab, or quick-complete a past session.</div>'+
+    '</div></div>';
+    $('pg-timeline').innerHTML = html;
+    return;
+  }
+
+  // Group by date desc
+  var byDate = {};
+  APP.timeEntries.forEach(function(e){
+    if(!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+  var dates = Object.keys(byDate).sort().reverse();
+  dates.forEach(function(d){
+    var entries = byDate[d];
+    entries.sort(function(a,b){return (a.startTime||'').localeCompare(b.startTime||'');});
+    var dayMin = entries.reduce(function(a,e){return a+(e.elapsedMin||0);},0);
+    html += '<div class="tl-day">'+
+      '<div class="tl-day-h"><span>'+fmtDateLong(d)+' · '+relDay(d)+'</span><span>'+entries.length+' session'+(entries.length===1?'':'s')+' · '+fmtMin(dayMin)+'</span></div>';
+    entries.forEach(function(e){
+      var act = ACT_LABELS[e.activityType] || {icon:'•', label:e.activityType};
+      var subj = SYL[e.subjectId] || {short:'?'};
+      var chap = chapName(e.subjectId, e.chapterIdx);
+      var statusB = e.status==='complete'?'<span class="badge bg-green">complete</span>'
+        : e.status==='partial'?'<span class="badge bg-amber">partial</span>':'';
+      html += '<div class="tl-block">'+
+        '<div class="tl-time">'+(e.startTime||'??:??')+' – '+(e.endTime||'??:??')+'</div>'+
+        '<div class="tl-mid">'+
+          '<div class="tl-act">'+act.icon+' '+esc(act.label)+' · '+subjectBadge(e.subjectId)+' '+esc(chap)+'</div>'+
+          '<div class="tl-meta">'+(e.coveredNote?'"'+esc(e.coveredNote)+'"':'<em>no note</em>')+(e.payload && e.payload.source?' · src: '+esc(e.payload.source):'')+'</div>'+
+        '</div>'+
+        '<div class="row" style="gap:6px">'+
+          statusB+
+          '<span class="tl-dur">'+fmtMin(e.elapsedMin)+'</span>'+
+          '<button class="btn btn-xs btn-ghost" onclick="deleteEntry(\''+e.id+'\')">×</button>'+
+        '</div>'+
+      '</div>';
+    });
+    html += '</div>';
+  });
+
+  html += '</div>';
+  $('pg-timeline').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: SETTINGS
+═══════════════════════════════════════════════════════════ */
+function renderSettings(){
+  var c = APP.cfg;
+  var html = '<div class="pw" style="max-width:780px;margin:0 auto">';
+  html += '<div class="stitle mb14">Settings</div>';
+
+  // Profile
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Profile</div>'+
+    '<div class="fld2">'+
+      '<div class="fld"><label>Name</label><input id="set-name" value="'+esc(c.name||'')+'"></div>'+
+      '<div class="fld"><label>First exam date</label><input id="set-exam" type="date" value="'+esc(c.examDate||'')+'"></div>'+
+    '</div>'+
+    '<div class="fld">'+
+      '<label>Group</label>'+
+      '<div class="seg">'+
+        '<button class="seg-btn '+(c.group==='1'?'on':'')+'" data-grp="1" type="button">Group 1</button>'+
+        '<button class="seg-btn '+(c.group==='2'?'on':'')+'" data-grp="2" type="button">Group 2</button>'+
+        '<button class="seg-btn '+(c.group==='both'?'on':'')+'" data-grp="both" type="button">Both</button>'+
+      '</div>'+
+    '</div>'+
+    '<button class="btn btn-p btn-sm" id="set-prof-save">Save profile</button>'+
+  '</div>';
+
+  // Exemptions
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Exemptions</div>'+
+    '<div id="set-exempt"></div>'+
+    '<div class="xs muted mt10" style="line-height:1.55">'+
+      '<strong style="color:var(--amber)">Standard:</strong> 3-attempt validity. 40% per remaining paper + 50% aggregate.<br>'+
+      '<strong style="color:var(--purple)">Permanent:</strong> Forever. 50% per remaining paper.'+
+    '</div>'+
+  '</div>';
+
+  // Sync
+  var hasSync = !!GIST_TOKEN;
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Cloud Sync (GitHub Gist)</div>';
+  if(!hasSync){
+    html += '<div class="alert al-blue mb12">Free, private, lives in <strong>your</strong> GitHub. Switch devices or clear browser data — paste token + gist id, all your data comes back.</div>'+
+      '<div class="fld">'+
+        '<label>Setup option A — first time</label>'+
+        '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+          '<input type="password" id="gist-token-new" placeholder="Personal Access Token (gist scope)" style="flex:1;min-width:200px">'+
+          '<button class="btn btn-p btn-sm" id="gist-connect-new">Connect &amp; create gist</button>'+
+        '</div>'+
+        '<div class="hint">Create a token at <a href="https://github.com/settings/tokens/new?scopes=gist&description=CA%20Inter%20Tracker" target="_blank">github.com/settings/tokens/new</a> with <strong>only</strong> gist scope. Paste here. A private gist is auto-created.</div>'+
+      '</div>'+
+      '<div class="fld mt14">'+
+        '<label>Setup option B — restore on a new device / browser</label>'+
+        '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+          '<input type="password" id="gist-token-r" placeholder="Same Personal Access Token" style="flex:1;min-width:200px">'+
+          '<input type="text" id="gist-id-r" placeholder="Gist ID (from the gist URL)" style="flex:1;min-width:200px">'+
+          '<button class="btn btn-suc btn-sm" id="gist-restore">Restore from gist</button>'+
+        '</div>'+
+      '</div>';
+  } else {
+    var lastSync = APP.meta.lastSyncAt ? relTime(APP.meta.lastSyncAt) : 'never';
+    html += '<div class="alert al-green mb12">Connected. Last sync: <strong>'+lastSync+'</strong>'+(GIST_ID?' · gist <span class="mono xs">'+esc(GIST_ID.slice(0,8))+'…</span>':'')+'</div>'+
+      '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+        '<button class="btn btn-suc btn-sm" id="gist-push">↑ Push now</button>'+
+        '<button class="btn btn-warn btn-sm" id="gist-pull">↓ Pull from cloud</button>'+
+        (GIST_ID?'<button class="btn btn-ghost btn-sm" onclick="window.open(\'https://gist.github.com/\'+GIST_ID, \'_blank\')">Open gist on GitHub</button>':'')+
+        '<button class="btn btn-dan btn-sm" id="gist-disconnect">Disconnect</button>'+
+      '</div>';
+  }
+  html += '</div>';
+
+  // Pomodoro defaults
+  var p = c.pomoDefault || {};
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Pomodoro defaults</div>'+
+    '<div class="fld3">'+
+      '<div class="fld"><label>Work (min)</label><input id="set-pw" type="number" min="1" value="'+(p.workMin||25)+'"></div>'+
+      '<div class="fld"><label>Break (min)</label><input id="set-pb" type="number" min="1" value="'+(p.breakMin||5)+'"></div>'+
+      '<div class="fld"><label>Long break (min)</label><input id="set-pl" type="number" min="1" value="'+(p.longBreakMin||15)+'"></div>'+
+    '</div>'+
+    '<div class="fld">'+
+      '<label>Long break every Nth break</label>'+
+      '<input id="set-ple" type="number" min="0" value="'+(p.longBreakEvery||4)+'">'+
+      '<div class="hint">Set 0 to disable long breaks.</div>'+
+    '</div>'+
+    '<button class="btn btn-p btn-sm" id="set-pomo-save">Save pomodoro</button>'+
+  '</div>';
+
+  // Revision offsets
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Revision schedule (days after first reading)</div>'+
+    '<div class="row" id="set-rev" style="flex-wrap:wrap;gap:6px"></div>'+
+    '<div class="hint mt8">Used by future Revisions tab to auto-schedule R1, R2, R3 after first reading. Same as setup screen.</div>'+
+  '</div>';
+
+  // Chapters editor
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Chapters</div>'+
+    '<div class="ssub mb10">Default = ICAI scheme. Customize per subject if your faculty splits differently.</div>'+
+    '<div id="set-chapters"></div>'+
+  '</div>';
+
+  // Data
+  html += '<div class="card mb10">'+
+    '<div class="slbl mb12">Data</div>'+
+    '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+      '<button class="btn btn-sm" onclick="exportJSON()">⬇ Export backup (JSON)</button>'+
+      '<label class="btn btn-sm" style="cursor:pointer">⬆ Import backup<input type="file" accept="application/json" style="display:none" id="imp"></label>'+
+      '<button class="btn btn-dan btn-sm" onclick="nukeAll()">⚠ Reset all data</button>'+
+    '</div>'+
+  '</div>';
+
+  html += '<div class="xs muted mono tc mt16">Tracker · CA Inter · slice 0.1 · v'+DATA_VERSION+'</div>';
+  html += '</div>';
+  $('pg-settings').innerHTML = html;
+  wireSettings();
+}
+
+function wireSettings(){
+  $('set-prof-save').onclick = function(){
+    var name = $('set-name').value.trim();
+    var exam = $('set-exam').value;
+    var grp = document.querySelector('[data-grp].on') ? document.querySelector('[data-grp].on').dataset.grp : APP.cfg.group;
+    if(!name){ toast('Name required', 'err'); return; }
+    APP.cfg.name = name;
+    APP.cfg.examDate = exam;
+    APP.cfg.group = grp;
+    save(true);
+    refreshTopbar();
+    toast('Profile saved', 'ok');
+    renderSettings();
+  };
+  document.querySelectorAll('[data-grp]').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('[data-grp]').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+    };
+  });
+
+  // Exemptions
+  renderSettingsExemptions();
+
+  // Sync
+  if($('gist-connect-new')){
+    $('gist-connect-new').onclick = function(){ connectGist($('gist-token-new').value.trim()); };
+  }
+  if($('gist-restore')){
+    $('gist-restore').onclick = function(){
+      reconnectGistWithExistingId($('gist-token-r').value.trim(), $('gist-id-r').value.trim());
+    };
+  }
+  if($('gist-push')) $('gist-push').onclick = function(){ syncToCloud(); };
+  if($('gist-pull')) $('gist-pull').onclick = function(){ syncFromCloud(); };
+  if($('gist-disconnect')) $('gist-disconnect').onclick = disconnectGist;
+
+  // Pomodoro
+  $('set-pomo-save').onclick = function(){
+    APP.cfg.pomoDefault = {
+      workMin: Math.max(1, parseInt($('set-pw').value, 10)||25),
+      breakMin: Math.max(1, parseInt($('set-pb').value, 10)||5),
+      longBreakEvery: Math.max(0, parseInt($('set-ple').value, 10)||0),
+      longBreakMin: Math.max(1, parseInt($('set-pl').value, 10)||15)
+    };
+    save(true);
+    toast('Pomodoro defaults saved', 'ok');
+  };
+
+  // Revision offsets
+  renderSettingsRev();
+
+  // Chapters
+  renderSettingsChapters();
+
+  // Import
+  $('imp').onchange = function(){ if($('imp').files[0]) importJSON($('imp').files[0]); };
+}
+
+function renderSettingsExemptions(){
+  var html = '';
+  PAPERS.forEach(function(p){
+    if(APP.cfg.group === '1' && p.group !== 1) return;
+    if(APP.cfg.group === '2' && p.group !== 2) return;
+    var current = APP.cfg.exemptions[p.id];
+    html += '<div class="rowb" style="background:var(--faint);border:1px solid var(--muted);border-radius:9px;padding:10px 12px;margin-bottom:6px">'+
+      '<div><div class="sm fw6">'+esc(p.name)+'</div><div class="xxs muted mono">'+p.id.toUpperCase()+'</div></div>'+
+      '<div class="row" style="gap:5px">'+
+        '<button class="exch '+(current==='standard'?'on':'')+'" data-p="'+p.id+'" data-t="standard" type="button">Standard</button>'+
+        '<button class="exch '+(current==='permanent'?'on':'')+'" data-p="'+p.id+'" data-t="permanent" type="button">Permanent</button>'+
+        (current?'<button class="btn btn-xs btn-ghost" data-p="'+p.id+'" data-t="clear" type="button">×</button>':'')+
+      '</div>'+
+    '</div>';
+  });
+  $('set-exempt').innerHTML = html || '<div class="xs muted">No papers in selected group.</div>';
+  $('set-exempt').querySelectorAll('button').forEach(function(b){
+    b.onclick = function(){
+      var pid = b.dataset.p, t = b.dataset.t;
+      if(t === 'clear') delete APP.cfg.exemptions[pid];
+      else APP.cfg.exemptions[pid] = t;
+      save();
+      renderSettingsExemptions();
+    };
+  });
+}
+
+function renderSettingsRev(){
+  var html = '';
+  APP.cfg.revOffsets.forEach(function(d, i){
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+
+      '<input type="number" min="1" max="365" value="'+d+'" data-i="'+i+'" style="width:60px;text-align:center;font-family:var(--mono);padding:6px 4px">'+
+      '<div class="xxs muted mono">R'+(i+1)+'</div>'+
+    '</div>';
+  });
+  html += '<div class="row" style="gap:4px;margin-left:6px">'+
+    '<button class="btn btn-xs btn-ghost" id="set-rev-add" type="button">+</button>'+
+    (APP.cfg.revOffsets.length>1?'<button class="btn btn-xs btn-ghost" id="set-rev-rm" type="button">−</button>':'')+
+  '</div>';
+  $('set-rev').innerHTML = html;
+  $('set-rev').querySelectorAll('input').forEach(function(inp){
+    inp.oninput = function(){
+      var v = parseInt(inp.value, 10);
+      if(!isNaN(v) && v > 0){
+        APP.cfg.revOffsets[parseInt(inp.dataset.i, 10)] = v;
+        save();
+      }
+    };
+  });
+  if($('set-rev-add')) $('set-rev-add').onclick = function(){
+    var last = APP.cfg.revOffsets[APP.cfg.revOffsets.length-1] || 30;
+    APP.cfg.revOffsets.push(last + 30);
+    save();
+    renderSettingsRev();
+  };
+  if($('set-rev-rm')) $('set-rev-rm').onclick = function(){
+    if(APP.cfg.revOffsets.length > 1){
+      APP.cfg.revOffsets.pop();
+      save();
+      renderSettingsRev();
+    }
+  };
+}
+
+function renderSettingsChapters(){
+  var subs = activeSubjects();
+  var html = '';
+  if(!subs.length){ $('set-chapters').innerHTML = '<div class="xs muted">No active subjects.</div>'; return; }
+  subs.forEach(function(sid){
+    var s = SYL[sid];
+    var custom = !!APP.chapters[sid];
+    html += '<details style="background:var(--faint);border:1px solid var(--muted);border-radius:9px;margin-bottom:6px">'+
+      '<summary style="padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none">'+
+        '<span class="row"><span class="schip" style="background:'+s.color+'22;color:'+s.color+'">'+s.short+'</span>'+esc(s.name)+'</span>'+
+        '<span class="xs muted mono">'+chapList(sid).length+' chapters'+(custom?' · custom':'')+'</span>'+
+      '</summary>'+
+      '<div style="padding:10px 14px 14px">'+
+        '<div id="chap-list-'+sid+'"></div>'+
+        '<div class="row mt8" style="gap:5px">'+
+          '<input type="text" placeholder="New chapter name" id="chap-new-'+sid+'" style="flex:1">'+
+          '<button class="btn btn-suc btn-sm" onclick="addChapter(\''+sid+'\')">+ Add</button>'+
+          (custom?'<button class="btn btn-ghost btn-sm" onclick="resetChapters(\''+sid+'\')">Reset to ICAI</button>':'')+
+        '</div>'+
+      '</div>'+
+    '</details>';
+  });
+  $('set-chapters').innerHTML = html;
+  subs.forEach(function(sid){ renderChapList(sid); });
+}
+
+function renderChapList(sid){
+  var list = chapList(sid);
+  var html = '';
+  list.forEach(function(c, i){
+    html += '<div class="chap-row">'+
+      '<span class="grip">'+(i+1)+'</span>'+
+      '<input class="chap-name" data-sid="'+sid+'" data-i="'+i+'" value="'+esc(c)+'">'+
+      '<button class="btn btn-xs btn-ghost" onclick="moveChap(\''+sid+'\','+i+',-1)" '+(i===0?'disabled':'')+'>↑</button>'+
+      '<button class="btn btn-xs btn-ghost" onclick="moveChap(\''+sid+'\','+i+',1)" '+(i===list.length-1?'disabled':'')+'>↓</button>'+
+      '<button class="btn btn-xs btn-dan" onclick="deleteChap(\''+sid+'\','+i+')">×</button>'+
+    '</div>';
+  });
+  $('chap-list-'+sid).innerHTML = html;
+  $('chap-list-'+sid).querySelectorAll('.chap-name').forEach(function(inp){
+    inp.onchange = function(){
+      var s = inp.dataset.sid, i = parseInt(inp.dataset.i, 10);
+      if(!APP.chapters[s]) APP.chapters[s] = chapList(s);
+      APP.chapters[s][i] = inp.value.trim();
+      save();
+    };
+  });
+}
+
+function addChapter(sid){
+  var inp = $('chap-new-'+sid);
+  var name = inp.value.trim();
+  if(!name){ toast('Enter a name', 'err'); return; }
+  if(!APP.chapters[sid]) APP.chapters[sid] = chapList(sid);
+  APP.chapters[sid].push(name);
+  inp.value = '';
+  save();
+  renderSettingsChapters();
+}
+
+function moveChap(sid, i, dir){
+  if(!APP.chapters[sid]) APP.chapters[sid] = chapList(sid);
+  var arr = APP.chapters[sid];
+  var j = i + dir;
+  if(j < 0 || j >= arr.length) return;
+  // Shift any lecture references
+  APP.lectures.forEach(function(l){
+    if(l.subjectId === sid){
+      if(l.chapterIdx === i) l.chapterIdx = j;
+      else if(l.chapterIdx === j) l.chapterIdx = i;
+    }
+  });
+  var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  save();
+  renderChapList(sid);
+}
+
+function deleteChap(sid, i){
+  var name = chapList(sid)[i];
+  var hasLectures = APP.lectures.some(function(l){return l.subjectId===sid && l.chapterIdx===i;});
+  if(hasLectures){
+    toast('Has lectures attached. Move/delete those first.', 'err');
+    return;
+  }
+  confirmDlg('Delete chapter "'+name+'"?', function(){
+    if(!APP.chapters[sid]) APP.chapters[sid] = chapList(sid);
+    APP.chapters[sid].splice(i, 1);
+    // Shift indices in lectures
+    APP.lectures.forEach(function(l){
+      if(l.subjectId === sid && l.chapterIdx > i) l.chapterIdx--;
+    });
+    save();
+    renderSettingsChapters();
+  }, {danger:true, yesLabel:'Delete'});
+}
+
+function resetChapters(sid){
+  confirmDlg('Reset to ICAI default chapters? Your custom ones for this subject will be lost.', function(){
+    delete APP.chapters[sid];
+    APP.chapters[sid] = SYL[sid].chapters.slice();
+    save();
+    renderSettingsChapters();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: HELP
+═══════════════════════════════════════════════════════════ */
+function renderHelp(){
+  var html = '<div class="pw" style="max-width:760px;margin:0 auto">';
+  html += '<div class="stitle mb14">Help &amp; what\'s here</div>';
+  html += '<div class="alert al-blue mb14"><strong>Slice 0.1</strong> — this is the first usable chunk. Lecture + Revision-Lecture activities work end-to-end. First-reading, Revisions, Tests, Questions, Flashpoints, Dashboard come in later slices.</div>';
+
+  html += '<div class="card mb10"><div class="slbl mb10">What works right now</div>'+
+    '<ul style="padding-left:18px;line-height:1.8;font-size:13px">'+
+    '<li><strong>Setup</strong> — name, exam date, group, exemptions (Standard / Permanent), revision offsets</li>'+
+    '<li><strong>Lectures tab</strong> — add main + revision lectures per subject, recorded vs live mode, edit/delete</li>'+
+    '<li><strong>Session tab</strong> — pick lecture, start live or pomodoro timer, pause/resume, end as complete or partial. Includes "what did you cover" note + content-min override + homework capture</li>'+
+    '<li><strong>Quick Complete</strong> — log a past session retroactively (date + start/end time)</li>'+
+    '<li><strong>Today tab</strong> — bento stats, resume strip for in-progress lectures, today\'s sessions</li>'+
+    '<li><strong>Timeline tab</strong> — every session, grouped by date</li>'+
+    '<li><strong>Settings</strong> — profile, exemptions, sync, pomodoro defaults, revision offsets, chapter editor, data export/import</li>'+
+    '<li><strong>Cloud sync</strong> — GitHub Gist with auto-pull on startup, debounced writes, dirty-flag re-queue</li>'+
+    '</ul></div>';
+
+  html += '<div class="card mb10"><div class="slbl mb10">How to set up cloud sync</div>'+
+    '<ol style="padding-left:18px;line-height:1.8;font-size:13px">'+
+    '<li>Visit <a href="https://github.com/settings/tokens/new?scopes=gist&description=CA%20Inter%20Tracker" target="_blank">github.com/settings/tokens/new</a> while logged in</li>'+
+    '<li>Make sure <strong>only the gist scope</strong> is checked. Set expiration as you like.</li>'+
+    '<li>Copy the generated token (starts with <code>ghp_</code>)</li>'+
+    '<li>Settings → Cloud Sync → paste in "Setup option A" → Connect &amp; create gist</li>'+
+    '<li>To switch device: install this HTML file there, Settings → "Setup option B" → paste same token + the gist id</li>'+
+    '</ol>'+
+    '<div class="al-amber alert mt12"><strong>Privacy:</strong> the token lives in this browser\'s localStorage. Don\'t share this device. Use a <strong>gist-scope-only</strong> token so even if leaked, only your gists are exposed.</div>'+
+  '</div>';
+
+  html += '<div class="card mb10"><div class="slbl mb10">Coming next (slices 0.2 → 0.7)</div>'+
+    '<ul style="padding-left:18px;line-height:1.8;font-size:13px">'+
+    '<li><strong>0.2</strong> — First reading + day-grouped chunks + Syllabus tab</li>'+
+    '<li><strong>0.3</strong> — Revisions queue (auto R1/R7/R30) + revision sessions</li>'+
+    '<li><strong>0.4</strong> — Tests (full-syllabus + chapterwise) with dual-phase timer</li>'+
+    '<li><strong>0.5</strong> — Questions, Homework, Flashpoints capture &amp; review</li>'+
+    '<li><strong>0.6</strong> — Real Dashboard + Final-revision planner (replaces "Phase 3")</li>'+
+    '<li><strong>0.7</strong> — Sync polish, help expansion</li>'+
+    '</ul></div>';
+
+  html += '</div>';
+  $('pg-help').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STUB PAGES
+═══════════════════════════════════════════════════════════ */
+function renderStub(id, title, msg){
+  $('pg-'+id).innerHTML = '<div class="stub">'+
+    '<div class="stub-big">'+esc(title)+'</div>'+
+    '<div class="stub-sub">'+esc(msg)+'</div>'+
+  '</div>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('beforeunload', function(){
+  if(APP) save(true);
+});
+
+// Keyboard: Esc closes modal & fullscreen
+window.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    if($('fso').classList.contains('show')) closeFullscreen();
+    else if($('modal-root').innerHTML) $('modal-root').innerHTML = '';
+  }
+  if(e.key === ' ' && APP && APP.activeSession && (currentPage==='session' || $('fso').classList.contains('show'))){
+    e.preventDefault();
+    if(APP.activeSession.paused) resumeSession(); else pauseSession();
+  }
+});
+
+// Boot
+init();
+
+</script>
+</body>
+</html>
