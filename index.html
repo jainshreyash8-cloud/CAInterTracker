@@ -1089,6 +1089,9 @@ function finishSetup(name, exam){
   save(true);
   $('setup').style.display = 'none';
   $('app').classList.remove('dn');
+  wireAppShell();
+  refreshTopbar();
+  if(!window._topbarInterval) window._topbarInterval = setInterval(refreshTopbar, 30000);
   showPage('today');
   toast('Welcome, ' + name.split(' ')[0] + '!', 'ok');
 }
@@ -1120,21 +1123,22 @@ async function init(){
   $('setup').style.display = 'none';
   $('app').classList.remove('dn');
 
-  // Wire nav
+  wireAppShell();
+  showPage('today');
+  refreshTopbar();
+  if(!window._topbarInterval) window._topbarInterval = setInterval(refreshTopbar, 30000);
+  resumeActiveSession();
+}
+
+function wireAppShell(){
+  // Nav buttons
   document.querySelectorAll('#nav .nb').forEach(function(b){
     b.onclick = function(){ showPage(b.dataset.p); };
   });
-
   // Topbar timer click → fullscreen
   $('tb-timer').onclick = function(){ openFullscreen(); };
-
-  // Sync indicator click → settings (but if syncing, skip)
+  // Sync indicator click → settings
   $('sync-i').onclick = function(){ showPage('settings'); };
-
-  showPage('today');
-  refreshTopbar();
-  setInterval(refreshTopbar, 30000); // refresh days/streak every 30s
-  resumeActiveSession();
 }
 
 function showPage(p){
