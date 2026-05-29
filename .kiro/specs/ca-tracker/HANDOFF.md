@@ -78,3 +78,22 @@ Start building the real working app as `index.html` on a fresh branch (e.g. `bui
 7. Dashboard + final-revision planner.
 8. Settings polish + Help + sync hardening.
 Test each step via raw.githack preview before moving on.
+
+
+
+## Build progress (updated 2026-05-29)
+
+`index.html` on `main` is the REAL working app. Done so far:
+- Foundation: setup (name/exam/group/exemptions Standard+Permanent/revision offsets), dark+light themes, padded/full-width toggle, bento design, Sora brand, line-icons.
+- Lectures tab: lectures live inside chapters (expandable), main + revision lectures, add/edit/delete, Misc/Bonus chapter, computed totals, per-subject completion due date.
+- Session: lecture + revision-lecture via unified subject -> chapter -> lecture DROPDOWN + mode (live/pomodoro) + Start; drift-free timer; pause/resume; fullscreen; end as done/in-progress with "minutes of lecture actually completed" + "where I stopped" note; links back to the lecture row (shows partial % + note + Resume).
+- Quick-complete with hard no-overlap guard. Today (bento stats, expandable exam plan, readiness, week chart, resume strip). Settings, Help.
+- Storage + Gist sync (auto-pull on startup, debounce, dirty-flag requeue, merge-by-id, last-synced).
+- Stubs: syllabus, revisions, tests, flashpoints, dashboard.
+
+## PENDING FIXES (do these FIRST in next session)
+1. **Remove the "Source" field from the Revision Lecture session config.** User confirmed it is useless / goes nowhere. Remove the `cf-src` field + `_sPick.source` handling for revision-lecture and drop `payload.source`.
+2. **Timeline is conceptually WRONG vs the v2 idea.** Current build renders Timeline as a simple list grouped by day. The v2 (correct) Timeline is a **visual day x hour GRID**: each row = one day, horizontal axis = time-of-day (hours), each session = a colored block positioned by start time and sized by duration, coloured by subject, showing partial vs complete — so you can SEE when in the day you did what. Rebuild as this grid. Reference v2 classes in `ca-tracker-v2.html`: `.tl-wrap .tl-hdr .tl-date .tl-hrs .tl-hr .tl-row .tl-grid .tl-blk .tl-tot`. Confirm exact desired form with user before building.
+
+## NEXT SLICE (after the two fixes)
+First Reading + day-grouped chunks + Syllabus tab (per the data-model rules above).
