@@ -383,6 +383,43 @@ body.theme-light .t-display{color:var(--green)}
 .tf-cbx input{width:15px;height:15px;flex:0 0 auto;accent-color:var(--accent)}
 </style>
 <style>
+/* ════ FLASHPOINTS ════ */
+.stabs{display:flex;flex-wrap:wrap;gap:6px}
+.stab{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--faint);color:var(--dim);font-size:12px;font-weight:600;cursor:pointer}
+.stab.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:transparent}
+.fp-grid{columns:2;column-gap:11px}
+@media(max-width:640px){.fp-grid{columns:1}}
+.fp-card{break-inside:avoid;background:var(--faint);border:1px solid var(--border);border-radius:11px;padding:12px 13px;margin-bottom:11px}
+.fp-top{font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:5px;line-height:1.35}
+.fp-body{font-size:12.5px;color:var(--dim);line-height:1.55;white-space:pre-wrap}
+.fp-foot{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
+.fp-rowx{display:grid;grid-template-columns:1fr 1.5fr auto;gap:8px;align-items:start;margin-bottom:8px}
+/* ════ DASHBOARD ════ */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
+@media(max-width:760px){.dash-grid{grid-template-columns:1fr}}
+.dbar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.dbar-l{font-size:12px;min-width:78px;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbar-t{flex:1;height:9px;background:var(--faint);border-radius:6px;overflow:hidden}
+.dbar-f{height:100%;border-radius:6px;min-width:2px}
+.dbar-v{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);min-width:50px;text-align:right}
+.dsess{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border)}
+.dsess:first-child{border-top:none}
+.gsep{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);margin:14px 0 8px}
+.gsep:first-child{margin-top:0}
+.hm-wrap{overflow-x:auto;padding-bottom:4px}
+.hm-mons{display:flex;font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px}
+.hm-grid{display:flex;gap:3px}
+.hm-col{display:flex;flex-direction:column;gap:3px}
+.hm-c{width:11px;height:11px;border-radius:2px;background:var(--faint)}
+.hm-c.h1{background:rgba(52,211,153,.28)}
+.hm-c.h2{background:rgba(52,211,153,.48)}
+.hm-c.h3{background:rgba(52,211,153,.66)}
+.hm-c.h4{background:rgba(52,211,153,.84)}
+.hm-c.h5{background:rgba(52,211,153,1)}
+.hm-c.h-today{box-shadow:0 0 0 1.5px var(--ink)}
+.dlegend{display:flex;align-items:center;gap:5px;margin-top:7px}
+</style>
+<style>
 /* ════ TIMELINE (day × hour grid) ════ */
 .tl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tl-inner{min-width:720px}
@@ -1096,6 +1133,7 @@ function tlBlock(id){
     '</div>';
   modal({title:a.label,body:body,actions:[
     {label:'Edit',kind:'primary',onClick:function(){editEntry(e.id);return true;}},
+    {label:'+ Flashpoint',kind:'ghost',onClick:function(){addFlashpoint({subjectId:e.subjectId,chapterIdx:(e.chapterIdx!=null&&e.chapterIdx>=0?e.chapterIdx:null)});return true;}},
     {label:'Delete',kind:'danger',onClick:function(){confirmDlg('Delete this session entry? This removes it from the timeline (lecture progress is not changed).',function(){APP.entries=APP.entries.filter(function(x){return x.id!==e.id;});save(true);renderTimeline();},{danger:true,yes:'Delete'});return true;}},
     {label:'Close',kind:'ghost'}]});
 }
@@ -1453,7 +1491,7 @@ function resetChap(sid){confirmDlg('Reset to ICAI default chapters?',function(){
 /* ═══════════ HELP ═══════════ */
 function renderHelp(){
   $('pg-help').innerHTML='<div class="pw" style="max-width:780px;margin:0 auto"><div class="h1 mb16">Help</div>'+
-  '<div class="alert al-blue">This is the working app, built one flow at a time. Lectures, Session, First Reading, Syllabus, Revisions, Timeline and Tests work fully. Questions, Flashpoints and the Dashboard come next.</div>'+
+  '<div class="alert al-blue">The full tracker is here — Today, Session (lectures, first reading, revision, questions, revision-lectures), Syllabus, Revisions, Tests, Flashpoints, Dashboard and Timeline all work. Tests use a real reading + writing countdown and you enter marks after you review.</div>'+
   '<div class="card mb10"><div class="slbl mb10">Works now</div><ul style="padding-left:18px;line-height:1.9;font-size:13px"><li><b>Lectures</b> — added inside each chapter; main + revision lectures; computed totals; per-subject completion due date; Misc/Bonus chapter</li><li><b>Session</b> — pick a lecture, live or pomodoro timer (breaks don\'t count as study time), pause/resume, fullscreen, end as Complete or In-progress with "where I stopped" note + content-min</li><li><b>Quick-complete</b> — log past sessions; blocks time overlaps</li><li><b>Syllabus</b> — per-chapter mastery: first-read status, confidence stars, notes, revision dots</li><li><b>Revisions</b> — "review yesterday" nudge + spaced 1/7/30/60/90 chapter revisions, launched queue-first</li><li><b>Tests</b> — full-syllabus &amp; chapterwise mocks with a real reading + writing countdown; Complete to record marks, Abort still logs your time</li><li><b>Today</b> — bento stats, expandable exam plan, resume strip, today\'s sessions</li><li><b>Timeline</b> — every session on a day &times; hour grid</li><li><b>Settings</b> — theme (dark/light), width, profile, exemptions, Gist sync, pomodoro, revision offsets, chapter editor, backup</li></ul></div>'+
   '<div class="card mb10"><div class="slbl mb10">Cloud sync (across devices)</div><ol style="padding-left:18px;line-height:1.9;font-size:13px"><li>Open <a href="https://github.com/settings/tokens/new?scopes=gist&description=CA+Tracker" target="_blank">github.com/settings/tokens/new</a>, tick only <b>gist</b>, generate, copy token (ghp_…)</li><li>Settings → Cloud sync → paste → Connect (a private gist is created)</li><li>New device: Settings → Restore → paste same token + the gist id</li></ol><div class="alert al-amber mt10">Token lives in this browser only. Use a gist-scope-only token.</div></div>'+
   '</div>';
@@ -1714,6 +1752,164 @@ function submitQuickTest(){
   t.updatedAt=Date.now();
   APP.entries.push({id:eid,createdAt:Date.now(),updatedAt:Date.now(),date:d,startTime:st,endTime:en,elapsedMin:dur,pauseMin:0,activityType:'test',subjectId:t.subjectId,chapterIdx:(t.type==='chapter'?t.chapterIdx:(t.type==='multi'&&testChapIdxs(t).length?testChapIdxs(t)[0]:-1)),lectureId:null,status:'done',mode:'quick',contentMin:dur,coveredNote:note,payload:{testId:t.id,testName:t.name,type:t.type,source:t.source,marks:marks,maxMarks:mxV,awaiting:marks==null}});
   save(true);toast('Test logged'+(marks!=null?' · '+marks+'/'+mxV:' · add marks later'),'ok');renderTests();return true;
+}
+</script>
+
+<script>
+/* ═══════════ FLASHPOINTS ═══════════ */
+var _fpFilter='all',_fpSearch='';
+function fpMatch(f){if(_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
+function renderFlashpoints(){
+  var subs=activeSubjects();
+  if(_fpFilter!=='all'&&subs.indexOf(_fpFilter)<0)_fpFilter='all';
+  var all=APP.flashpoints||[];
+  var list=all.filter(fpMatch).slice().reverse();
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas, traps &amp; takeaways — quick revision fuel.</div></div><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add flashpoints</button></div>';
+  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'</div></div>';
+  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+'</div>';
+  if(list.length)h+='<div class="fp-grid">'+list.map(fpCard).join('')+'</div>';
+  else h+='<div class="empty"><div class="empty-t">'+(all.length?'Nothing matches':'No flashpoints yet')+'</div><div>'+(all.length?'Try a different search or subject.':'Capture key points, formulas and exam traps as you study. Add them here, or from a logged session on the Timeline.')+'</div></div>';
+  h+='</div>';
+  $('pg-flashpoints').innerHTML=h;
+}
+function fpSearchInput(v){_fpSearch=v;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
+function setFp(sid){_fpFilter=sid;renderFlashpoints();}
+function fpTabs(subs){var h='<span class="stab'+(_fpFilter==='all'?' on':'')+'" onclick="setFp(\'all\')">All</span>';subs.forEach(function(s){h+='<span class="stab'+(_fpFilter===s?' on':'')+'" onclick="setFp(\''+s+'\')"'+(_fpFilter===s?' style="color:'+subjColor(s)+';background:'+subjColor(s)+'22"':'')+'>'+subjShort(s)+'</span>';});return h;}
+function fpCard(f){
+  var hasS=f.subjectId&&SYL[f.subjectId];
+  var chap=(f.chapterIdx!=null&&f.chapterIdx>=0)?'<span class="xs mono muted">'+esc(chapName(f.subjectId,f.chapterIdx))+'</span>':'';
+  return '<div class="fp-card"><div class="fp-top">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-body">'+esc(f.point)+'</div>':'')+
+    '<div class="fp-foot">'+(hasS?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>')+chap+
+    '<span class="xs mono muted" style="margin-left:auto">'+fmtDate(f.date)+'</span>'+
+    '<button class="btn btn-icon btn-ghost" onclick="editFP(\''+f.id+'\')" title="Edit">'+ICON.edit+'</button>'+
+    '<button class="btn btn-icon btn-ghost" onclick="delFP(\''+f.id+'\')" title="Delete">'+ICON.trash+'</button></div></div>';
+}
+function fpRowHTML(){return '<div class="fp-rowx"><div class="fld" style="margin:0"><input class="fp-t" placeholder="Title / key term"></div><div class="fld" style="margin:0"><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px"></textarea></div><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div>';}
+function fpAddRow(){var r=$('fp-rows');if(r)r.insertAdjacentHTML('beforeend',fpRowHTML());}
+function addFlashpoint(pre){
+  pre=pre||{};
+  var subs=activeSubjects();
+  var sid=pre.subjectId!=null?pre.subjectId:(_fpFilter!=='all'?_fpFilter:'');
+  var body='<div class="fld2"><div class="fld"><label>Subject</label><select id="fp-sub"><option value="">General (no subject)</option>'+subs.map(function(s){return '<option value="'+s+'" '+(sid===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter <span class="muted" style="font-weight:400">(optional)</span></label><select id="fp-ch"></select></div></div>'+
+    '<div class="slbl mb8" style="margin-top:4px">Points</div><div id="fp-rows">'+fpRowHTML()+'</div>'+
+    '<button class="btn btn-ghost btn-sm" type="button" onclick="fpAddRow()" style="width:100%;margin-top:2px">'+ICON.plus+' Add another row</button>';
+  modal({size:'md',title:'Add flashpoints',body:body,
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Save all',kind:'primary',onClick:function(){if(saveFlashpoints())return false;return true;}}],
+    onOpen:function(){
+      function fillCh(){var s=$('fp-sub').value;$('fp-ch').innerHTML='<option value="">— Any —</option>'+(s?chapList(s).map(function(cn,i){return '<option value="'+i+'" '+(pre.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join(''):'');}
+      $('fp-sub').onchange=fillCh;fillCh();
+    }});
+}
+function saveFlashpoints(){
+  var sid=$('fp-sub').value||'';
+  var cv=$('fp-ch')?$('fp-ch').value:'';var ci=cv!==''?+cv:null;
+  var n=0;
+  document.querySelectorAll('#fp-rows .fp-rowx').forEach(function(row){
+    var t=row.querySelector('.fp-t').value.trim(),p=row.querySelector('.fp-p').value.trim();
+    if(!t&&!p)return;
+    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,date:today(),source:'manual'});n++;
+  });
+  if(!n){toast('Add at least one point','err');return false;}
+  save(true);toast('Saved '+n+' flashpoint'+(n===1?'':'s'),'ok');renderFlashpoints();return true;
+}
+function editFP(id){
+  var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;
+  var subs=activeSubjects();
+  var body='<div class="fld"><label>Title</label><input id="fpe-t" value="'+esc(f.title||'')+'"></div>'+
+    '<div class="fld"><label>Point</label><textarea id="fpe-p">'+esc(f.point||'')+'</textarea></div>'+
+    '<div class="fld2"><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="fpe-c"></select></div></div>';
+  modal({size:'md',title:'Edit flashpoint',body:body,
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){if(saveFP(id))return false;return true;}}],
+    onOpen:function(){function fillCh(){var s=$('fpe-s').value;$('fpe-c').innerHTML='<option value="">— Any —</option>'+(s?chapList(s).map(function(cn,i){return '<option value="'+i+'" '+(f.subjectId===s&&f.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join(''):'');}$('fpe-s').onchange=fillCh;fillCh();}});
+}
+function saveFP(id){
+  var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return false;
+  var t=$('fpe-t').value.trim();if(!t){toast('Title required','err');return false;}
+  f.title=t;f.point=$('fpe-p').value.trim();f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;
+  save(true);toast('Updated','ok');renderFlashpoints();return true;
+}
+function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoints=APP.flashpoints.filter(function(x){return x.id!==id;});save(true);renderFlashpoints();},{danger:true,yes:'Delete'});}
+</script>
+
+<script>
+/* ═══════════ DASHBOARD ═══════════ */
+function dashEntries(){var ids={};activeSubjects().forEach(function(s){ids[s]=1;});return APP.entries.filter(function(e){return ids[e.subjectId]&&(e.elapsedMin||0)>0;});}
+function studyDays(){var by={};dashEntries().forEach(function(e){if(e.elapsedMin>=1)by[e.date]=1;});return Object.keys(by);}
+function dataStart(){var ds=studyDays();if(!ds.length)return today();ds.sort();return ds[0];}
+function totalStudyMin(){return dashEntries().reduce(function(a,e){return a+(e.elapsedMin||0);},0);}
+function dayMin(d){return dashEntries().filter(function(e){return e.date===d;}).reduce(function(a,e){return a+e.elapsedMin;},0);}
+function subProg(sid){var chs=chapList(sid),done=0;for(var i=0;i<chs.length;i++)if(chapStatus(sid,i)==='done')done++;return {done:done,total:chs.length};}
+function overallPct(){var d=0,t=0;activeSubjects().forEach(function(s){var p=subProg(s);d+=p.done;t+=p.total;});return t?Math.round(d/t*100):0;}
+function weakChapters(){var out=[];activeSubjects().forEach(function(sid){chapList(sid).forEach(function(cn,i){var cd=getCh(sid,i);if(cd.firstReadDone&&cd.conf>0&&cd.conf<=3)out.push({sid:sid,i:i,conf:cd.conf,name:cn});});});out.sort(function(a,b){return a.conf-b.conf;});return out;}
+function dbar(label,val,max,color,valTxt){var w=Math.round((val/Math.max(1,max))*100);return '<div class="dbar"><div class="dbar-l">'+esc(label)+'</div><div class="dbar-t"><div class="dbar-f" style="width:'+w+'%;background:'+color+'"></div></div><div class="dbar-v">'+valTxt+'</div></div>';}
+function buildHeatmap(){
+  var byH={};dashEntries().forEach(function(e){byH[e.date]=(byH[e.date]||0)+e.elapsedMin/60;});
+  var start=dataStart();if(!isDate(start))start=today();var td=today();
+  var st=new Date(start+'T12:00:00');st.setDate(st.getDate()-st.getDay());
+  var en=new Date(td+'T12:00:00');en.setDate(en.getDate()+(6-en.getDay()));
+  var weeks=[],cur=new Date(st),guard=0;
+  while(cur<=en&&guard<160){var wk=[];for(var i=0;i<7;i++){wk.push(cur.getFullYear()+'-'+pad(cur.getMonth()+1)+'-'+pad(cur.getDate()));cur.setDate(cur.getDate()+1);}weeks.push(wk);guard++;}
+  var mons=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],monRow='<div class="hm-mons">',lastM=-1;
+  weeks.forEach(function(wk){var m=new Date(wk[0]+'T12:00:00').getMonth();monRow+='<span style="min-width:14px">'+(m!==lastM?mons[m]:'')+'</span>';lastM=m;});
+  monRow+='</div>';
+  var grid='<div class="hm-grid">';
+  weeks.forEach(function(wk){grid+='<div class="hm-col">';wk.forEach(function(ds){
+    var hh=byH[ds]||0,cls='hm-c';
+    if(ds<=td){if(hh>=6)cls+=' h5';else if(hh>=4)cls+=' h4';else if(hh>=2)cls+=' h3';else if(hh>=1)cls+=' h2';else if(hh>0)cls+=' h1';}
+    if(ds===td)cls+=' h-today';
+    grid+='<div class="'+cls+'" title="'+ds+(hh?' · '+hh.toFixed(1)+'h':'')+'"></div>';
+  });grid+='</div>';});
+  grid+='</div>';
+  return '<div class="hm-wrap">'+monRow+grid+'</div>';
+}
+function renderDash(){
+  var subs=activeSubjects();
+  if(!subs.length){$('pg-dashboard').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
+  var sdays=studyDays(),start=dataStart();
+  var totalD=Math.max(1,diffD(start,today())+1),missed=Math.max(0,totalD-sdays.length);
+  var totM=totalStudyMin(),avgM=sdays.length?Math.round(totM/sdays.length):0,tdM=dayMin(today());
+  var d2e=APP.cfg.examDate?diffD(today(),APP.cfg.examDate):null;
+  var sc=[];(APP.tests||[]).forEach(function(t){testAttempts(t).forEach(function(a){var p=attPct(a,t);if(p!=null)sc.push(p);});});
+  var avgSc=sc.length?Math.round(sc.reduce(function(a,b){return a+b;},0)/sc.length):null;
+  var de=dashEntries();
+  var actM={};de.forEach(function(e){actM[e.activityType]=(actM[e.activityType]||0)+e.elapsedMin;});
+  var actKeys=Object.keys(actM).filter(function(k){return actM[k]>0;}).sort(function(a,b){return actM[b]-actM[a];});
+  var maxA=Math.max.apply(null,[1].concat(actKeys.map(function(k){return actM[k];})));
+  var subM=subs.map(function(s){return {s:s,m:de.filter(function(e){return e.subjectId===s;}).reduce(function(a,e){return a+e.elapsedMin;},0)};});
+  var maxS=Math.max.apply(null,[1].concat(subM.map(function(x){return x.m;})));
+  var recent=de.slice().sort(function(a,b){return (b.date+(b.startTime||'')).localeCompare(a.date+(a.startTime||''));}).slice(0,6);
+  var weak=weakChapters().slice(0,6);
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Dashboard</div><div class="sub">Your whole prep at a glance.</div></div></div>';
+  // hero bento
+  h+='<div class="bento b5 mb12">'+
+    '<div class="bc bc-accent"><span class="blbl">Overall progress</span><div class="bnum"><span class="bn-v">'+overallPct()+'</span><span class="bn-u">%</span></div><span class="bsub">chapters first-read</span></div>'+
+    '<div class="bc bc-neutral"><span class="blbl">Days studied</span><div class="bnum"><span class="bn-v">'+sdays.length+'</span></div><span class="bsub">of '+totalD+' · '+missed+' missed</span></div>'+
+    '<div class="bc bc-neutral"><span class="blbl">Streak</span><div class="bnum"><span class="bn-v">'+computeStreak()+'</span><span class="bn-u">days</span></div><span class="bsub">in a row</span></div>'+
+    '<div class="bc bc-purple"><span class="blbl">Total hours</span><div class="bnum">'+bnumHTML(fmtMinParts(totM))+'</div><span class="bsub">avg '+fmtMin(avgM)+'/study day</span></div>'+
+    '<div class="bc bc-amber"><span class="blbl">Days to exam</span><div class="bnum"><span class="bn-v">'+(d2e==null?'—':d2e<0?Math.abs(d2e):d2e)+'</span></div><span class="bsub">'+(d2e==null?'set date':avgSc!=null?'avg test '+avgSc+'%':'today '+fmtMin(tdM))+'</span></div>'+
+  '</div>';
+  // heatmap
+  h+='<div class="card mb12"><div class="rowb mb12"><span class="slbl">Study heatmap</span><span class="dlegend"><span class="xxs muted">less</span><span class="hm-c"></span><span class="hm-c h2"></span><span class="hm-c h3"></span><span class="hm-c h4"></span><span class="hm-c h5"></span><span class="xxs muted">more</span></span></div>'+buildHeatmap()+'</div>';
+  // two-column grid
+  h+='<div class="dash-grid">';
+  // col A
+  h+='<div class="col" style="display:flex;flex-direction:column;gap:12px">';
+  h+='<div class="card"><div class="slbl mb12">Activity breakdown</div>'+(actKeys.length?actKeys.map(function(k){return dbar((ACT[k]?ACT[k].label:k),actM[k],maxA,'var(--accent)',fmtMin(actM[k]));}).join(''):'<div class="xs muted">No sessions yet.</div>')+'</div>';
+  h+='<div class="card"><div class="slbl mb12">Hours by subject</div>'+subM.map(function(x){return dbar(subjShort(x.s),x.m,maxS,subjColor(x.s),fmtMin(x.m));}).join('')+'</div>';
+  h+='</div>';
+  // col B
+  h+='<div class="col" style="display:flex;flex-direction:column;gap:12px">';
+  // subject progress
+  var g1=subs.filter(function(s){return SYL[s].group===1}),g2=subs.filter(function(s){return SYL[s].group===2});
+  var sp='';[[1,g1],[2,g2]].forEach(function(g){if(!g[1].length)return;sp+='<div class="gsep">Group '+g[0]+'</div>';g[1].forEach(function(s){var p=subProg(s),pc=p.total?Math.round(p.done/p.total*100):0;sp+='<div style="margin-bottom:10px"><div class="rowb" style="margin-bottom:4px"><div class="row" style="gap:7px">'+subjChip(s)+'<span class="sm fw6">'+esc(SYL[s].name)+'</span></div><span class="mono xs" style="color:'+subjColor(s)+'">'+p.done+'/'+p.total+' · '+pc+'%</span></div><div class="dbar-t"><div class="dbar-f" style="width:'+pc+'%;background:'+subjColor(s)+'"></div></div></div>';});});
+  h+='<div class="card"><div class="slbl mb12">Subject progress</div>'+sp+'</div>';
+  // recent sessions
+  h+='<div class="card"><div class="slbl mb12">Recent sessions</div>'+(recent.length?recent.map(function(e){return '<div class="dsess"><div class="srow-ic">'+ICON[(ACT[e.activityType]||{icon:'lecture'}).icon]+'</div><div class="f1" style="min-width:0"><div class="sm fw6" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+entryTitle(e)+'</div><div class="xs muted mono">'+subjShort(e.subjectId)+' · '+relDay(e.date)+' · '+fmtMin(e.elapsedMin)+'</div></div></div>';}).join(''):'<div class="xs muted">No sessions yet.</div>')+'</div>';
+  // weak chapters
+  if(weak.length)h+='<div class="card"><div class="slbl mb12">Weak chapters <span class="muted" style="font-weight:400;text-transform:none">· lowest confidence</span></div>'+weak.map(function(w){return '<div class="dsess"><div class="f1" style="min-width:0"><div class="sm fw6" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(w.name)+'</div><div class="xs muted mono">'+subjShort(w.sid)+'</div></div><span class="mono xs" style="color:'+(w.conf<=2?'var(--rose)':'var(--amber)')+'">'+w.conf+'/5 ★</span></div>';}).join('')+'</div>';
+  h+='</div>';
+  h+='</div></div>';
+  $('pg-dashboard').innerHTML=h;
 }
 </script>
 
