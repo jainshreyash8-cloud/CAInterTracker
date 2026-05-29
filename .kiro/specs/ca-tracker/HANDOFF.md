@@ -148,3 +148,35 @@ Rebuilt cleanly after the previous session's uncommitted Tests code was lost. `i
 
 ### STILL TODO (unchanged, confirm look with user first)
 Questions (session activity, no tab) · Flashpoints tab · Dashboard tab + final-revision planner. Per user's standing request, CONFIRM the exact Flashpoints + Dashboard look before building (adapt from v2 `renderDash`/`renderFlashpoints` but drop "phases", no emojis, use our data model).
+
+
+## Tracker COMPLETE 2026-05-29 — Tests refinements + Questions + Flashpoints + Dashboard (all on `main`)
+
+All tabs now functional. Commits: `fix(timeline)` (edit/delete popover double-close), `feat(tests+questions)`, `feat(flashpoints+dashboard)`.
+
+### Bug fixed
+- Timeline popover (`tlBlock`) Edit/Delete were broken: handlers called `close()` then returned undefined, so the modal framework auto-closed AGAIN and wiped the freshly-opened dialog. Fix = return `true` from those onClicks (the new modal replaces modal-root). Pattern note for future: any modal action that opens another modal must `return true`.
+
+### Tests (final shape)
+- `APP.tests[]`: `{id,type:'full'|'multi'|'chapter',source,name,subjectId,chapterIdx,chapterIdxs,dueDate,readingMin,testMin,maxMarks,attempts:[]}`.
+- Attempt: `{id,entryId,date,startTime,endTime,durationMin,readingMin,marks,maxMarks,note,status:'awaiting'|'scored'}`. (Aborts create NO attempt — time-only entry.)
+- 3 types: full (whole subject), multi (multi-select 2+ chapters via `chapterIdxs`), single chapter. Type LOCKED when editing.
+- Optional `dueDate`. `testsToSit()` = no attempts + due≤today; `testsAwaiting()` = has an `awaiting` attempt. Both shown as Today nudges (`.today-due` strips) and in the Tests bento.
+- Review-later flow: live **Complete** logs time + creates an `awaiting` attempt + entry (NO marks prompt), then auto-opens `enterResult`. `enterResult`/`saveResult` set marks+takeaways, flip to `scored`, and patch the linked timeline entry's `payload.marks`/`coveredNote`. `attPct` returns null when marks==null (awaiting excluded from best/avg; real 0 still counts).
+- Helpers: `testChapIdxs`, `testLoc`, `pendingReview`, `testHasAttempt`, `testGroup`.
+
+### Questions (session activity, no tab)
+- `ACT.questions.on=true`. Config (`renderConfig` isQ branch) adds a Source select (`QSOURCES`=Textbook/RTP/MTP/PYP/Faculty/AI/Mixed) and a chapter dropdown with a "— Mixed / multiple —" option (default). `canStart` only needs a subject when mixed. End form adds an optional question-count field. Payload: `{source,mixed,count}`. Display via `qLoc(e)` in `entryTitle`, entryRow meta, timeline tooltip + popover. No scoring.
+
+### Flashpoints (`renderFlashpoints`)
+- `APP.flashpoints[]`: `{id,subjectId,chapterIdx,title,point,date,source}`. Per-subject filter chips (`.stab`) + live search (`fpSearchInput` re-renders + refocuses). Masonry `.fp-grid` cards with edit/delete. `addFlashpoint(pre)` = multi-row modal (`fpAddRow`/`fpRowHTML`, `.fp-rowx`), `saveFlashpoints` bulk-inserts. Edit modal ids are `fpe-*` (avoid colliding with end-form `ef-*`). `+ Flashpoint` button in the Timeline popover passes `{subjectId,chapterIdx}` to auto-fill.
+
+### Dashboard (`renderDash`, adapted from v2 — NO phases, NO emojis, our data model)
+- Helpers: `dashEntries` (active-subject entries w/ time), `studyDays`, `dataStart`, `totalStudyMin`, `dayMin`, `subProg` (first-read done/total), `overallPct`, `weakChapters` (read + conf 1–3, asc), `dbar` (CSS bar), `buildHeatmap` (CSS calendar grid, green intensity by daily hours, today ringed).
+- Layout: b5 hero stats (overall % / days studied+missed / streak / total+avg hrs / exam countdown w/ avg test score) → heatmap card → 2-col `.dash-grid`: [activity breakdown bars, hours-by-subject bars] | [subject progress by group, recent sessions, weak chapters]. No canvas line chart (heatmap covers daily-hours-over-time; matches the agreed spec).
+
+### Verify
+`node --check` per `<script>` block (wrap each in IIFE — strict mode is per-script in the browser, so don't concat into one program). 20 script + 9 style tags, balanced.
+
+### Possible follow-ups (not requested yet)
+Final-revision planner (the old v2 "phase 3" replacement) is still not built. Flashpoint auto-capture currently only from the Timeline popover (could also add from session end / syllabus rows).
