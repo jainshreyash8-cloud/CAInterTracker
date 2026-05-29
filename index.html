@@ -1066,8 +1066,8 @@ function tlBlock(id){
     (e.coveredNote?'<span class="muted">Covered</span><span>'+esc(e.coveredNote)+'</span>':'')+
     '</div>';
   modal({title:a.label,body:body,actions:[
-    {label:'Edit',kind:'primary',onClick:function(close){close();editEntry(e.id);}},
-    {label:'Delete',kind:'danger',onClick:function(close){confirmDlg('Delete this session entry? This removes it from the timeline (lecture progress is not changed).',function(){APP.entries=APP.entries.filter(function(x){return x.id!==e.id;});save(true);renderTimeline();},{danger:true,yes:'Delete'});close();}},
+    {label:'Edit',kind:'primary',onClick:function(){editEntry(e.id);return true;}},
+    {label:'Delete',kind:'danger',onClick:function(){confirmDlg('Delete this session entry? This removes it from the timeline (lecture progress is not changed).',function(){APP.entries=APP.entries.filter(function(x){return x.id!==e.id;});save(true);renderTimeline();},{danger:true,yes:'Delete'});return true;}},
     {label:'Close',kind:'ghost'}]});
 }
 </script>
