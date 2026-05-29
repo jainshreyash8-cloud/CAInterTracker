@@ -480,7 +480,7 @@ var ACT={
   lecture:{icon:'lecture',label:'Lecture',desc:'Watch a course lecture',on:true},
   'revision-lecture':{icon:'revlec',label:'Revision Lecture',desc:'Refresher / YouTube revision',on:true},
   'first-reading':{icon:'reading',label:'First Reading',desc:'Read a chapter for the first time',on:true},
-  revision:{icon:'revision',label:'Revision',desc:'Revise a chapter you have already read',on:true},
+  revision:{icon:'revision',label:'Revision',desc:'Revise a chapter you have already read',on:true,pick:false},
   questions:{icon:'questions',label:'Questions',desc:'Slice 0.5',on:false},
   test:{icon:'test',label:'Test',desc:'Slice 0.4',on:false}
 };
@@ -788,7 +788,7 @@ function renderSession(){
   _sStep='pick';_sPick=null;
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Start a session</div><div class="sub">Pick an activity — date &amp; time fill in automatically.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete()">'+ICON.bolt+' Quick-complete a past session</button></div>';
   h+='<div class="card"><div class="slbl mb12">Activity</div><div class="act-grid">';
-  Object.keys(ACT).forEach(function(k){var a=ACT[k];h+='<div class="act-card '+(a.on?'':'dis')+'" '+(a.on?'onclick="pickAct(\''+k+'\')"':'')+'><div class="act-ico">'+ICON[a.icon]+'</div><div class="act-lbl">'+a.label+'</div><div class="act-sub">'+esc(a.desc)+'</div></div>';});
+  Object.keys(ACT).forEach(function(k){var a=ACT[k];if(a.pick===false)return;h+='<div class="act-card '+(a.on?'':'dis')+'" '+(a.on?'onclick="pickAct(\''+k+'\')"':'')+'><div class="act-ico">'+ICON[a.icon]+'</div><div class="act-lbl">'+a.label+'</div><div class="act-sub">'+esc(a.desc)+'</div></div>';});
   h+='</div></div></div>';
   $('pg-session').innerHTML=h;
 }
@@ -1130,7 +1130,25 @@ function revQueue(){
   return {due:due,upcoming:upcoming};
 }
 function revCounts(){var q=revQueue();return {due:q.due.length,review:reviewYestList().length};}
-function startRevision(sid,ci){_sPick={activity:'revision',subjectId:sid,chapterIdx:ci,lectureId:null};_sStep='config';showPage('session');}
+function launchRevision(sid,ci){
+  if(APP.active){toast('Finish your current session first','err');showPage('session');return;}
+  modal({title:'Revise · '+chapName(sid,ci),body:'<div class="row mb10" style="gap:7px">'+subjChip(sid)+'<span class="sm fw6">'+esc(chapName(sid,ci))+'</span></div><div class="sm muted">How do you want to revise?</div>',
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Pomodoro',kind:'primary',onClick:function(){beginRev(sid,ci,'pomodoro');}},{label:'Live timer',kind:'primary',onClick:function(){beginRev(sid,ci,'live');}}]});
+}
+function beginRev(sid,ci,mode){
+  if(APP.active){toast('Finish your current session first','err');return;}
+  var pm=APP.cfg.pomo,pomo=mode==='pomodoro'?{workMin:pm.workMin,breakMin:pm.breakMin,longEvery:pm.longEvery,longMin:pm.longMin}:null;
+  startSession('revision',{subjectId:sid,chapterIdx:ci,lectureId:null,mode:mode,pomo:pomo,referenceMin:0});
+  showPage('session');
+}
+function offScheduleRev(){
+  var subs=activeSubjects();if(!subs.length){toast('No active subjects','err');return;}
+  modal({size:'md',title:'Revise off-schedule',body:'<div class="sm muted mb12">Revise any chapter, even if it isn\'t due yet.</div>'+
+    '<div class="fld2"><div class="fld"><label>Subject</label><select id="osr-sub">'+subs.map(function(s){return '<option value="'+s+'">'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="osr-ch"></select></div></div>'+
+    '<div class="fld"><label>Timer</label><div class="seg"><button class="seg-btn on" id="osr-live" type="button">Live</button><button class="seg-btn" id="osr-pomo" type="button">Pomodoro</button></div></div>',
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Start',kind:'primary',onClick:function(){var sid=$('osr-sub').value,ci=$('osr-ch').value;if(ci===''){toast('Pick a chapter','err');return true;}beginRev(sid,+ci,$('osr-pomo').classList.contains('on')?'pomodoro':'live');}}],
+    onOpen:function(){function fill(){var sid=$('osr-sub').value;$('osr-ch').innerHTML=chapList(sid).map(function(c,i){return '<option value="'+i+'">'+esc(c)+'</option>';}).join('');}$('osr-sub').onchange=fill;fill();$('osr-live').onclick=function(){$('osr-live').classList.add('on');$('osr-pomo').classList.remove('on');};$('osr-pomo').onclick=function(){$('osr-pomo').classList.add('on');$('osr-live').classList.remove('on');};}});
+}
 function quickRevDone(sid,ci){var r=markNextRevDone(sid,ci);save(true);toast(r?'Revision R'+r+' marked done':'Nothing to mark','ok');renderRevisions();}
 function revItemHTML(it,kind){
   var c=subjColor(it.sid);
@@ -1143,7 +1161,7 @@ function revItemHTML(it,kind){
     tag='<span class="rev-tag '+cls+'">'+(it.dd<0?Math.abs(it.dd)+'d overdue':it.dd===0?'due today':'in '+it.dd+'d')+'</span>';
     meta='Revision R'+it.r+' · scheduled '+fmtDate(it.due);
   }
-  var acts='<div class="rev-acts">'+tag+'<button class="btn btn-p btn-sm" onclick="startRevision(\''+it.sid+'\','+it.ci+')">'+(kind==='review'?'Review now':'Start revision')+'</button>';
+  var acts='<div class="rev-acts">'+tag+'<button class="btn btn-p btn-sm" onclick="launchRevision(\''+it.sid+'\','+it.ci+')">'+(kind==='review'?'Review now':'Start revision')+'</button>';
   if(kind==='due')acts+='<button class="btn btn-ghost btn-sm" onclick="quickRevDone(\''+it.sid+'\','+it.ci+')" title="Mark done without a timer">✓ Done</button>';
   acts+='</div>';
   var rowCls=kind==='due'?(it.dd<0?' over':it.dd===0?' due':''):'';
@@ -1153,7 +1171,7 @@ function subjShort(sid){return SYL[sid]?SYL[sid].short:sid;}
 function renderRevisions(){
   if(!activeSubjects().length){$('pg-revisions').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
   var review=reviewYestList(),q=revQueue();
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Revisions</div><div class="sub">Two layers: quick "review yesterday", and your spaced chapter revisions.</div></div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Revisions</div><div class="sub">Two layers: quick "review yesterday", and your spaced chapter revisions.</div></div><button class="btn btn-ghost btn-sm" onclick="offScheduleRev()">'+ICON.revision+' Revise off-schedule</button></div>';
   // Layer 1
   h+='<div class="rev-sec"><div class="rev-sec-h"><span class="slbl">Review yesterday</span><span class="xs mono muted">consolidate fresh material · fades after 2 days</span></div>';
   if(review.length)h+=review.map(function(it){return revItemHTML(it,'review');}).join('');
