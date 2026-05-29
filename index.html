@@ -374,6 +374,13 @@ body.theme-light .t-display{color:var(--green)}
 .tst-atts{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .tst-att{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--faint);border:1px solid var(--border);border-radius:8px}
 .tst-acts{display:flex;flex-wrap:wrap;gap:7px}
+.seg3 .seg-btn{flex:1;font-size:12px;padding:7px 4px}
+.seg-locked{opacity:.85}
+.seg-locked .seg-btn{cursor:default}
+.tf-multi{max-height:190px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;padding:5px;display:flex;flex-direction:column;gap:1px}
+.tf-cbx{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;font-size:12.5px;cursor:pointer;line-height:1.35}
+.tf-cbx:hover{background:var(--faint)}
+.tf-cbx input{width:15px;height:15px;flex:0 0 auto;accent-color:var(--accent)}
 </style>
 <style>
 /* ════ TIMELINE (day × hour grid) ════ */
@@ -500,7 +507,7 @@ var ACT={
   'revision-lecture':{icon:'revlec',label:'Revision Lecture',desc:'Refresher / YouTube revision',on:true},
   'first-reading':{icon:'reading',label:'First Reading',desc:'Read a chapter for the first time',on:true},
   revision:{icon:'revision',label:'Revision',desc:'Revise a chapter you have already read',on:true,pick:false},
-  questions:{icon:'questions',label:'Questions',desc:'Slice 0.5',on:false},
+  questions:{icon:'questions',label:'Questions',desc:'Practice problems from textbook / RTP / MTP etc.',on:true},
   test:{icon:'test',label:'Test',desc:'Sit a timed mock / chapter test',on:true,pick:false}
 };
 var STORE_KEY='ca_tracker_v1';
@@ -519,7 +526,8 @@ function freshState(){
     chData:{},            // per-chapter record keyed "sid_idx": {conf,notes,firstReadDone}
     subjectDue:{},        // {aa:'YYYY-MM-DD'} lecture-completion due per subject
     lectures:[],          // {id,subjectId,chapterIdx(-1=misc),label,lectureNumber,plannedMin,kind,status,contentDoneMin,lastNote,...}
-    tests:[],             // {id,type:'full'|'chapter',source,name,subjectId,chapterIdx,readingMin,testMin,maxMarks,attempts:[]}
+    tests:[],             // {id,type:'full'|'multi'|'chapter',source,name,subjectId,chapterIdx,chapterIdxs,dueDate,readingMin,testMin,maxMarks,attempts:[]}
+    flashpoints:[],       // {id,subjectId,chapterIdx,title,point,date,source}
     entries:[],           // TimeEntry spine
     active:null,          // running session
     activeTest:null,      // running dual-phase test
@@ -634,7 +642,7 @@ async function syncFromCloud(silent){
       var byId={};(APP.entries||[]).forEach(function(e){byId[e.id]=e;});
       var merged=(APP.entries||[]).slice();
       (cloud.entries||[]).forEach(function(e){if(!byId[e.id])merged.push(e);else if((e.updatedAt||0)>(byId[e.id].updatedAt||0)){var i=merged.findIndex(function(x){return x.id===e.id;});if(i>=0)merged[i]=e;}});
-      ['cfg','chapters','subjectDue','lectures','tests'].forEach(function(k){if(cloud[k]!==undefined)APP[k]=cloud[k];});
+      ['cfg','chapters','subjectDue','lectures','tests','flashpoints'].forEach(function(k){if(cloud[k]!==undefined)APP[k]=cloud[k];});
       APP.entries=merged;APP.meta.lastSyncAt=Date.now();delete APP._ts;save(true);
     }
     syncUI('ok');if(!silent)toast('Synced from cloud','ok');return true;
@@ -702,8 +710,8 @@ function showPage(p){currentPage=p;document.querySelectorAll('#nav .nb').forEach
     syllabus:renderSyllabus,
     revisions:renderRevisions,
     tests:renderTests,
-    flashpoints:function(){stub('flashpoints','Flashpoints','Quick-revision points. Coming next.');},
-    dashboard:function(){stub('dashboard','Dashboard','All stats + final-revision planner. Coming next.');}
+    flashpoints:renderFlashpoints,
+    dashboard:renderDash
   }[p]||function(){})();}
 function stub(id,t,s){$('pg-'+id).innerHTML='<div class="stub"><div class="stub-t">'+t+'</div><div class="stub-s">'+s+'</div></div>';}
 function refreshTop(){
@@ -773,8 +781,10 @@ function showEndForm(status){
     rows+='<div class="fld"><label>Minutes of lecture actually completed</label><div class="row" style="gap:8px"><input type="number" id="ef-c" min="0" value="'+sm+'" style="flex:1"><span class="xs muted mono">'+(l&&l.plannedMin?'of '+l.plannedMin+'m':'')+'</span></div><div class="hint">You spent '+sm+'m of study time. If pauses / note-taking ate some, enter the actual lecture content covered (e.g. 40 of 60).</div></div>';
     if(s.activityType==='lecture')rows+='<div class="fld"><label class="row" style="gap:6px;text-transform:none"><input type="checkbox" id="ef-hw" style="width:auto"> Homework was given</label></div><div class="fld dn" id="ef-hww"><label>What homework?</label><textarea id="ef-hwt" placeholder="e.g. Practice Q12.4 to Q12.10"></textarea></div>';
   }
+  if(s.activityType==='questions')rows+='<div class="fld"><label>Roughly how many questions? <span class="muted" style="font-weight:400">(optional)</span></label><input type="number" id="ef-qn" min="0" placeholder="e.g. 15"></div>';
+  var locTxt=(s.activityType==='questions'&&s.qMixed)?'mixed chapters':chapName(s.subjectId,s.chapterIdx);
   modal({size:'md',title:status==='done'?'Complete session':'Save as in-progress',
-    body:'<div class="alert al-dim rowb" style="align-items:center"><div><div class="sm fw6">'+a.label+'</div><div class="xs muted mono mt4">'+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+esc(chapName(s.subjectId,s.chapterIdx))+' · '+s.startTime+'–'+nowHM()+'</div></div><div class="row"><span class="mono fw7" style="font-size:15px;color:var(--ink)">'+fmtMin(sm)+'</span>'+(status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in progress</span>')+'</div></div>'+
+    body:'<div class="alert al-dim rowb" style="align-items:center"><div><div class="sm fw6">'+a.label+'</div><div class="xs muted mono mt4">'+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+esc(locTxt)+' · '+s.startTime+'–'+nowHM()+'</div></div><div class="row"><span class="mono fw7" style="font-size:15px;color:var(--ink)">'+fmtMin(sm)+'</span>'+(status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in progress</span>')+'</div></div>'+
       rows+
       '<div class="fld"><label>What did you cover / where did you stop?</label><textarea id="ef-n" placeholder="e.g. reached till operating lease classification">'+esc(s._resumeNote||'')+'</textarea><div class="hint">Shows when you resume, so you know where to continue.</div></div>',
     actions:[{label:'Discard session',kind:'ghost',onClick:function(){confirmDlg('Discard the '+fmtMin(sm)+' entirely? Not logged.',function(){APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);renderSession();},{danger:true,yes:'Discard'});return true;}},
@@ -788,6 +798,7 @@ function finalizeSession(status){
   var e={id:s.id,createdAt:s.startedAt,updatedAt:Date.now(),date:s.date,startTime:s.startTime,endTime:nowHM(),elapsedMin:sm,pauseMin:Math.round(s.accumPausedMs/60000),
     activityType:s.activityType,subjectId:s.subjectId,chapterIdx:s.chapterIdx,lectureId:s.lectureId,status:status,mode:s.mode,contentMin:cm,coveredNote:note,payload:{}};
   if(s.activityType==='lecture'){e.payload.homeworkGiven=hw;if(hw)e.payload.homeworkText=hwt;}
+  if(s.activityType==='questions'){e.payload.source=s.qSource||'';e.payload.mixed=!!s.qMixed;var qn=$('ef-qn')?parseInt($('ef-qn').value,10):NaN;if(!isNaN(qn)&&qn>=0)e.payload.count=qn;}
   if(s.activityType==='first-reading'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0)markFirstRead(s.subjectId,s.chapterIdx,s.date);
   if(s.activityType==='revision'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0){var _r=markNextRevDone(s.subjectId,s.chapterIdx);if(_r)e.payload.revIndex=_r;}
   APP.entries.push(e);
@@ -818,18 +829,26 @@ function renderSession(){
 function pickAct(k){_sPick={activity:k,subjectId:null,chapterIdx:null,lectureId:null};_sStep='config';renderSession();}
 function sessReset(){_sStep='pick';_sPick=null;renderSession();}
 function sKind(a){return a==='lecture'?'main':a==='first-reading'?'reading':'revision';}
+var QSOURCES=['Textbook','RTP','MTP','PYP','Faculty','AI','Mixed'];
 function renderConfig(){
   var a=ACT[_sPick.activity],kind=sKind(_sPick.activity),subs=activeSubjects();
   if(_sPick.subjectId==null)_sPick.subjectId=subs[0]||null;
   var usesLec=(_sPick.activity==='lecture'||_sPick.activity==='revision-lecture');
-  var verb=kind==='main'?'watching':kind==='reading'?'reading':'revising';
+  var isQ=_sPick.activity==='questions';
+  if(isQ){if(_sPick.qSource==null)_sPick.qSource=QSOURCES[0];if(_sPick.qMixed==null)_sPick.qMixed=true;}
+  var verb=kind==='main'?'watching':kind==='reading'?'reading':isQ?'practising':'revising';
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Pick what you\'re '+verb+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
   h+='<div class="card mb12"><div class="slbl mb12">What are you studying?</div>';
   h+='<div class="fld2"><div class="fld"><label>Subject</label><select id="cf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div>';
-  h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
-  if(usesLec)h+='<div class="fld"><label>'+(_sPick.activity==='lecture'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(_sPick.activity==='lecture'?'main':'revision')+'</select><div class="hint">'+(_sPick.activity==='lecture'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
-  else if(_sPick.activity==='first-reading')h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
-  else h+='<div class="hint">Revising this chapter. Finishing this session as Complete ticks off its next scheduled revision (if first reading is done).</div>';
+  if(isQ){
+    h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="mixed" '+(_sPick.qMixed?'selected':'')+'>— Mixed / multiple —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(!_sPick.qMixed&&_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
+    h+='<div class="fld"><label>Source</label><select id="cf-src">'+QSOURCES.map(function(s){return '<option value="'+s+'" '+(_sPick.qSource===s?'selected':'')+'>'+s+'</option>';}).join('')+'</select><div class="hint">Where the questions are from (textbook, RTP, MTP, etc.). No scoring — this just tracks practice time and source. You can note a rough count when you finish.</div></div>';
+  }else{
+    h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
+    if(usesLec)h+='<div class="fld"><label>'+(_sPick.activity==='lecture'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(_sPick.activity==='lecture'?'main':'revision')+'</select><div class="hint">'+(_sPick.activity==='lecture'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
+    else if(_sPick.activity==='first-reading')h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
+    else h+='<div class="hint">Revising this chapter. Finishing this session as Complete ticks off its next scheduled revision (if first reading is done).</div>';
+  }
   h+='</div>'+modeAndGo();
   $('pg-session').innerHTML=h;wireConfig(kind);
 }
@@ -842,17 +861,18 @@ function lecOptions(kind){
   return o;
 }
 function modeAndGo(){
-  var kind=sKind(_sPick.activity);
-  var canStart=_sPick.subjectId!=null&&_sPick.chapterIdx!=null;
+  var kind=sKind(_sPick.activity),isQ=_sPick.activity==='questions';
+  var canStart=_sPick.subjectId!=null&&(_sPick.chapterIdx!=null||(isQ&&_sPick.qMixed));
   if(kind==='main')canStart=canStart&&!!_sPick.lectureId;
   var pm=APP.cfg.pomo,ref='';
   if(_sPick.lectureId){var l=APP.lectures.find(function(x){return x.id===_sPick.lectureId;});if(l&&l.plannedMin){var rem=Math.max(1,l.plannedMin-(l.contentDoneMin||0));ref='<div class="alert al-blue">Reference time: <b>'+fmtMin(rem)+'</b>'+(rem<l.plannedMin?' remaining':'')+'</div>';}}
   return '<div class="card mb12"><div class="slbl mb12">Timer mode</div><div class="seg mb12"><button class="seg-btn on" data-mode="live" type="button">Live timer</button><button class="seg-btn" data-mode="pomodoro" type="button">Pomodoro</button></div><div id="pomocfg" class="dn"><div class="fld3"><div class="fld"><label>Work</label><input type="number" id="pc-w" min="1" value="'+pm.workMin+'"></div><div class="fld"><label>Break</label><input type="number" id="pc-b" min="1" value="'+pm.breakMin+'"></div><div class="fld"><label>Long every</label><input type="number" id="pc-e" min="0" value="'+pm.longEvery+'"></div></div><div class="fld"><label>Long break (min)</label><input type="number" id="pc-l" min="1" value="'+pm.longMin+'"></div></div></div>'+ref+'<div class="row" style="justify-content:flex-end;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" onclick="sessReset()">Cancel</button><button class="btn btn-p" id="go" '+(canStart?'':'disabled')+'>Start session →</button></div></div>';
 }
 function wireConfig(kind){
-  var sub=$('cf-sub'),ch=$('cf-ch'),lec=$('cf-lec');
+  var sub=$('cf-sub'),ch=$('cf-ch'),lec=$('cf-lec'),src=$('cf-src');
   if(sub)sub.onchange=function(){_sPick.subjectId=sub.value||null;_sPick.chapterIdx=null;_sPick.lectureId=null;renderConfig();};
-  if(ch)ch.onchange=function(){_sPick.chapterIdx=ch.value===''?null:+ch.value;_sPick.lectureId=null;renderConfig();};
+  if(ch)ch.onchange=function(){if(ch.value==='mixed'){_sPick.qMixed=true;_sPick.chapterIdx=null;}else{_sPick.qMixed=false;_sPick.chapterIdx=ch.value===''?null:+ch.value;}_sPick.lectureId=null;renderConfig();};
+  if(src)src.onchange=function(){_sPick.qSource=src.value;};
   if(lec)lec.onchange=function(){_sPick.lectureId=lec.value||null;var l=_sPick.lectureId?APP.lectures.find(function(x){return x.id===_sPick.lectureId;}):null;_sPick._resumeNote=l?(l.lastNote||''):'';if($('go'))$('go').disabled=(kind==='main'&&!_sPick.lectureId);};
   document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){document.querySelectorAll('[data-mode]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');$('pomocfg').classList.toggle('dn',b.dataset.mode!=='pomodoro');};});
   if($('go'))$('go').onclick=function(){
@@ -862,6 +882,7 @@ function wireConfig(kind){
     var rn=_sPick._resumeNote||'';
     startSession(_sPick.activity,{subjectId:_sPick.subjectId,chapterIdx:_sPick.chapterIdx,lectureId:_sPick.lectureId,mode:mode,pomo:pomo,referenceMin:ref});
     if(APP.active)APP.active._resumeNote=rn;
+    if(APP.active&&_sPick.activity==='questions'){APP.active.qSource=_sPick.qSource||'';APP.active.qMixed=!!_sPick.qMixed;}
   };
 }
 function renderRunning(){
@@ -906,6 +927,12 @@ function renderToday(){
     var bits=[];if(_rc.due)bits.push('<b style="color:var(--ink)">'+_rc.due+'</b> revision'+(_rc.due===1?'':'s')+' due');if(_rc.review)bits.push('<b style="color:var(--ink)">'+_rc.review+'</b> to review');
     h+='<div class="today-due" onclick="showPage(\'revisions\')">'+ICON.revision+'<div class="f1 sm">'+bits.join(' · ')+'</div><span class="xs mono" style="color:var(--amber)">Open Revisions →</span></div>';
   }
+  // test nudge (due to sit / awaiting review)
+  var _ts=testsToSit(),_ta=testsAwaiting();
+  if(_ts.length||_ta.length){
+    var tbits=[];if(_ts.length)tbits.push('<b style="color:var(--ink)">'+_ts.length+'</b> test'+(_ts.length===1?'':'s')+' due to sit');if(_ta.length)tbits.push('<b style="color:var(--ink)">'+_ta.length+'</b> awaiting marks');
+    h+='<div class="today-due" onclick="showPage(\'tests\')">'+ICON.test+'<div class="f1 sm">'+tbits.join(' · ')+'</div><span class="xs mono" style="color:var(--amber)">Open Tests →</span></div>';
+  }
   // readiness + week
   h+='<div class="bento b2 mb20"><div class="card"><div class="rowb mb16"><span class="slbl">Subject readiness</span><span class="xs mono muted">lecture coverage</span></div>'+readinessHTML()+'</div>'+
     '<div class="card"><div class="rowb mb16"><span class="slbl">This week</span><span class="xs mono muted">hours / day</span></div><div class="wk" id="t-wk"></div></div></div>';
@@ -937,10 +964,12 @@ function paintWeek(id){
   $(id).innerHTML=days.map(function(d,i){var hh=(vals[i]/60),pct=Math.round(vals[i]/mx*100),last=i===6,dn=new Date(d+'T12:00:00').getDay();
     return '<div class="wk-col"><span class="wk-v">'+(hh>0?hh.toFixed(1):'')+'</span><div class="wk-bar" style="height:'+Math.max(2,pct)+'%;background:'+(last?'var(--accent)':'color-mix(in srgb,var(--accent) 28%,transparent)')+'"></div><span class="wk-d">'+W[dn]+'</span></div>';}).join('');
 }
-function entryTitle(e){var a=ACT[e.activityType]||{label:e.activityType};if(e.activityType==='test')return 'Test · '+esc((e.payload&&e.payload.testName)||'Test');return esc(a.label)+' · '+esc(chapName(e.subjectId,e.chapterIdx));}
+function qLoc(e){return (e.payload&&e.payload.mixed)?subjShort(e.subjectId)+' (mixed)':chapName(e.subjectId,e.chapterIdx);}
+function entryTitle(e){var a=ACT[e.activityType]||{label:e.activityType};if(e.activityType==='test')return 'Test · '+esc((e.payload&&e.payload.testName)||'Test');if(e.activityType==='questions')return 'Questions · '+esc(qLoc(e));return esc(a.label)+' · '+esc(chapName(e.subjectId,e.chapterIdx));}
 function entryRow(e){var a=ACT[e.activityType]||{icon:'lecture',label:e.activityType};
   var meta=(SYL[e.subjectId]?SYL[e.subjectId].short:'');
-  if(e.activityType==='test'&&e.payload){if(e.payload.aborted)meta+=' · aborted';else if(e.payload.marks!=null)meta+=' · '+e.payload.marks+'/'+(e.payload.maxMarks||'?');}
+  if(e.activityType==='test'&&e.payload){if(e.payload.aborted)meta+=' · aborted';else if(e.payload.awaiting)meta+=' · awaiting marks';else if(e.payload.marks!=null)meta+=' · '+e.payload.marks+'/'+(e.payload.maxMarks||'?');}
+  if(e.activityType==='questions'&&e.payload){if(e.payload.source)meta+=' · '+esc(e.payload.source);if(e.payload.count)meta+=' · '+e.payload.count+' Qs';}
   if(e.coveredNote)meta+=' · '+esc(e.coveredNote);
   return '<div class="srow"><div class="srow-ic">'+ICON[a.icon]+'</div><div class="stime">'+(e.startTime||'—')+' – '+(e.endTime||'—')+'</div><div class="sbody"><div class="sname">'+entryTitle(e)+'</div><div class="smeta">'+meta+'</div></div>'+(e.status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in prog</span>')+'<span class="sdur">'+fmtMin(e.elapsedMin)+'</span><button class="btn btn-icon btn-ghost" onclick="editEntry(\''+e.id+'\')" title="Edit">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delEntry(\''+e.id+'\')" title="Delete">'+ICON.trash+'</button></div>';}
 function delEntry(id){confirmDlg('Delete this session entry?',function(){APP.entries=APP.entries.filter(function(e){return e.id!==id;});save(true);showPage(currentPage);},{danger:true,yes:'Delete'});}
@@ -1025,7 +1054,7 @@ function renderTimeline(){
         ? 'background:'+c+';border:1px solid '+c+';color:#0E0E0E'
         : 'background:color-mix(in srgb,'+c+' 16%,transparent);border:1px dashed '+c+';color:'+c;
       var lbl=wp>4?(SYL[e.subjectId]?SYL[e.subjectId].short:''):'';
-      var ttl=e.activityType==='test'?('Test · '+((e.payload&&e.payload.testName)||'Test')):((ACT[e.activityType]?ACT[e.activityType].label:e.activityType)+' \u00b7 '+chapName(e.subjectId,e.chapterIdx));
+      var ttl=e.activityType==='test'?('Test · '+((e.payload&&e.payload.testName)||'Test')):e.activityType==='questions'?('Questions · '+qLoc(e)):((ACT[e.activityType]?ACT[e.activityType].label:e.activityType)+' \u00b7 '+chapName(e.subjectId,e.chapterIdx));
       var tip=ttl+' \u00b7 '+(e.startTime||'')+'\u2013'+(e.endTime||'')+' \u00b7 '+fmtMin(e.elapsedMin)+(done?'':' \u00b7 in progress');
       blocks+='<div class="tl-blk'+(done?'':' tl-prog')+'" style="left:'+lp.toFixed(2)+'%;width:'+wp.toFixed(2)+'%;'+st+'" title="'+esc(tip)+'" onclick="tlBlock(\''+e.id+'\')">'+esc(lbl)+'</div>';
     });
@@ -1055,7 +1084,7 @@ function tlBlock(id){
   var e=APP.entries.find(function(x){return x.id===id;});if(!e)return;
   var a=ACT[e.activityType]||{label:e.activityType},c=subjColor(e.subjectId);
   var lec=e.lectureId?APP.lectures.find(function(x){return x.id===e.lectureId;}):null;
-  var body='<div class="row" style="gap:8px;margin-bottom:12px">'+subjChip(e.subjectId)+'<span class="sm fw6">'+(e.activityType==='test'?esc((e.payload&&e.payload.testName)||'Test'):esc(chapName(e.subjectId,e.chapterIdx)))+'</span></div>'+
+  var body='<div class="row" style="gap:8px;margin-bottom:12px">'+subjChip(e.subjectId)+'<span class="sm fw6">'+(e.activityType==='test'?esc((e.payload&&e.payload.testName)||'Test'):e.activityType==='questions'?esc(qLoc(e)):esc(chapName(e.subjectId,e.chapterIdx)))+'</span></div>'+
     '<div class="srow-meta" style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12px">'+
     '<span class="muted">Activity</span><span>'+esc(a.label)+(lec&&lec.label?' \u00b7 '+esc(lec.label):'')+'</span>'+
     '<span class="muted">Date</span><span>'+fmtDateLong(e.date)+' \u00b7 '+relDay(e.date)+'</span>'+
@@ -1435,48 +1464,69 @@ function renderHelp(){
 /* ═══════════ TESTS ═══════════ */
 var TEST_SOURCES=['MTP','Model','PYP','Other'];
 function testAttempts(t){return (t.attempts||[]).filter(function(a){return a.status!=='aborted';});}
-function attPct(a,t){var mx=(a.maxMarks!=null?a.maxMarks:t.maxMarks);if(!mx||mx<=0)return null;var m=(a.marks!=null?a.marks:0);return Math.round(m/mx*100);}
+function attPct(a,t){if(a.marks==null)return null;var mx=(a.maxMarks!=null?a.maxMarks:t.maxMarks);if(!mx||mx<=0)return null;return Math.round(a.marks/mx*100);}
 function testBestPct(t){var best=null;testAttempts(t).forEach(function(a){var p=attPct(a,t);if(p!=null&&(best==null||p>best))best=p;});return best;}
 function pctColor(p){return p==null?'var(--dim)':p>=50?'var(--green)':p>=40?'var(--amber)':'var(--rose)';}
-function testTypeLabel(t){return t.type==='full'?'Full-syllabus':'Chapterwise';}
+var TYPE_LABELS={full:'Full-syllabus',multi:'Multi-chapter',chapter:'Single chapter'};
+function testTypeLabel(t){return TYPE_LABELS[t.type]||'Test';}
+function testChapIdxs(t){return t.type==='multi'?(t.chapterIdxs||[]):(t.type==='chapter'&&t.chapterIdx!=null?[t.chapterIdx]:[]);}
+function testLoc(t){var ci=testChapIdxs(t);if(t.type==='full')return subjShort(t.subjectId)+' \u00b7 whole subject';if(t.type==='multi')return subjShort(t.subjectId)+' \u00b7 '+ci.length+' chapter'+(ci.length===1?'':'s');return subjShort(t.subjectId)+' \u00b7 '+chapName(t.subjectId,t.chapterIdx);}
+function pendingReview(t){return testAttempts(t).filter(function(a){return a.status==='awaiting';});}
+function testHasAttempt(t){return testAttempts(t).length>0;}
+function testsToSit(){return (APP.tests||[]).filter(function(t){return !testHasAttempt(t)&&isDate(t.dueDate)&&diffD(today(),t.dueDate)<=0;});}
+function testsAwaiting(){return (APP.tests||[]).filter(function(t){return pendingReview(t).length;});}
 function renderTests(){
   if(APP.activeTest){renderTestRunning();return;}
   var subs=activeSubjects();
   var tests=APP.tests||[];
   var full=tests.filter(function(t){return t.type==='full';});
-  var chap=tests.filter(function(t){return t.type!=='full';});
+  var multi=tests.filter(function(t){return t.type==='multi';});
+  var single=tests.filter(function(t){return t.type==='chapter';});
   var allAtt=[];tests.forEach(function(t){testAttempts(t).forEach(function(a){allAtt.push({a:a,t:t});});});
   var scored=allAtt.filter(function(x){return attPct(x.a,x.t)!=null;});
   var avg=scored.length?Math.round(scored.reduce(function(s,x){return s+attPct(x.a,x.t);},0)/scored.length):null;
-  var unatt=tests.filter(function(t){return !testAttempts(t).length;}).length;
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Tests</div><div class="sub">Timed mocks &amp; chapter tests — real reading + writing countdown.</div></div><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="quickTest()">'+ICON.bolt+' Log a past test</button><button class="btn btn-p btn-sm" onclick="testForm()">'+ICON.plus+' New test</button></div></div>';
+  var awaiting=testsAwaiting().length,due=testsToSit().length;
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Tests</div><div class="sub">Timed mocks &amp; chapter tests — real reading + writing countdown. Enter marks after you review.</div></div><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="quickTest()">'+ICON.bolt+' Log a past test</button><button class="btn btn-p btn-sm" onclick="testForm()">'+ICON.plus+' New test</button></div></div>';
   h+='<div class="bento b4 mb16">'+
-    '<div class="bc bc-neutral"><span class="blbl">Tests</span><div class="bnum"><span class="bn-v">'+tests.length+'</span></div><span class="bsub">'+full.length+' full · '+chap.length+' chapter</span></div>'+
-    '<div class="bc bc-accent"><span class="blbl">Attempts</span><div class="bnum"><span class="bn-v">'+allAtt.length+'</span></div><span class="bsub">'+scored.length+' scored</span></div>'+
-    '<div class="bc bc-purple"><span class="blbl">Avg score</span><div class="bnum"><span class="bn-v">'+(avg!=null?avg:'—')+'</span>'+(avg!=null?'<span class="bn-u">%</span>':'')+'</div><span class="bsub">across scored attempts</span></div>'+
-    '<div class="bc bc-neutral"><span class="blbl">Not attempted</span><div class="bnum"><span class="bn-v">'+unatt+'</span></div><span class="bsub">ready to sit</span></div>'+
+    '<div class="bc bc-neutral"><span class="blbl">Tests</span><div class="bnum"><span class="bn-v">'+tests.length+'</span></div><span class="bsub">'+full.length+' full · '+multi.length+' multi · '+single.length+' single</span></div>'+
+    '<div class="bc bc-purple"><span class="blbl">Avg score</span><div class="bnum"><span class="bn-v">'+(avg!=null?avg:'—')+'</span>'+(avg!=null?'<span class="bn-u">%</span>':'')+'</div><span class="bsub">'+scored.length+' scored attempt'+(scored.length===1?'':'s')+'</span></div>'+
+    '<div class="bc '+(awaiting?'bc-amber':'bc-neutral')+'"><span class="blbl">Awaiting review</span><div class="bnum"><span class="bn-v">'+awaiting+'</span></div><span class="bsub">sat, need marks</span></div>'+
+    '<div class="bc '+(due?'bc-accent':'bc-neutral')+'"><span class="blbl">Due to sit</span><div class="bnum"><span class="bn-v">'+due+'</span></div><span class="bsub">on or past due date</span></div>'+
   '</div>';
   if(!subs.length){h+='<div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';$('pg-tests').innerHTML=h;return;}
   if(!tests.length){
-    h+='<div class="empty"><div class="empty-t">No tests yet</div><div>Add a full-syllabus mock (MTP / Model / PYP) or a chapterwise test, then sit it with a real countdown.</div><button class="btn btn-p btn-sm mt12" onclick="testForm()">'+ICON.plus+' New test</button></div>';
+    h+='<div class="empty"><div class="empty-t">No tests yet</div><div>Add a full-syllabus mock, a multi-chapter test, or a single-chapter test — then sit it with a real countdown.</div><button class="btn btn-p btn-sm mt12" onclick="testForm()">'+ICON.plus+' New test</button></div>';
   }else{
-    if(full.length)h+='<div class="rowb mb10"><span class="slbl">Full-syllabus</span><span class="xs mono muted">'+full.length+'</span></div>'+full.map(testCard).join('');
-    if(chap.length)h+='<div class="rowb mb10" style="margin-top:'+(full.length?'18px':'0')+'"><span class="slbl">Chapterwise</span><span class="xs mono muted">'+chap.length+'</span></div>'+chap.map(testCard).join('');
+    h+=testGroup('Full-syllabus',full,false)+testGroup('Multi-chapter',multi,full.length>0)+testGroup('Single chapter',single,(full.length+multi.length)>0);
   }
   h+='</div>';
   $('pg-tests').innerHTML=h;
 }
+function testGroup(label,arr,gap){if(!arr.length)return '';return '<div class="rowb mb10"'+(gap?' style="margin-top:18px"':'')+'><span class="slbl">'+label+'</span><span class="xs mono muted">'+arr.length+'</span></div>'+arr.map(testCard).join('');}
 function testCard(t){
   var as=testAttempts(t),best=testBestPct(t),c=subjColor(t.subjectId);
-  var loc=subjShort(t.subjectId)+(t.type!=='full'&&t.chapterIdx!=null&&t.chapterIdx>=0?' · '+chapName(t.subjectId,t.chapterIdx):'');
-  var chips=(t.type==='full'&&t.source?'<span class="badge bg-gray">'+esc(t.source)+'</span>':'')+'<span class="badge bg-gray">'+(t.readingMin?t.readingMin+'m read + ':'')+t.testMin+'m</span><span class="badge bg-gray">'+t.maxMarks+' marks</span>';
-  var scoreBadge=best!=null?'<span class="tst-pct" style="color:'+pctColor(best)+'">'+best+'%<span class="tst-pct-l">best</span></span>':'<span class="badge bg-amber">not attempted</span>';
+  var pend=pendingReview(t),over=isDate(t.dueDate)?diffD(today(),t.dueDate):null;
+  var rightBadge;
+  if(pend.length)rightBadge='<span class="badge bg-amber">awaiting review</span>';
+  else if(best!=null)rightBadge='<span class="tst-pct" style="color:'+pctColor(best)+'">'+best+'%<span class="tst-pct-l">best</span></span>';
+  else if(over!=null&&over<0)rightBadge='<span class="badge bg-rose">'+(-over)+'d overdue</span>';
+  else if(over===0)rightBadge='<span class="badge bg-amber">due today</span>';
+  else rightBadge='<span class="badge bg-gray">not attempted</span>';
+  var chips=(t.type==='full'&&t.source?'<span class="badge bg-gray">'+esc(t.source)+'</span>':'')+'<span class="badge bg-gray">'+(t.readingMin?t.readingMin+'m read + ':'')+t.testMin+'m</span><span class="badge bg-gray">'+t.maxMarks+' marks</span>'+(isDate(t.dueDate)?'<span class="badge '+(over<0?'bg-rose':over===0?'bg-amber':'bg-gray')+'">due '+fmtDate(t.dueDate)+'</span>':'');
+  var chapsHTML=t.type==='multi'&&testChapIdxs(t).length?'<div class="xs muted mb10" style="line-height:1.6">'+testChapIdxs(t).map(function(i){return esc(chapName(t.subjectId,i));}).join(' · ')+'</div>':'';
   var attHTML='';
-  if(as.length)attHTML='<div class="tst-atts">'+as.slice().reverse().map(function(a){var p=attPct(a,t);return '<div class="tst-att"><span class="mono xs muted">'+fmtDate(a.date)+'</span><span class="mono xs">'+(a.marks!=null?a.marks+'/'+(a.maxMarks!=null?a.maxMarks:t.maxMarks):'—')+'</span><span class="mono xs fw7" style="color:'+pctColor(p)+'">'+(p!=null?p+'%':'—')+'</span><span class="f1 xs muted">'+fmtMin(a.durationMin)+(a.note?' · '+esc(a.note):'')+'</span><button class="btn btn-icon btn-ghost" onclick="delAttempt(\''+t.id+'\',\''+a.id+'\')" title="Delete attempt">'+ICON.trash+'</button></div>';}).join('')+'</div>';
-  return '<details class="tst-card"><summary class="tst-sum"><span class="tst-cv">'+ICON.caret+'</span>'+
+  if(as.length)attHTML='<div class="tst-atts">'+as.slice().reverse().map(function(a){
+    var p=attPct(a,t),aw=a.status==='awaiting';
+    return '<div class="tst-att"><span class="mono xs muted">'+fmtDate(a.date)+'</span>'+
+      (aw?'<span class="badge bg-amber">awaiting marks</span>':'<span class="mono xs">'+(a.marks!=null?a.marks+'/'+(a.maxMarks!=null?a.maxMarks:t.maxMarks):'—')+'</span><span class="mono xs fw7" style="color:'+pctColor(p)+'">'+(p!=null?p+'%':'—')+'</span>')+
+      '<span class="f1 xs muted">'+fmtMin(a.durationMin)+(a.note?' · '+esc(a.note):'')+'</span>'+
+      (aw?'<button class="btn btn-suc btn-sm" onclick="enterResult(\''+t.id+'\',\''+a.id+'\')">Enter marks</button>':'<button class="btn btn-icon btn-ghost" onclick="enterResult(\''+t.id+'\',\''+a.id+'\')" title="Edit result">'+ICON.edit+'</button>')+
+      '<button class="btn btn-icon btn-ghost" onclick="delAttempt(\''+t.id+'\',\''+a.id+'\')" title="Delete attempt">'+ICON.trash+'</button></div>';
+  }).join('')+'</div>';
+  return '<details class="tst-card"'+(pend.length?' open':'')+'><summary class="tst-sum"><span class="tst-cv">'+ICON.caret+'</span>'+
     '<div class="tst-ic" style="background:'+c+'22;color:'+c+'">'+ICON.test+'</div>'+
-    '<div class="tst-bd"><div class="tst-nm">'+esc(t.name)+'</div><div class="tst-mt">'+esc(loc)+' · '+as.length+' attempt'+(as.length===1?'':'s')+'</div></div>'+scoreBadge+
-    '</summary><div class="tst-body"><div class="row wrap" style="gap:6px;margin-bottom:10px">'+chips+'</div>'+attHTML+
+    '<div class="tst-bd"><div class="tst-nm">'+esc(t.name)+'</div><div class="tst-mt">'+esc(testLoc(t))+' · '+as.length+' attempt'+(as.length===1?'':'s')+'</div></div>'+rightBadge+
+    '</summary><div class="tst-body"><div class="row wrap" style="gap:6px;margin-bottom:10px">'+chips+'</div>'+chapsHTML+attHTML+
     '<div class="tst-acts"><button class="btn btn-p btn-sm" onclick="startTest(\''+t.id+'\')">'+ICON.play+' Start test</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="quickTest(\''+t.id+'\')">Log past attempt</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="testForm(\''+t.id+'\')">Edit</button>'+
@@ -1484,37 +1534,51 @@ function testCard(t){
 }
 function delAttempt(tid,aid){confirmDlg('Delete this attempt? (The timeline entry stays.)',function(){var t=APP.tests.find(function(x){return x.id===tid;});if(t){t.attempts=(t.attempts||[]).filter(function(a){return a.id!==aid;});t.updatedAt=Date.now();save(true);renderTests();}},{danger:true,yes:'Delete'});}
 function delTest(id){confirmDlg('Delete this test and all its attempts? (Timeline entries stay.)',function(){APP.tests=APP.tests.filter(function(x){return x.id!==id;});save(true);renderTests();},{danger:true,yes:'Delete'});}
+function tfDefaults(ty){return ty==='full'?{rd:15,tm:180,mx:100}:ty==='multi'?{rd:0,tm:120,mx:100}:{rd:0,tm:60,mx:30};}
+function tfChapArea(ty,sid,t){
+  if(ty==='full')return '<div class="hint">Covers the whole subject.</div>';
+  var list=chapList(sid);
+  if(ty==='chapter'){var cur=(t&&t.subjectId===sid&&t.chapterIdx!=null)?t.chapterIdx:0;return '<label>Chapter</label><select id="tf-ch">'+list.map(function(cn,i){return '<option value="'+i+'" '+(cur===i?'selected':'')+'>'+esc(cn)+'</option>';}).join('')+'</select>';}
+  var sel=(t&&t.subjectId===sid&&t.chapterIdxs)?t.chapterIdxs:[];
+  return '<label>Chapters <span class="muted" style="font-weight:400">(tick 2 or more)</span></label><div class="tf-multi" id="tf-multi">'+list.map(function(cn,i){return '<label class="tf-cbx"><input type="checkbox" value="'+i+'" '+(sel.indexOf(i)>=0?'checked':'')+'><span>'+esc(cn)+'</span></label>';}).join('')+'</div>';
+}
 function testForm(id){
   var subs=activeSubjects();if(!subs.length){toast('No active subjects','err');return;}
   var t=id?APP.tests.find(function(x){return x.id===id;}):null;
   var type=t?t.type:'full',sid=t?t.subjectId:subs[0],src=t?(t.source||'MTP'):'MTP';
+  var types=[['full','Full-syllabus'],['multi','Multi-chapter'],['chapter','Single chapter']];
+  var seg=types.map(function(p){return '<button class="seg-btn'+(type===p[0]?' on':'')+'" data-t="'+p[0]+'" type="button"'+(id?' disabled':'')+'>'+p[1]+'</button>';}).join('');
   var body=
-    '<div class="fld"><label>Type</label><div class="seg" id="tf-seg"><button class="seg-btn'+(type==='full'?' on':'')+'" data-t="full" type="button">Full-syllabus</button><button class="seg-btn'+(type!=='full'?' on':'')+'" data-t="chapter" type="button">Chapterwise</button></div><div class="hint">RTP isn\'t a test — log it under Questions (coming soon).</div></div>'+
-    '<div class="fld dn" id="tf-srcw"><label>Source</label><select id="tf-src">'+TEST_SOURCES.map(function(s){return '<option value="'+s+'" '+(src===s?'selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
+    '<div class="fld"><label>Type</label><div class="seg seg3'+(id?' seg-locked':'')+'" id="tf-seg">'+seg+'</div><div class="hint">'+(id?'Type can\'t be changed when editing.':'RTP isn\'t a test — log it under Questions instead.')+'</div></div>'+
+    '<div class="fld'+(type==='full'?'':' dn')+'" id="tf-srcw"><label>Source</label><select id="tf-src">'+TEST_SOURCES.map(function(s){return '<option value="'+s+'" '+(src===s?'selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
     '<div class="fld"><label>Test name</label><input type="text" id="tf-name" placeholder="e.g. MTP March 24 · Series I" value="'+esc(t?t.name:'')+'"></div>'+
-    '<div class="fld2"><div class="fld"><label>Subject</label><select id="tf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(sid===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld" id="tf-chw"><label>Chapter</label><select id="tf-ch"></select></div></div>'+
+    '<div class="fld2"><div class="fld"><label>Subject</label><select id="tf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(sid===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Due date <span class="muted" style="font-weight:400">(optional)</span></label><input type="date" id="tf-due" value="'+(t&&isDate(t.dueDate)?t.dueDate:'')+'"></div></div>'+
+    '<div class="fld" id="tf-chw">'+tfChapArea(type,sid,t)+'</div>'+
     '<div class="fld3"><div class="fld"><label>Reading (min)</label><input type="number" id="tf-rd" min="0" value="'+(t?t.readingMin:15)+'"></div><div class="fld"><label>Test (min)</label><input type="number" id="tf-tm" min="1" value="'+(t?t.testMin:180)+'"></div><div class="fld"><label>Max marks</label><input type="number" id="tf-mx" min="1" value="'+(t?t.maxMarks:100)+'"></div></div>';
   modal({size:'md',title:id?'Edit test':'New test',body:body,
     actions:[{label:'Cancel',kind:'ghost'},{label:id?'Save':'Add test',kind:'primary',onClick:function(){if(saveTest(id))return false;return true;}}],
     onOpen:function(){
-      function fillCh(){var s=$('tf-sub').value;$('tf-ch').innerHTML=chapList(s).map(function(cn,i){return '<option value="'+i+'" '+(t&&t.subjectId===s&&t.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join('');}
-      function applyType(ty){$('tf-srcw').classList.toggle('dn',ty!=='full');$('tf-chw').classList.toggle('dn',ty==='full');}
-      $('tf-seg').querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){$('tf-seg').querySelectorAll('[data-t]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');var ty=b.dataset.t;applyType(ty);if(!id){if(ty==='full'){$('tf-rd').value=15;$('tf-tm').value=180;}else{$('tf-rd').value=0;$('tf-tm').value=90;}}};});
-      $('tf-sub').onchange=fillCh;fillCh();applyType(type);
+      function curType(){var on=$('tf-seg').querySelector('.seg-btn.on');return on?on.dataset.t:'full';}
+      function refresh(){var ty=curType(),s=$('tf-sub').value;$('tf-srcw').classList.toggle('dn',ty!=='full');$('tf-chw').innerHTML=tfChapArea(ty,s,t);}
+      if(!id)$('tf-seg').querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){$('tf-seg').querySelectorAll('[data-t]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');var d=tfDefaults(b.dataset.t);$('tf-rd').value=d.rd;$('tf-tm').value=d.tm;$('tf-mx').value=d.mx;refresh();};});
+      $('tf-sub').onchange=refresh;refresh();
     }});
 }
 function saveTest(id){
-  var seg=$('tf-seg').querySelector('.seg-btn.on'),type=seg?seg.dataset.t:'full';
+  var t=id?APP.tests.find(function(x){return x.id===id;}):null;
+  var on=$('tf-seg').querySelector('.seg-btn.on');var type=id?t.type:(on?on.dataset.t:'full');
   var name=$('tf-name').value.trim();if(!name){toast('Enter a test name','err');return false;}
   var sid=$('tf-sub').value;
-  var ci=type==='full'?null:(($('tf-ch').value!=='')?+$('tf-ch').value:null);
-  if(type==='chapter'&&ci==null){toast('Pick a chapter','err');return false;}
+  var ci=null,cis=null;
+  if(type==='chapter'){ci=($('tf-ch')&&$('tf-ch').value!=='')?+$('tf-ch').value:null;if(ci==null){toast('Pick a chapter','err');return false;}}
+  else if(type==='multi'){cis=[];if($('tf-multi'))$('tf-multi').querySelectorAll('input:checked').forEach(function(c){cis.push(+c.value);});if(cis.length<2){toast('Tick at least 2 chapters','err');return false;}}
   var rd=parseInt($('tf-rd').value,10);if(isNaN(rd)||rd<0)rd=0;
-  var tm=parseInt($('tf-tm').value,10);if(isNaN(tm)||tm<1)tm=type==='full'?180:90;
-  var mx=parseInt($('tf-mx').value,10);if(isNaN(mx)||mx<1)mx=100;
+  var tm=parseInt($('tf-tm').value,10);if(isNaN(tm)||tm<1)tm=tfDefaults(type).tm;
+  var mx=parseInt($('tf-mx').value,10);if(isNaN(mx)||mx<1)mx=tfDefaults(type).mx;
   var src=type==='full'?$('tf-src').value:'';
-  if(id){var t=APP.tests.find(function(x){return x.id===id;});if(!t)return false;t.type=type;t.source=src;t.name=name;t.subjectId=sid;t.chapterIdx=ci;t.readingMin=rd;t.testMin=tm;t.maxMarks=mx;t.updatedAt=Date.now();}
-  else APP.tests.push({id:uid(),type:type,source:src,name:name,subjectId:sid,chapterIdx:ci,readingMin:rd,testMin:tm,maxMarks:mx,attempts:[],createdAt:Date.now(),updatedAt:Date.now()});
+  var due=$('tf-due')&&isDate($('tf-due').value)?$('tf-due').value:null;
+  if(id){t.source=src;t.name=name;t.subjectId=sid;t.chapterIdx=ci;t.chapterIdxs=cis;t.dueDate=due;t.readingMin=rd;t.testMin=tm;t.maxMarks=mx;t.updatedAt=Date.now();}
+  else APP.tests.push({id:uid(),type:type,source:src,name:name,subjectId:sid,chapterIdx:ci,chapterIdxs:cis,dueDate:due,readingMin:rd,testMin:tm,maxMarks:mx,attempts:[],createdAt:Date.now(),updatedAt:Date.now()});
   save(true);toast(id?'Test updated':'Test added','ok');renderTests();return true;
 }
 /* ── dual-phase countdown engine ── */
@@ -1528,7 +1592,8 @@ function startTest(id){
   if(APP.activeTest){showPage('tests');return;}
   var t=APP.tests.find(function(x){return x.id===id;});if(!t)return;
   var now=Date.now(),read=(t.readingMin!=null?t.readingMin:0);
-  APP.activeTest={id:uid(),testId:t.id,type:t.type,source:t.source||'',name:t.name,subjectId:t.subjectId,chapterIdx:(t.chapterIdx!=null?t.chapterIdx:-1),
+  var cis=testChapIdxs(t),repCi=t.type==='chapter'?t.chapterIdx:(t.type==='multi'&&cis.length?cis[0]:-1);
+  APP.activeTest={id:uid(),testId:t.id,type:t.type,source:t.source||'',name:t.name,subjectId:t.subjectId,chapterIdx:repCi,chapterIdxs:cis,
     readingMin:read,testMin:t.testMin,maxMarks:t.maxMarks,
     phase:read>0?'reading':'writing',startedAt:now,writingStartedAt:read>0?null:now,date:today(),startTime:nowHM()};
   save(true);$('tb-timer').classList.remove('dn');startTestLoop();showPage('tests');
@@ -1554,7 +1619,7 @@ function renderTestRunning(){
   var t=APP.activeTest;if(!t){renderTests();return;}
   var left=testPhaseLeft(t),disp=pad(Math.floor(left/60))+':'+pad(left%60);
   var col=t.phase==='reading'?'var(--accent)':(left<=0?'var(--rose)':left<=300?'var(--amber)':'var(--ink)');
-  var loc=subjShort(t.subjectId)+(t.type!=='full'&&t.chapterIdx>=0?' · '+chapName(t.subjectId,t.chapterIdx):'');
+  var loc=testLoc(t);
   var h='<div class="pw"><div class="t-wrap"><div class="card" style="padding:30px 24px">'+
     '<div class="row" style="justify-content:center;gap:7px;flex-wrap:wrap;margin-bottom:12px">'+subjChip(t.subjectId)+'<span class="badge bg-gray">'+esc(testTypeLabel(t))+'</span>'+(t.type==='full'&&t.source?'<span class="badge bg-gray">'+esc(t.source)+'</span>':'')+'</div>'+
     '<div class="sub mb6">'+esc(t.name)+'</div><div class="xs muted mono mb12">'+esc(loc)+' · '+t.maxMarks+' marks · '+(t.readingMin?t.readingMin+'m read + ':'')+t.testMin+'m</div>'+
@@ -1562,10 +1627,10 @@ function renderTestRunning(){
     '<div class="t-display" id="tst-cd" style="color:'+col+'">'+disp+'</div>'+
     '<div class="t-phase mt10">started '+t.startTime+' · counts down</div>'+
     '<div class="sctrl">'+
-      (t.phase==='reading'?'<button class="btn btn-p" onclick="testSkipReading()">Start writing now →</button>':'<button class="btn btn-suc" onclick="completeTest()">Complete &amp; enter marks</button>')+
+      (t.phase==='reading'?'<button class="btn btn-p" onclick="testSkipReading()">Start writing now →</button>':'<button class="btn btn-suc" onclick="completeTest()">Complete test</button>')+
       '<button class="btn btn-dan" onclick="abortTest()">Abort</button>'+
     '</div>'+
-    '<div class="hint mt10" style="text-align:center">Only Complete or Abort — like a real exam. Abort still logs your time to the Timeline.</div>'+
+    '<div class="hint mt10" style="text-align:center">Complete = done writing (you\'ll add marks after you review). Abort still logs your time to the Timeline.</div>'+
     '</div></div></div>';
   $('pg-tests').innerHTML=h;paintTest(t);
 }
@@ -1573,26 +1638,39 @@ function testSkipReading(){var t=APP.activeTest;if(!t||t.phase!=='reading')retur
 function completeTest(){
   var t=APP.activeTest;if(!t)return;
   var dur=Math.max(1,Math.round((Date.now()-t.startedAt)/60000));
-  modal({size:'md',title:'Complete test',
-    body:'<div class="alert al-dim rowb" style="align-items:center"><div><div class="sm fw6">'+esc(t.name)+'</div><div class="xs muted mono mt4">'+esc(subjShort(t.subjectId))+' · '+t.startTime+'–'+nowHM()+' · '+fmtMin(dur)+'</div></div></div>'+
-      '<div class="fld2"><div class="fld"><label>Marks scored</label><input type="number" id="tc-m" min="0" max="'+t.maxMarks+'" placeholder="(optional)"></div><div class="fld"><label>Out of</label><input type="number" id="tc-mx" min="1" value="'+t.maxMarks+'"></div></div>'+
-      '<div class="fld"><label>Notes — weak areas, mistakes, takeaways</label><textarea id="tc-n" placeholder="e.g. lost marks on AS 19 lease classification; redo cash-flow format"></textarea></div>',
-    actions:[{label:'Discard test',kind:'ghost',onClick:function(){confirmDlg('Discard this test? Nothing is logged.',function(){clearActiveTest();save(true);renderTests();},{danger:true,yes:'Discard'});return true;}},
-      {label:'Save result',kind:'primary',onClick:function(){finalizeTest();return false;}}]});
-}
-function finalizeTest(){
-  var t=APP.activeTest;if(!t)return;
-  var dur=Math.max(1,Math.round((Date.now()-t.startedAt)/60000));
-  var mxV=parseInt($('tc-mx').value,10);if(isNaN(mxV)||mxV<1)mxV=t.maxMarks;
-  var mV=$('tc-m').value,marks=(mV!==''&&mV!=null&&!isNaN(parseFloat(mV)))?parseFloat(mV):null;
-  if(marks!=null){if(marks<0)marks=0;if(marks>mxV)marks=mxV;}
-  var note=$('tc-n')?$('tc-n').value.trim():'';
+  var end=nowHM();
   var def=APP.tests.find(function(x){return x.id===t.testId;});
-  if(def){if(!def.attempts)def.attempts=[];def.attempts.push({id:uid(),date:t.date,startTime:t.startTime,endTime:nowHM(),durationMin:dur,readingMin:t.readingMin,marks:marks,maxMarks:mxV,note:note,status:'completed'});def.updatedAt=Date.now();}
-  APP.entries.push({id:t.id,createdAt:t.startedAt,updatedAt:Date.now(),date:t.date,startTime:t.startTime,endTime:nowHM(),elapsedMin:dur,pauseMin:0,
-    activityType:'test',subjectId:t.subjectId,chapterIdx:t.chapterIdx,lectureId:null,status:'done',mode:'test',contentMin:dur,coveredNote:note,
-    payload:{testId:t.testId,testName:t.name,type:t.type,source:t.source,marks:marks,maxMarks:mxV,readingMin:t.readingMin}});
-  clearActiveTest();save(true);toast('Test logged'+(marks!=null?' · '+marks+'/'+mxV:''),'ok');showPage('tests');
+  var aid=uid();
+  if(def){if(!def.attempts)def.attempts=[];def.attempts.push({id:aid,entryId:t.id,date:t.date,startTime:t.startTime,endTime:end,durationMin:dur,readingMin:t.readingMin,marks:null,maxMarks:t.maxMarks,note:'',status:'awaiting'});def.updatedAt=Date.now();}
+  APP.entries.push({id:t.id,createdAt:t.startedAt,updatedAt:Date.now(),date:t.date,startTime:t.startTime,endTime:end,elapsedMin:dur,pauseMin:0,
+    activityType:'test',subjectId:t.subjectId,chapterIdx:t.chapterIdx,lectureId:null,status:'done',mode:'test',contentMin:dur,coveredNote:'',
+    payload:{testId:t.testId,testName:t.name,type:t.type,source:t.source,marks:null,maxMarks:t.maxMarks,readingMin:t.readingMin,awaiting:true}});
+  clearActiveTest();save(true);
+  toast('Test done · '+fmtMin(dur)+' logged — add marks after you review','ok');
+  showPage('tests');
+  if(def)setTimeout(function(){enterResult(def.id,aid);},250);
+}
+function enterResult(testId,attemptId){
+  var t=APP.tests.find(function(x){return x.id===testId;});if(!t)return;
+  var a=(t.attempts||[]).find(function(x){return x.id===attemptId;});if(!a)return;
+  var mxV=a.maxMarks!=null?a.maxMarks:t.maxMarks;
+  modal({size:'md',title:a.status==='awaiting'?'Enter result':'Edit result',
+    body:'<div class="alert al-dim"><div class="sm fw6">'+esc(t.name)+'</div><div class="xs muted mono mt4">'+esc(testLoc(t))+' · sat '+fmtDate(a.date)+' · '+fmtMin(a.durationMin)+'</div></div>'+
+      '<div class="fld2"><div class="fld"><label>Marks scored</label><input type="number" id="rs-m" min="0" max="'+mxV+'" value="'+(a.marks!=null?a.marks:'')+'" placeholder="e.g. 62"></div><div class="fld"><label>Out of</label><input type="number" id="rs-mx" min="1" value="'+mxV+'"></div></div>'+
+      '<div class="fld"><label>Learnings / takeaways — weak areas, mistakes, what to revise</label><textarea id="rs-n" placeholder="e.g. lost marks on AS 19 lease classification; redo cash-flow format">'+esc(a.note||'')+'</textarea></div>',
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Save result',kind:'primary',onClick:function(){if(saveResult(testId,attemptId))return false;return true;}}]});
+}
+function saveResult(testId,attemptId){
+  var t=APP.tests.find(function(x){return x.id===testId;});if(!t)return false;
+  var a=(t.attempts||[]).find(function(x){return x.id===attemptId;});if(!a)return false;
+  var mxV=parseInt($('rs-mx').value,10);if(isNaN(mxV)||mxV<1)mxV=t.maxMarks;
+  var mV=$('rs-m').value,marks=(mV!==''&&mV!=null&&!isNaN(parseFloat(mV)))?parseFloat(mV):null;
+  if(marks==null){toast('Enter the marks you scored','err');return false;}
+  if(marks<0)marks=0;if(marks>mxV)marks=mxV;
+  var note=$('rs-n').value.trim();
+  a.marks=marks;a.maxMarks=mxV;a.note=note;a.status='scored';t.updatedAt=Date.now();
+  if(a.entryId){var e=APP.entries.find(function(x){return x.id===a.entryId;});if(e){e.coveredNote=note;e.updatedAt=Date.now();if(e.payload){e.payload.marks=marks;e.payload.maxMarks=mxV;e.payload.awaiting=false;}}}
+  save(true);toast('Result saved · '+marks+'/'+mxV,'ok');renderTests();return true;
 }
 function abortTest(){
   var t=APP.activeTest;if(!t)return;
@@ -1630,11 +1708,12 @@ function submitQuickTest(){
   var mV=$('qt-m').value,marks=(mV!==''&&mV!=null&&!isNaN(parseFloat(mV)))?parseFloat(mV):null;
   if(marks!=null){if(marks<0)marks=0;if(marks>mxV)marks=mxV;}
   var note=$('qt-n').value.trim();
+  var eid=uid();
   if(!t.attempts)t.attempts=[];
-  t.attempts.push({id:uid(),date:d,startTime:st,endTime:en,durationMin:dur,readingMin:t.readingMin,marks:marks,maxMarks:mxV,note:note,status:'completed'});
+  t.attempts.push({id:uid(),entryId:eid,date:d,startTime:st,endTime:en,durationMin:dur,readingMin:t.readingMin,marks:marks,maxMarks:mxV,note:note,status:marks!=null?'scored':'awaiting'});
   t.updatedAt=Date.now();
-  APP.entries.push({id:uid(),createdAt:Date.now(),updatedAt:Date.now(),date:d,startTime:st,endTime:en,elapsedMin:dur,pauseMin:0,activityType:'test',subjectId:t.subjectId,chapterIdx:(t.chapterIdx!=null?t.chapterIdx:-1),lectureId:null,status:'done',mode:'quick',contentMin:dur,coveredNote:note,payload:{testId:t.id,testName:t.name,type:t.type,source:t.source,marks:marks,maxMarks:mxV}});
-  save(true);toast('Test logged'+(marks!=null?' · '+marks+'/'+mxV:''),'ok');renderTests();return true;
+  APP.entries.push({id:eid,createdAt:Date.now(),updatedAt:Date.now(),date:d,startTime:st,endTime:en,elapsedMin:dur,pauseMin:0,activityType:'test',subjectId:t.subjectId,chapterIdx:(t.type==='chapter'?t.chapterIdx:(t.type==='multi'&&testChapIdxs(t).length?testChapIdxs(t)[0]:-1)),lectureId:null,status:'done',mode:'quick',contentMin:dur,coveredNote:note,payload:{testId:t.id,testName:t.name,type:t.type,source:t.source,marks:marks,maxMarks:mxV,awaiting:marks==null}});
+  save(true);toast('Test logged'+(marks!=null?' · '+marks+'/'+mxV:' · add marks later'),'ok');renderTests();return true;
 }
 </script>
 
