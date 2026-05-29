@@ -407,6 +407,8 @@ body.theme-light .t-display{color:var(--green)}
 .syl-dot.d-up{background:transparent;border:1.5px solid var(--dim)}
 .syl-dot.d-due{background:var(--amber);border:1.5px solid var(--amber)}
 .syl-dot.d-over{background:var(--rose);border:1.5px solid var(--rose)}
+.syl-dot.d-done{background:var(--green);border:1.5px solid var(--green)}
+.syl-rev.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent)}
 .syl-nodot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
 .syl-stars{display:inline-flex;gap:1px;flex-shrink:0}
 .syl-star{font-size:15px;line-height:1;color:var(--track);cursor:pointer;transition:color .1s}
@@ -416,6 +418,23 @@ body.theme-light .t-display{color:var(--green)}
 .syl-note{font-size:12px;line-height:1.6;color:var(--ink2);white-space:pre-wrap;background:var(--faint);border:1px solid var(--border);border-radius:8px;padding:9px 11px}
 .syl-legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px;font-size:10px;color:var(--dim)}
 .syl-lg{display:flex;align-items:center;gap:5px}
+/* ════ REVISIONS ════ */
+.rev-sec{margin-bottom:24px}
+.rev-sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.rev-item{display:flex;align-items:center;gap:11px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:11px 14px;margin-bottom:8px}
+.rev-item.over{border-color:color-mix(in srgb,var(--rose) 35%,transparent)}
+.rev-item.due{border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+.rev-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rev-bd{flex:1;min-width:0}
+.rev-nm{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rev-mt{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.rev-acts{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.rev-tag{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.rev-tag.over{background:color-mix(in srgb,var(--rose) 15%,transparent);color:var(--rose)}
+.rev-tag.due{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber)}
+.rev-tag.up{background:var(--line);color:var(--dim)}
+.today-due{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--amber) 8%,transparent);border:1px solid color-mix(in srgb,var(--amber) 22%,transparent);border-radius:12px;padding:11px 15px;margin-bottom:16px;cursor:pointer}
+.today-due:hover{background:color-mix(in srgb,var(--amber) 12%,transparent)}
 </style>
 
 <script>
@@ -461,7 +480,7 @@ var ACT={
   lecture:{icon:'lecture',label:'Lecture',desc:'Watch a course lecture',on:true},
   'revision-lecture':{icon:'revlec',label:'Revision Lecture',desc:'Refresher / YouTube revision',on:true},
   'first-reading':{icon:'reading',label:'First Reading',desc:'Read a chapter for the first time',on:true},
-  revision:{icon:'revision',label:'Revision',desc:'Slice 0.3',on:false},
+  revision:{icon:'revision',label:'Revision',desc:'Revise a chapter you have already read',on:true},
   questions:{icon:'questions',label:'Questions',desc:'Slice 0.5',on:false},
   test:{icon:'test',label:'Test',desc:'Slice 0.4',on:false}
 };
@@ -507,8 +526,10 @@ function relTime(ts){if(!ts)return'never';var s=(Date.now()-ts)/1000;if(s<60)ret
 function chapList(sid){if(APP.chapters&&APP.chapters[sid])return APP.chapters[sid];return (SYL[sid]&&SYL[sid].chapters)?SYL[sid].chapters.slice():[];}
 function chapName(sid,idx){if(idx===-1)return'Misc / Bonus';var l=chapList(sid);return l[idx]||'(chapter)';}
 function ck(sid,idx){return sid+'_'+idx;}
-function getCh(sid,idx){var k=ck(sid,idx);return (APP.chData&&APP.chData[k])||{conf:0,notes:'',firstReadDone:null};}
-function getChW(sid,idx){var k=ck(sid,idx);if(!APP.chData)APP.chData={};if(!APP.chData[k])APP.chData[k]={conf:0,notes:'',firstReadDone:null};return APP.chData[k];}
+function getCh(sid,idx){var k=ck(sid,idx);return (APP.chData&&APP.chData[k])||{conf:0,notes:'',firstReadDone:null,revs:{}};}
+function getChW(sid,idx){var k=ck(sid,idx);if(!APP.chData)APP.chData={};if(!APP.chData[k])APP.chData[k]={conf:0,notes:'',firstReadDone:null,revs:{}};if(!APP.chData[k].revs)APP.chData[k].revs={};return APP.chData[k];}
+function revActiveR(sid,idx){var cd=getCh(sid,idx);if(!cd.firstReadDone)return 0;var offs=APP.cfg.revOffsets||[],revs=cd.revs||{};for(var i=1;i<=offs.length;i++){if(!revs[i])return i;}return 0;}
+function markNextRevDone(sid,idx){var cd=getChW(sid,idx);if(!cd.firstReadDone)return null;var offs=APP.cfg.revOffsets||[];for(var i=1;i<=offs.length;i++){if(!cd.revs[i]){cd.revs[i]=today();return i;}}return null;}
 function frEntries(sid,idx){return APP.entries.filter(function(e){return e.activityType==='first-reading'&&e.subjectId===sid&&(idx==null||e.chapterIdx===idx);});}
 function chapStatus(sid,idx){if(getCh(sid,idx).firstReadDone)return'done';return frEntries(sid,idx).length?'inprogress':'none';}
 function markFirstRead(sid,idx,date){var cd=getChW(sid,idx);if(!cd.firstReadDone)cd.firstReadDone=date||today();}
@@ -657,7 +678,7 @@ function applyLayout(){document.body.classList.toggle('layout-padded',APP.cfg.la
 function showPage(p){currentPage=p;document.querySelectorAll('#nav .nb').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id==='pg-'+p);});
   ({today:renderToday,session:renderSession,lectures:renderLectures,timeline:renderTimeline,settings:renderSettings,help:renderHelp,
     syllabus:renderSyllabus,
-    revisions:function(){stub('revisions','Revisions','Auto-scheduled revision queue. Coming next.');},
+    revisions:renderRevisions,
     tests:function(){stub('tests','Tests','Dual-phase test timer. Coming next.');},
     flashpoints:function(){stub('flashpoints','Flashpoints','Quick-revision points. Coming next.');},
     dashboard:function(){stub('dashboard','Dashboard','All stats + final-revision planner. Coming next.');}
@@ -745,6 +766,7 @@ function finalizeSession(status){
     activityType:s.activityType,subjectId:s.subjectId,chapterIdx:s.chapterIdx,lectureId:s.lectureId,status:status,mode:s.mode,contentMin:cm,coveredNote:note,payload:{}};
   if(s.activityType==='lecture'){e.payload.homeworkGiven=hw;if(hw)e.payload.homeworkText=hwt;}
   if(s.activityType==='first-reading'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0)markFirstRead(s.subjectId,s.chapterIdx,s.date);
+  if(s.activityType==='revision'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0){var _r=markNextRevDone(s.subjectId,s.chapterIdx);if(_r)e.payload.revIndex=_r;}
   APP.entries.push(e);
   if(s.lectureId){var l=APP.lectures.find(function(x){return x.id===s.lectureId;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+cm;l.lastNote=note;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';if(s.activityType==='lecture'&&hw){l.homeworkGiven=true;if(hwt)l.homeworkText=hwt;}}}
   APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
@@ -776,13 +798,15 @@ function sKind(a){return a==='lecture'?'main':a==='first-reading'?'reading':'rev
 function renderConfig(){
   var a=ACT[_sPick.activity],kind=sKind(_sPick.activity),subs=activeSubjects();
   if(_sPick.subjectId==null)_sPick.subjectId=subs[0]||null;
+  var usesLec=(_sPick.activity==='lecture'||_sPick.activity==='revision-lecture');
   var verb=kind==='main'?'watching':kind==='reading'?'reading':'revising';
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Pick what you\'re '+verb+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
   h+='<div class="card mb12"><div class="slbl mb12">What are you studying?</div>';
   h+='<div class="fld2"><div class="fld"><label>Subject</label><select id="cf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div>';
   h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
-  if(kind!=='reading')h+='<div class="fld"><label>'+(kind==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(kind)+'</select><div class="hint">'+(kind==='main'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
-  else h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
+  if(usesLec)h+='<div class="fld"><label>'+(_sPick.activity==='lecture'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(_sPick.activity==='lecture'?'main':'revision')+'</select><div class="hint">'+(_sPick.activity==='lecture'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
+  else if(_sPick.activity==='first-reading')h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
+  else h+='<div class="hint">Revising this chapter. Finishing this session as Complete ticks off its next scheduled revision (if first reading is done).</div>';
   h+='</div>'+modeAndGo();
   $('pg-session').innerHTML=h;wireConfig(kind);
 }
@@ -853,6 +877,12 @@ function renderToday(){
   h+='<div class="bc bc-purple"><span class="blbl">Last 7 days</span><div class="bnum">'+bnumHTML(fmtMinParts(wmin))+'</div><span class="bsub">avg '+fmtMin(Math.round(wmin/7))+'/day</span></div>';
   h+='<div class="bc bc-neutral"><span class="blbl">In progress</span><div class="bnum"><span class="bn-v">'+inprog.length+'</span></div><span class="bsub">to resume</span></div>';
   h+='</div>';
+  // due-now nudge
+  var _rc=revCounts();
+  if(_rc.due||_rc.review){
+    var bits=[];if(_rc.due)bits.push('<b style="color:var(--ink)">'+_rc.due+'</b> revision'+(_rc.due===1?'':'s')+' due');if(_rc.review)bits.push('<b style="color:var(--ink)">'+_rc.review+'</b> to review');
+    h+='<div class="today-due" onclick="showPage(\'revisions\')">'+ICON.revision+'<div class="f1 sm">'+bits.join(' · ')+'</div><span class="xs mono" style="color:var(--amber)">Open Revisions →</span></div>';
+  }
   // readiness + week
   h+='<div class="bento b2 mb20"><div class="card"><div class="rowb mb16"><span class="slbl">Subject readiness</span><span class="xs mono muted">lecture coverage</span></div>'+readinessHTML()+'</div>'+
     '<div class="card"><div class="rowb mb16"><span class="slbl">This week</span><span class="xs mono muted">hours / day</span></div><div class="wk" id="t-wk"></div></div></div>';
@@ -1001,8 +1031,8 @@ function sylChunks(sid,ci){
 function startReading(sid,ci){_sPick={activity:'first-reading',subjectId:sid,chapterIdx:ci,lectureId:null};_sStep='config';showPage('session');}
 function resumeReading(sid,ci){var ch=sylChunks(sid,ci),last=ch.length?ch[ch.length-1]:null;_sPick={activity:'first-reading',subjectId:sid,chapterIdx:ci,lectureId:null,_resumeNote:last?last.note:''};_sStep='config';showPage('session');}
 function sylBadge(st){return st==='done'?'<span class="badge bg-green">read</span>':st==='inprogress'?'<span class="badge bg-amber">in progress</span>':'<span class="badge bg-gray">not started</span>';}
-function revInfo(sid,ci){var cd=getCh(sid,ci);if(!cd.firstReadDone)return null;return (APP.cfg.revOffsets||[]).map(function(off,i){var due=addD(cd.firstReadDone,off),dd=diffD(today(),due);return {i:i,off:off,due:due,dd:dd,state:dd<0?'over':dd===0?'due':'up'};});}
-function revDots(sid,ci){var rs=revInfo(sid,ci);if(!rs)return '<span class="syl-nodot">—</span>';return rs.map(function(r){return '<span class="syl-dot d-'+r.state+'" title="R'+(r.i+1)+' · +'+r.off+'d · '+fmtDate(r.due)+(r.dd<0?' · overdue':r.dd===0?' · due today':'')+'"></span>';}).join('');}
+function revInfo(sid,ci){var cd=getCh(sid,ci);if(!cd.firstReadDone)return null;var revs=cd.revs||{};return (APP.cfg.revOffsets||[]).map(function(off,i){var done=!!revs[i+1];var due=addD(cd.firstReadDone,off),dd=diffD(today(),due);return {i:i,off:off,due:due,dd:dd,done:done,doneAt:revs[i+1]||null,state:done?'done':dd<0?'over':dd===0?'due':'up'};});}
+function revDots(sid,ci){var rs=revInfo(sid,ci);if(!rs)return '<span class="syl-nodot">—</span>';return rs.map(function(r){return '<span class="syl-dot d-'+r.state+'" title="R'+(r.i+1)+' · '+(r.done?'done '+fmtDate(r.doneAt):'+'+r.off+'d · '+fmtDate(r.due)+(r.dd<0?' · overdue':r.dd===0?' · due today':''))+'"></span>';}).join('');}
 function sylStars(sid,ci){var conf=getCh(sid,ci).conf||0,o='<span class="syl-stars" data-k="'+ck(sid,ci)+'">';for(var i=1;i<=5;i++)o+='<span class="syl-star'+(i<=conf?' on':'')+'" onclick="event.preventDefault();event.stopPropagation();setConf(\''+sid+'\','+ci+','+i+')" title="'+i+'/5">★</span>';return o+'</span>';}
 function setConf(sid,ci,n){var cd=getChW(sid,ci);cd.conf=(cd.conf===n?0:n);save();renderSyllabus();}
 function sylNotes(sid,ci){var cd=getCh(sid,ci);modal({size:'md',title:'Notes · '+chapName(sid,ci),body:'<div class="xs muted mb8">Your summary notes, formulas, mnemonics for this chapter.</div><textarea id="syl-nt" style="min-height:200px;width:100%" placeholder="Key points, formulas, things to remember…">'+esc(cd.notes||'')+'</textarea>',actions:[{label:'Cancel',kind:'ghost'},{label:'Save notes',kind:'primary',onClick:function(c){getChW(sid,ci).notes=$('syl-nt').value;save(true);toast('Notes saved','ok');renderSyllabus();}}]});}
@@ -1018,7 +1048,7 @@ function sylChapRow(sid,ci,cn){
   var metaStr=meta.join(' · ')||'not started';
   var detail='';
   var rs=revInfo(sid,ci);
-  if(rs)detail+='<div class="syl-d-lbl">Revision schedule</div><div class="syl-revs">'+rs.map(function(r){return '<span class="syl-rev '+(r.state==='over'?'over':r.state==='due'?'due':'')+'" title="+'+r.off+'d">R'+(r.i+1)+' · '+fmtDate(r.due)+'</span>';}).join('')+'</div>';
+  if(rs)detail+='<div class="syl-d-lbl">Revision schedule</div><div class="syl-revs">'+rs.map(function(r){return '<span class="syl-rev '+r.state+'" title="+'+r.off+'d">R'+(r.i+1)+' · '+(r.done?'✓ '+fmtDate(r.doneAt):fmtDate(r.due))+'</span>';}).join('')+'</div>';
   else detail+='<div class="xs muted" style="padding:2px 0 6px">Mark first reading done to start the 1 / 7 / 30 / 60 / 90 revision schedule.</div>';
   var chunks=sylChunks(sid,ci);
   if(chunks.length)detail+='<div class="syl-d-lbl">Reading log</div>'+chunks.map(function(cu){return '<div class="syl-chunk"><div class="syl-chk-d">'+fmtDate(cu.date)+'</div><div class="f1 xs">'+fmtMin(cu.mins)+' · '+(cu.done?'done':'in progress')+(cu.note?' · '+esc(cu.note):'')+'</div></div>';}).join('');
@@ -1064,12 +1094,91 @@ function renderSyllabus(){
 
 
 <script>
+/* ═══════════ REVISIONS ═══════════ */
+// Layer 1: "review yesterday" — chapters with lecture/first-reading/questions in last 2 days, not studied today
+function reviewYestList(){
+  var t=today(),y1=addD(t,-1),y2=addD(t,-2),acts=['lecture','first-reading','questions'];
+  var studiedToday={};
+  APP.entries.forEach(function(e){if(e.date===t&&e.chapterIdx!=null&&e.chapterIdx>=0)studiedToday[ck(e.subjectId,e.chapterIdx)]=true;});
+  var map={};
+  APP.entries.forEach(function(e){
+    if(acts.indexOf(e.activityType)<0)return;
+    if(e.date!==y1&&e.date!==y2)return;
+    if(e.chapterIdx==null||e.chapterIdx<0)return;
+    if(!activeSubjects().includes(e.subjectId))return;
+    var k=ck(e.subjectId,e.chapterIdx);
+    if(studiedToday[k])return;
+    if(!map[k])map[k]={sid:e.subjectId,ci:e.chapterIdx,acts:{},last:e.date};
+    map[k].acts[e.activityType]=true;if(e.date>map[k].last)map[k].last=e.date;
+  });
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.last.localeCompare(a.last);});
+}
+// Layer 2: chapter spaced revisions (sequential, fixed dates from firstReadDone)
+function revQueue(){
+  var t=today(),due=[],upcoming=[];
+  activeSubjects().forEach(function(sid){
+    chapList(sid).forEach(function(cn,ci){
+      var r=revActiveR(sid,ci);if(!r)return;
+      var off=(APP.cfg.revOffsets||[])[r-1];if(off==null)return;
+      var d=addD(getCh(sid,ci).firstReadDone,off),dd=diffD(t,d);
+      var it={sid:sid,ci:ci,cn:cn,r:r,due:d,dd:dd};
+      if(dd<=0)due.push(it);else if(dd<=7)upcoming.push(it);
+    });
+  });
+  due.sort(function(a,b){return a.due.localeCompare(b.due);});
+  upcoming.sort(function(a,b){return a.due.localeCompare(b.due);});
+  return {due:due,upcoming:upcoming};
+}
+function revCounts(){var q=revQueue();return {due:q.due.length,review:reviewYestList().length};}
+function startRevision(sid,ci){_sPick={activity:'revision',subjectId:sid,chapterIdx:ci,lectureId:null};_sStep='config';showPage('session');}
+function quickRevDone(sid,ci){var r=markNextRevDone(sid,ci);save(true);toast(r?'Revision R'+r+' marked done':'Nothing to mark','ok');renderRevisions();}
+function revItemHTML(it,kind){
+  var c=subjColor(it.sid);
+  var tag,meta;
+  if(kind==='review'){
+    var did=Object.keys(it.acts).map(function(a){return ACT[a]?ACT[a].label:a;}).join(' + ');
+    tag='';meta=did+' · '+relDay(it.last);
+  }else{
+    var cls=it.dd<0?'over':it.dd===0?'due':'up';
+    tag='<span class="rev-tag '+cls+'">'+(it.dd<0?Math.abs(it.dd)+'d overdue':it.dd===0?'due today':'in '+it.dd+'d')+'</span>';
+    meta='Revision R'+it.r+' · scheduled '+fmtDate(it.due);
+  }
+  var acts='<div class="rev-acts">'+tag+'<button class="btn btn-p btn-sm" onclick="startRevision(\''+it.sid+'\','+it.ci+')">'+(kind==='review'?'Review now':'Start revision')+'</button>';
+  if(kind==='due')acts+='<button class="btn btn-ghost btn-sm" onclick="quickRevDone(\''+it.sid+'\','+it.ci+')" title="Mark done without a timer">✓ Done</button>';
+  acts+='</div>';
+  var rowCls=kind==='due'?(it.dd<0?' over':it.dd===0?' due':''):'';
+  return '<div class="rev-item'+rowCls+'"><div class="rev-ic" style="background:'+c+'22;color:'+c+'">'+ICON.revision+'</div><div class="rev-bd"><div class="rev-nm">'+subjShort(it.sid)+' · '+esc(chapName(it.sid,it.ci))+'</div><div class="rev-mt">'+meta+'</div></div>'+acts+'</div>';
+}
+function subjShort(sid){return SYL[sid]?SYL[sid].short:sid;}
+function renderRevisions(){
+  if(!activeSubjects().length){$('pg-revisions').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
+  var review=reviewYestList(),q=revQueue();
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Revisions</div><div class="sub">Two layers: quick "review yesterday", and your spaced chapter revisions.</div></div></div>';
+  // Layer 1
+  h+='<div class="rev-sec"><div class="rev-sec-h"><span class="slbl">Review yesterday</span><span class="xs mono muted">consolidate fresh material · fades after 2 days</span></div>';
+  if(review.length)h+=review.map(function(it){return revItemHTML(it,'review');}).join('');
+  else h+='<div class="empty" style="padding:18px"><div class="xs">Nothing to review — anything you study gets a quick nudge here the next day.</div></div>';
+  h+='</div>';
+  // Layer 2 - due
+  h+='<div class="rev-sec"><div class="rev-sec-h"><span class="slbl">Revisions due</span><span class="xs mono muted">'+q.due.length+' due / overdue</span></div>';
+  if(q.due.length)h+=q.due.map(function(it){return revItemHTML(it,'due');}).join('');
+  else h+='<div class="empty" style="padding:18px"><div class="xs">No revisions due. Finish first-reading a chapter (Syllabus) to start its 1/7/30/60/90 schedule.</div></div>';
+  h+='</div>';
+  // Layer 2 - upcoming (next 7 days)
+  if(q.upcoming.length){h+='<div class="rev-sec"><div class="rev-sec-h"><span class="slbl">Coming up this week</span><span class="xs mono muted">'+q.upcoming.length+' scheduled</span></div>'+q.upcoming.map(function(it){return revItemHTML(it,'up');}).join('')+'</div>';}
+  h+='</div>';
+  $('pg-revisions').innerHTML=h;
+}
+</script>
+
+
+<script>
 /* ═══════════ QUICK COMPLETE ═══════════ */
 function quickComplete(pre){
   pre=pre||{};var subs=activeSubjects();
   modal({size:'md',title:'Quick-complete a past session',
     body:'<div class="alert al-blue">For sessions done before/without the live timer. Times can\'t overlap an existing session.</div>'+
-      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(pre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(pre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(pre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option><option value="first-reading" '+(pre.activity==='first-reading'?'selected':'')+'>First Reading</option></select></div></div>'+
+      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(pre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(pre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(pre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option><option value="first-reading" '+(pre.activity==='first-reading'?'selected':'')+'>First Reading</option><option value="revision" '+(pre.activity==='revision'?'selected':'')+'>Revision</option></select></div></div>'+
       '<div class="fld3"><div class="fld"><label>Start</label><input type="time" id="qc-s" value="09:00"></div><div class="fld"><label>End</label><input type="time" id="qc-e" value="10:00"></div><div class="fld"><label>Status</label><select id="qc-st"><option value="done">Done</option><option value="inprogress">In progress</option></select></div></div>'+
       '<div class="fld2"><div class="fld"><label>Subject</label><select id="qc-sub"><option value="">— pick —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(pre.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="qc-ch" disabled><option>pick subject</option></select></div></div>'+
       '<div class="fld dn" id="qc-lw"><label>Lecture (optional)</label><select id="qc-lec"><option value="">— none —</option></select></div>'+
@@ -1095,6 +1204,7 @@ function submitQC(){
   var e={id:uid(),createdAt:Date.now(),updatedAt:Date.now(),date:d,startTime:st,endTime:en,elapsedMin:dur,pauseMin:0,activityType:a,subjectId:sid,chapterIdx:+ci,lectureId:lid||null,status:status,mode:'quick',contentMin:dur,coveredNote:n,payload:{}};
   APP.entries.push(e);
   if(a==='first-reading'&&status==='done'&&(+ci)>=0)markFirstRead(sid,+ci,d);
+  if(a==='revision'&&status==='done'&&(+ci)>=0)markNextRevDone(sid,+ci);
   if(lid){var l=APP.lectures.find(function(x){return x.id===lid;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+dur;l.lastNote=n||l.lastNote;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';}}
   save(true);toast('Logged · '+fmtMin(dur),'ok');showPage(currentPage);return true;
 }
