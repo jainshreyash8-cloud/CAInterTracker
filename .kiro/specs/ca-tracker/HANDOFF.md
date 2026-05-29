@@ -101,4 +101,12 @@ Test each step via raw.githack preview before moving on.
    - Right-hand **day total** colored by a **user-adjustable** target (inputs on the Timeline page, persisted in `cfg.dayGoalH` / `cfg.dayOkH`; defaults green ≥8h, amber ≥6h, dim below).
 
 ## NEXT SLICE (in progress)
-First Reading + day-grouped chunks + Syllabus tab (per the data-model rules above).
+First Reading + day-grouped chunks + Syllabus tab — **DONE 2026-05-29** (commit `feat(first-reading + syllabus)…`). All defaults confirmed with user:
+- **First Reading** is now a real session activity. Config = subject → chapter → timer mode → start (no lecture step; reading is tracked at the **chapter** level). End form shows only the "what I covered / where I stopped" note (no content-minutes, no homework).
+- **Day-grouped chunks** derived from entries (time-is-schema): all `first-reading` entries on the same subject+chapter+calendar-date = one chunk. A chunk is `done` if any of its sessions was completed.
+- **Chapter first-reading status:** done if any chunk done, else in-progress if chunks exist, else not-started. "Complete" on a reading session = chapter first-read done.
+- **Syllabus tab:** per-subject tabs + summary bento (first reads done / reading time / in-progress / not started) + expandable row per chapter (status badge, time, chunk count, last-read date). Expanded view lists day-chunks and each chunk's **scheduled revision dates** computed from `cfg.revOffsets` (overdue=red, today=amber) — **read-only preview**; the actionable queue is the next slice. Misc/Bonus pseudo-chapter is excluded.
+- Per-chapter actions: Start reading / Continue reading / Read again + Quick-log. First Reading added to the Quick-complete activity list.
+
+## NEXT SLICE (after this)
+Revisions queue + revision sessions: turn the per-chunk scheduled revision dates into an actionable queue (due today / overdue), start a revision session from it, and mark a revision done (advancing to the next offset). Consumes the chunk + `revOffsets` data already produced by the Syllabus slice.
