@@ -62,11 +62,10 @@ A **single offline HTML file** study tracker for CA Inter students, with optiona
 - Escape ALL user input via esc() before innerHTML (prevent layout-break).
 - Mobile: save timer state every tick + on `pagehide`/`visibilitychange` (not just beforeunload).
 
-## Repo state
-- `main`: README + old `ca-tracker-v2.html` (the original; kept for reference).
-- `build/prototype-look`: `prototype.html` (look-only v3, 3 tabs). PREVIEW the design here.
-- `build/slice-0.1-lectures`: earlier `index.html` logic attempt + PR #1 (superseded; do not continue this — rebuild with locked decisions).
-- This file: `.kiro/specs/ca-tracker/HANDOFF.md`.
+## Repo state  (IMPORTANT — read carefully)
+- **Everything important now lives on `main`.** Files on `main`: `README.md`, `ca-tracker-v2.html` (original, reference), `prototype.html` (look-only v3 design — open via raw to preview), and this `HANDOFF.md`.
+- **ENVIRONMENT QUIRK:** in the sandbox, pushes to non-default branches report "success" but do NOT reach real GitHub — only pushes to `main` actually land. So: **commit build work to `main` and push `main`** (or verify any branch actually appears on GitHub before relying on it). The old `build/prototype-look` and `build/slice-0.1-lectures` branches and "PR #1" never reached GitHub — ignore them; their content is preserved in `main`'s history.
+- The repo is **private**, so raw.githubusercontent / raw.githack URLs return 403 unless the repo is made public or accessed with auth.
 
 ## NEXT STEP for new session
 Start building the real working app as `index.html` on a fresh branch (e.g. `build/v1`), incrementally:
