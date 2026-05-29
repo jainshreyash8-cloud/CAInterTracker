@@ -119,7 +119,11 @@ In this slice the revision dots are a **read-only preview**. The actionable due-
 ## NEXT SLICE (after this)
 Revisions queue + revision sessions + the daily "review yesterday" nudge — **DONE 2026-05-29** (commit `feat(revisions): two-layer revision queue + revision sessions`).
 
-- **Revision is now a real session activity** (subject → chapter, no lecture step). Finishing it as Complete ticks off the chapter's next due revision; a quick **✓ Done** button on each queue item does the same without a timer. Completion stored in `chData.revs` (keyed by R number → date) and shown as green dots in the Syllabus table. Added to Quick-complete too.
+- **Revision is a session activity** (subject → chapter, no lecture step) — but it is **NOT shown in the Session activity picker** (`ACT.revision.pick=false`). Revisions are scheduled by the app, so you launch them **queue-first** from the Revisions tab / Today nudge, never by blindly picking "Revision" then hunting for a chapter (user feedback: that was counterproductive).
+  - Each queue item (due + review-yesterday) → tap **Start** → small **Live / Pomodoro** chooser → drops straight into the normal running-timer screen (same place all sessions run; toolbar chip + fullscreen unchanged). Functions: `launchRevision(sid,ci)` → `beginRev(sid,ci,mode)`.
+  - **"Revise off-schedule"** button (`offScheduleRev()`) on the Revisions tab covers the rare ad-hoc case (pick subject+chapter+timer).
+  - Guarded so you can't start a revision while another session is active.
+  - Finishing it as Complete ticks off the chapter's next due revision; a quick **✓ Done** button on each queue item does the same without a timer. Completion stored in `chData.revs` (keyed by R number → date) and shown as green dots in the Syllabus table. Quick-complete also supports Revision (for logging past ones).
 - **Revisions tab** has the two locked layers:
   1. **Review yesterday** — chapters with a lecture / first-reading / questions session in the last ~2 days that haven't been studied again today. Fully derived from entries (no extra state); fades after 2 days; clears once you study the chapter again. "Review now" starts a revision session.
   2. **Revisions due** — chapter spaced revisions from `firstReadDone` + `revOffsets`, **sequential + fixed dates** (only the next undone R is active; due/overdue first), plus a "coming up this week" peek. Decision locked with user: fixed schedule, done in order.
