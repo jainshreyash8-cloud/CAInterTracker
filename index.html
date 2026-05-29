@@ -384,6 +384,24 @@ body.theme-light .t-display{color:var(--green)}
 .tl-mv{display:flex;align-items:center;gap:6px}
 .tl-mv label{font-size:11px;color:var(--ink2)}
 .tl-mv input{width:52px;padding:5px 7px;font-size:11px}
+/* ════ SYLLABUS ════ */
+.syl-ch{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.syl-sum{padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;list-style:none}
+.syl-sum::-webkit-details-marker{display:none}
+.syl-ch[open] .syl-cv{transform:rotate(90deg)}
+.syl-cv{transition:transform .18s;color:var(--dim);flex-shrink:0}
+.syl-ci{flex:1;min-width:0}
+.syl-cn{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.syl-cm{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.syl-body{padding:4px 14px 14px;border-top:1px solid var(--line)}
+.syl-chunk{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.syl-chunk:last-child{border-bottom:none}
+.syl-chk-d{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);min-width:74px}
+.syl-revs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.syl-rev{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:6px;background:var(--faint);border:1px solid var(--border);color:var(--dim)}
+.syl-rev.due{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,transparent)}
+.syl-rev.over{color:var(--rose);border-color:color-mix(in srgb,var(--rose) 40%,transparent)}
+.syl-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 </style>
 
 <script>
@@ -428,7 +446,7 @@ var PAPERS=[
 var ACT={
   lecture:{icon:'lecture',label:'Lecture',desc:'Watch a course lecture',on:true},
   'revision-lecture':{icon:'revlec',label:'Revision Lecture',desc:'Refresher / YouTube revision',on:true},
-  'first-reading':{icon:'reading',label:'First Reading',desc:'Slice 0.2',on:false},
+  'first-reading':{icon:'reading',label:'First Reading',desc:'Read a chapter for the first time',on:true},
   revision:{icon:'revision',label:'Revision',desc:'Slice 0.3',on:false},
   questions:{icon:'questions',label:'Questions',desc:'Slice 0.5',on:false},
   test:{icon:'test',label:'Test',desc:'Slice 0.4',on:false}
@@ -617,7 +635,7 @@ function applyTheme(){document.body.classList.toggle('theme-dark',APP.cfg.theme!
 function applyLayout(){document.body.classList.toggle('layout-padded',APP.cfg.layout!=='full');}
 function showPage(p){currentPage=p;document.querySelectorAll('#nav .nb').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id==='pg-'+p);});
   ({today:renderToday,session:renderSession,lectures:renderLectures,timeline:renderTimeline,settings:renderSettings,help:renderHelp,
-    syllabus:function(){stub('syllabus','Syllabus','First-reading tracking with day-grouped chunks. Coming next.');},
+    syllabus:renderSyllabus,
     revisions:function(){stub('revisions','Revisions','Auto-scheduled revision queue. Coming next.');},
     tests:function(){stub('tests','Tests','Dual-phase test timer. Coming next.');},
     flashpoints:function(){stub('flashpoints','Flashpoints','Quick-revision points. Coming next.');},
@@ -732,14 +750,17 @@ function renderSession(){
 }
 function pickAct(k){_sPick={activity:k,subjectId:null,chapterIdx:null,lectureId:null};_sStep='config';renderSession();}
 function sessReset(){_sStep='pick';_sPick=null;renderSession();}
+function sKind(a){return a==='lecture'?'main':a==='first-reading'?'reading':'revision';}
 function renderConfig(){
-  var a=ACT[_sPick.activity],kind=_sPick.activity==='lecture'?'main':'revision',subs=activeSubjects();
+  var a=ACT[_sPick.activity],kind=sKind(_sPick.activity),subs=activeSubjects();
   if(_sPick.subjectId==null)_sPick.subjectId=subs[0]||null;
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Pick what you\'re '+(kind==='main'?'watching':'revising')+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
+  var verb=kind==='main'?'watching':kind==='reading'?'reading':'revising';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Pick what you\'re '+verb+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
   h+='<div class="card mb12"><div class="slbl mb12">What are you studying?</div>';
   h+='<div class="fld2"><div class="fld"><label>Subject</label><select id="cf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div>';
   h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
-  h+='<div class="fld"><label>'+(kind==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(kind)+'</select><div class="hint">'+(kind==='main'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
+  if(kind!=='reading')h+='<div class="fld"><label>'+(kind==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(kind)+'</select><div class="hint">'+(kind==='main'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
+  else h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
   h+='</div>'+modeAndGo();
   $('pg-session').innerHTML=h;wireConfig(kind);
 }
@@ -752,7 +773,7 @@ function lecOptions(kind){
   return o;
 }
 function modeAndGo(){
-  var kind=_sPick.activity==='lecture'?'main':'revision';
+  var kind=sKind(_sPick.activity);
   var canStart=_sPick.subjectId!=null&&_sPick.chapterIdx!=null;
   if(kind==='main')canStart=canStart&&!!_sPick.lectureId;
   var pm=APP.cfg.pomo,ref='';
@@ -944,12 +965,76 @@ function tlBlock(id){
 
 
 <script>
+/* ═══════════ SYLLABUS (first reading) ═══════════ */
+var _sylSub=null;
+function sylChunks(sid,ci){
+  var es=APP.entries.filter(function(e){return e.activityType==='first-reading'&&e.subjectId===sid&&e.chapterIdx===ci;});
+  var by={};es.forEach(function(e){(by[e.date]=by[e.date]||[]).push(e);});
+  return Object.keys(by).sort().map(function(d){
+    var list=by[d],mins=0,done=false,note='';
+    list.forEach(function(e){mins+=(e.elapsedMin||0);if(e.status==='done')done=true;if(e.coveredNote)note=e.coveredNote;});
+    return {date:d,mins:mins,done:done,note:note,n:list.length};
+  });
+}
+function chapReadStatus(sid,ci){var ch=sylChunks(sid,ci);if(!ch.length)return 'none';return ch.some(function(c){return c.done;})?'done':'inprogress';}
+function startReading(sid,ci){_sPick={activity:'first-reading',subjectId:sid,chapterIdx:ci,lectureId:null};_sStep='config';showPage('session');}
+function resumeReading(sid,ci){var ch=sylChunks(sid,ci),last=ch.length?ch[ch.length-1]:null;_sPick={activity:'first-reading',subjectId:sid,chapterIdx:ci,lectureId:null,_resumeNote:last?last.note:''};_sStep='config';showPage('session');}
+function sylBadge(st){return st==='done'?'<span class="badge bg-green">read</span>':st==='inprogress'?'<span class="badge bg-amber">in progress</span>':'<span class="badge bg-gray">not started</span>';}
+function sylChapRow(sid,ci,cn,st){
+  var ch=sylChunks(sid,ci);
+  var mins=ch.reduce(function(a,x){return a+x.mins;},0);
+  var last=ch.length?ch[ch.length-1].date:null;
+  var meta=fmtMin(mins)+' \u00b7 '+ch.length+' chunk'+(ch.length===1?'':'s')+(last?' \u00b7 last '+fmtDate(last):'');
+  var body='';
+  if(ch.length){
+    body+=ch.map(function(cu){
+      var revs=(APP.cfg.revOffsets||[]).map(function(off,i){
+        var due=addD(cu.date,off),dd=diffD(today(),due);
+        var cls=dd<0?'over':dd===0?'due':'';
+        return '<span class="syl-rev '+cls+'" title="revision '+(i+1)+', +'+off+'d">R'+(i+1)+' \u00b7 '+fmtDate(due)+'</span>';
+      }).join('');
+      return '<div class="syl-chunk"><div class="syl-chk-d">'+fmtDate(cu.date)+'</div><div class="f1"><div class="xs">'+fmtMin(cu.mins)+' \u00b7 '+(cu.done?'done':'in progress')+(cu.note?' \u00b7 '+esc(cu.note):'')+'</div>'+(revs?'<div class="syl-revs">'+revs+'</div>':'')+'</div></div>';
+    }).join('');
+  }else{body+='<div class="xs muted" style="padding:8px 0">No first-reading logged yet for this chapter.</div>';}
+  var acts='<div class="syl-acts">';
+  if(st==='done')acts+='<button class="btn btn-ghost btn-sm" onclick="startReading(\''+sid+'\','+ci+')">Read again</button>';
+  else if(st==='inprogress')acts+='<button class="btn btn-p btn-sm" onclick="resumeReading(\''+sid+'\','+ci+')">Continue reading</button>';
+  else acts+='<button class="btn btn-p btn-sm" onclick="startReading(\''+sid+'\','+ci+')">Start reading</button>';
+  acts+='<button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'first-reading\',subjectId:\''+sid+'\',chapterIdx:'+ci+'})">Quick-log</button></div>';
+  return '<details class="syl-ch"><summary class="syl-sum"><span class="syl-cv">'+ICON.caret+'</span><div class="syl-ci"><div class="syl-cn">'+(ci+1)+'. '+esc(cn)+'</div><div class="syl-cm">'+sylBadge(st)+' \u00b7 '+meta+'</div></div></summary><div class="syl-body">'+body+acts+'</div></details>';
+}
+function renderSyllabus(){
+  var subs=activeSubjects();
+  if(!subs.length){$('pg-syllabus').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
+  if(!_sylSub||subs.indexOf(_sylSub)<0)_sylSub=subs[0];
+  var sid=_sylSub,chs=chapList(sid);
+  var doneN=0,inprogN=0;
+  var statuses=chs.map(function(cn,ci){var st=chapReadStatus(sid,ci);if(st==='done')doneN++;else if(st==='inprogress')inprogN++;return st;});
+  var totMin=APP.entries.filter(function(e){return e.activityType==='first-reading'&&e.subjectId===sid;}).reduce(function(a,e){return a+(e.elapsedMin||0);},0);
+  var pct=chs.length?Math.round(doneN/chs.length*100):0;
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Syllabus</div><div class="sub">First reading of each chapter. Each day you read = one chunk that schedules its own revisions.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'first-reading\'})">'+ICON.bolt+' Quick-log reading</button></div>';
+  h+='<div class="stabs">'+subs.map(function(s){var on=s===sid,col=subjColor(s);return '<button class="stab" style="'+(on?'background:'+col+';border-color:'+col+';color:#0E0E0E':'')+'" onclick="_sylSub=\''+s+'\';renderSyllabus()"><span class="sdot" style="background:'+(on?'#0E0E0E':col)+'"></span>'+SYL[s].short+'</button>';}).join('')+'</div>';
+  h+='<div class="bento b4 mb20">'+
+    '<div class="bc bc-neutral"><span class="blbl">First reads done</span><div class="bnum"><span class="bn-v">'+doneN+'</span><span class="bn-u">/ '+chs.length+'</span></div><span class="bsub">'+pct+'% of chapters</span></div>'+
+    '<div class="bc bc-accent"><span class="blbl">Reading time</span><div class="bnum">'+bnumHTML(fmtMinParts(totMin))+'</div><span class="bsub">across all chunks</span></div>'+
+    '<div class="bc bc-amber"><span class="blbl">In progress</span><div class="bnum"><span class="bn-v">'+inprogN+'</span></div><span class="bsub">started, not done</span></div>'+
+    '<div class="bc bc-neutral"><span class="blbl">Not started</span><div class="bnum"><span class="bn-v">'+Math.max(0,chs.length-doneN-inprogN)+'</span></div><span class="bsub">'+Math.max(0,chs.length-doneN)+' to finish</span></div>'+
+  '</div>';
+  if(!chs.length)h+='<div class="empty"><div class="empty-t">No chapters</div><div>Add chapters for this subject in Settings.</div></div>';
+  else h+=chs.map(function(cn,ci){return sylChapRow(sid,ci,cn,statuses[ci]);}).join('');
+  h+='</div>';
+  $('pg-syllabus').innerHTML=h;
+}
+</script>
+
+
+<script>
 /* ═══════════ QUICK COMPLETE ═══════════ */
 function quickComplete(pre){
   pre=pre||{};var subs=activeSubjects();
   modal({size:'md',title:'Quick-complete a past session',
     body:'<div class="alert al-blue">For sessions done before/without the live timer. Times can\'t overlap an existing session.</div>'+
-      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(pre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(pre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(pre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option></select></div></div>'+
+      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(pre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(pre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(pre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option><option value="first-reading" '+(pre.activity==='first-reading'?'selected':'')+'>First Reading</option></select></div></div>'+
       '<div class="fld3"><div class="fld"><label>Start</label><input type="time" id="qc-s" value="09:00"></div><div class="fld"><label>End</label><input type="time" id="qc-e" value="10:00"></div><div class="fld"><label>Status</label><select id="qc-st"><option value="done">Done</option><option value="inprogress">In progress</option></select></div></div>'+
       '<div class="fld2"><div class="fld"><label>Subject</label><select id="qc-sub"><option value="">— pick —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(pre.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="qc-ch" disabled><option>pick subject</option></select></div></div>'+
       '<div class="fld dn" id="qc-lw"><label>Lecture (optional)</label><select id="qc-lec"><option value="">— none —</option></select></div>'+
