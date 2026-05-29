@@ -402,6 +402,20 @@ body.theme-light .t-display{color:var(--green)}
 .syl-rev.due{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,transparent)}
 .syl-rev.over{color:var(--rose);border-color:color-mix(in srgb,var(--rose) 40%,transparent)}
 .syl-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.syl-dotwrap{display:flex;gap:3px;align-items:center;flex-shrink:0}
+.syl-dot{width:9px;height:9px;border-radius:50%;display:inline-block;box-sizing:border-box}
+.syl-dot.d-up{background:transparent;border:1.5px solid var(--dim)}
+.syl-dot.d-due{background:var(--amber);border:1.5px solid var(--amber)}
+.syl-dot.d-over{background:var(--rose);border:1.5px solid var(--rose)}
+.syl-nodot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
+.syl-stars{display:inline-flex;gap:1px;flex-shrink:0}
+.syl-star{font-size:15px;line-height:1;color:var(--track);cursor:pointer;transition:color .1s}
+.syl-star:hover{color:var(--amber)}
+.syl-star.on{color:var(--amber)}
+.syl-d-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-family:'JetBrains Mono',monospace;margin:10px 0 5px}
+.syl-note{font-size:12px;line-height:1.6;color:var(--ink2);white-space:pre-wrap;background:var(--faint);border:1px solid var(--border);border-radius:8px;padding:9px 11px}
+.syl-legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px;font-size:10px;color:var(--dim)}
+.syl-lg{display:flex;align-items:center;gap:5px}
 </style>
 
 <script>
@@ -464,6 +478,7 @@ function freshState(){
     cfg:{name:'',examDate:'',group:'both',exemptions:{},revOffsets:[1,7,30,60,90],
       pomo:{workMin:25,breakMin:5,longEvery:4,longMin:15},theme:'dark',layout:'padded',dayGoalH:8,dayOkH:6,setupDone:false},
     chapters:{},          // {aa:['ch1',...]} overrides SYL
+    chData:{},            // per-chapter record keyed "sid_idx": {conf,notes,firstReadDone}
     subjectDue:{},        // {aa:'YYYY-MM-DD'} lecture-completion due per subject
     lectures:[],          // {id,subjectId,chapterIdx(-1=misc),label,lectureNumber,plannedMin,kind,status,contentDoneMin,lastNote,...}
     entries:[],           // TimeEntry spine
@@ -491,6 +506,12 @@ function relDay(d){var dd=diffD(today(),d);if(dd===0)return'Today';if(dd===-1)re
 function relTime(ts){if(!ts)return'never';var s=(Date.now()-ts)/1000;if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 function chapList(sid){if(APP.chapters&&APP.chapters[sid])return APP.chapters[sid];return (SYL[sid]&&SYL[sid].chapters)?SYL[sid].chapters.slice():[];}
 function chapName(sid,idx){if(idx===-1)return'Misc / Bonus';var l=chapList(sid);return l[idx]||'(chapter)';}
+function ck(sid,idx){return sid+'_'+idx;}
+function getCh(sid,idx){var k=ck(sid,idx);return (APP.chData&&APP.chData[k])||{conf:0,notes:'',firstReadDone:null};}
+function getChW(sid,idx){var k=ck(sid,idx);if(!APP.chData)APP.chData={};if(!APP.chData[k])APP.chData[k]={conf:0,notes:'',firstReadDone:null};return APP.chData[k];}
+function frEntries(sid,idx){return APP.entries.filter(function(e){return e.activityType==='first-reading'&&e.subjectId===sid&&(idx==null||e.chapterIdx===idx);});}
+function chapStatus(sid,idx){if(getCh(sid,idx).firstReadDone)return'done';return frEntries(sid,idx).length?'inprogress':'none';}
+function markFirstRead(sid,idx,date){var cd=getChW(sid,idx);if(!cd.firstReadDone)cd.firstReadDone=date||today();}
 function activeSubjects(){var ex=APP.cfg.exemptions||{},out=[];PAPERS.forEach(function(p){if(APP.cfg.group==='1'&&p.group!==1)return;if(APP.cfg.group==='2'&&p.group!==2)return;if(ex[p.id])return;p.subjects.forEach(function(s){out.push(s);});});return out;}
 function activePapers(){var ex=APP.cfg.exemptions||{};return PAPERS.filter(function(p){if(APP.cfg.group==='1'&&p.group!==1)return false;if(APP.cfg.group==='2'&&p.group!==2)return false;return !ex[p.id];});}
 function subjColor(sid){return (SYL[sid]&&SYL[sid].color)||'#888';}
@@ -723,6 +744,7 @@ function finalizeSession(status){
   var e={id:s.id,createdAt:s.startedAt,updatedAt:Date.now(),date:s.date,startTime:s.startTime,endTime:nowHM(),elapsedMin:sm,pauseMin:Math.round(s.accumPausedMs/60000),
     activityType:s.activityType,subjectId:s.subjectId,chapterIdx:s.chapterIdx,lectureId:s.lectureId,status:status,mode:s.mode,contentMin:cm,coveredNote:note,payload:{}};
   if(s.activityType==='lecture'){e.payload.homeworkGiven=hw;if(hw)e.payload.homeworkText=hwt;}
+  if(s.activityType==='first-reading'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0)markFirstRead(s.subjectId,s.chapterIdx,s.date);
   APP.entries.push(e);
   if(s.lectureId){var l=APP.lectures.find(function(x){return x.id===s.lectureId;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+cm;l.lastNote=note;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';if(s.activityType==='lecture'&&hw){l.homeworkGiven=true;if(hwt)l.homeworkText=hwt;}}}
   APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
@@ -976,52 +998,65 @@ function sylChunks(sid,ci){
     return {date:d,mins:mins,done:done,note:note,n:list.length};
   });
 }
-function chapReadStatus(sid,ci){var ch=sylChunks(sid,ci);if(!ch.length)return 'none';return ch.some(function(c){return c.done;})?'done':'inprogress';}
 function startReading(sid,ci){_sPick={activity:'first-reading',subjectId:sid,chapterIdx:ci,lectureId:null};_sStep='config';showPage('session');}
 function resumeReading(sid,ci){var ch=sylChunks(sid,ci),last=ch.length?ch[ch.length-1]:null;_sPick={activity:'first-reading',subjectId:sid,chapterIdx:ci,lectureId:null,_resumeNote:last?last.note:''};_sStep='config';showPage('session');}
 function sylBadge(st){return st==='done'?'<span class="badge bg-green">read</span>':st==='inprogress'?'<span class="badge bg-amber">in progress</span>':'<span class="badge bg-gray">not started</span>';}
-function sylChapRow(sid,ci,cn,st){
-  var ch=sylChunks(sid,ci);
-  var mins=ch.reduce(function(a,x){return a+x.mins;},0);
-  var last=ch.length?ch[ch.length-1].date:null;
-  var meta=fmtMin(mins)+' \u00b7 '+ch.length+' chunk'+(ch.length===1?'':'s')+(last?' \u00b7 last '+fmtDate(last):'');
-  var body='';
-  if(ch.length){
-    body+=ch.map(function(cu){
-      var revs=(APP.cfg.revOffsets||[]).map(function(off,i){
-        var due=addD(cu.date,off),dd=diffD(today(),due);
-        var cls=dd<0?'over':dd===0?'due':'';
-        return '<span class="syl-rev '+cls+'" title="revision '+(i+1)+', +'+off+'d">R'+(i+1)+' \u00b7 '+fmtDate(due)+'</span>';
-      }).join('');
-      return '<div class="syl-chunk"><div class="syl-chk-d">'+fmtDate(cu.date)+'</div><div class="f1"><div class="xs">'+fmtMin(cu.mins)+' \u00b7 '+(cu.done?'done':'in progress')+(cu.note?' \u00b7 '+esc(cu.note):'')+'</div>'+(revs?'<div class="syl-revs">'+revs+'</div>':'')+'</div></div>';
-    }).join('');
-  }else{body+='<div class="xs muted" style="padding:8px 0">No first-reading logged yet for this chapter.</div>';}
+function revInfo(sid,ci){var cd=getCh(sid,ci);if(!cd.firstReadDone)return null;return (APP.cfg.revOffsets||[]).map(function(off,i){var due=addD(cd.firstReadDone,off),dd=diffD(today(),due);return {i:i,off:off,due:due,dd:dd,state:dd<0?'over':dd===0?'due':'up'};});}
+function revDots(sid,ci){var rs=revInfo(sid,ci);if(!rs)return '<span class="syl-nodot">—</span>';return rs.map(function(r){return '<span class="syl-dot d-'+r.state+'" title="R'+(r.i+1)+' · +'+r.off+'d · '+fmtDate(r.due)+(r.dd<0?' · overdue':r.dd===0?' · due today':'')+'"></span>';}).join('');}
+function sylStars(sid,ci){var conf=getCh(sid,ci).conf||0,o='<span class="syl-stars" data-k="'+ck(sid,ci)+'">';for(var i=1;i<=5;i++)o+='<span class="syl-star'+(i<=conf?' on':'')+'" onclick="event.preventDefault();event.stopPropagation();setConf(\''+sid+'\','+ci+','+i+')" title="'+i+'/5">★</span>';return o+'</span>';}
+function setConf(sid,ci,n){var cd=getChW(sid,ci);cd.conf=(cd.conf===n?0:n);save();renderSyllabus();}
+function sylNotes(sid,ci){var cd=getCh(sid,ci);modal({size:'md',title:'Notes · '+chapName(sid,ci),body:'<div class="xs muted mb8">Your summary notes, formulas, mnemonics for this chapter.</div><textarea id="syl-nt" style="min-height:200px;width:100%" placeholder="Key points, formulas, things to remember…">'+esc(cd.notes||'')+'</textarea>',actions:[{label:'Cancel',kind:'ghost'},{label:'Save notes',kind:'primary',onClick:function(c){getChW(sid,ci).notes=$('syl-nt').value;save(true);toast('Notes saved','ok');renderSyllabus();}}]});}
+function toggleFirstRead(sid,ci){var cd=getCh(sid,ci);if(cd.firstReadDone){confirmDlg('Reopen first reading? This clears this chapter\'s revision schedule.',function(){getChW(sid,ci).firstReadDone=null;save(true);renderSyllabus();},{danger:true,yes:'Reopen'});}else{markFirstRead(sid,ci,today());save(true);toast('First read done · revisions scheduled','ok');renderSyllabus();}}
+function sylChapRow(sid,ci,cn){
+  var st=chapStatus(sid,ci),cd=getCh(sid,ci),fr=frEntries(sid,ci);
+  var mins=fr.reduce(function(a,e){return a+(e.elapsedMin||0);},0);
+  var dates=fr.map(function(e){return e.date;}).sort();
+  var meta=[];
+  if(cd.firstReadDone)meta.push('read '+fmtDate(cd.firstReadDone));
+  else if(dates.length)meta.push('started '+fmtDate(dates[0]));
+  if(mins)meta.push(fmtMin(mins));
+  var metaStr=meta.join(' · ')||'not started';
+  var detail='';
+  var rs=revInfo(sid,ci);
+  if(rs)detail+='<div class="syl-d-lbl">Revision schedule</div><div class="syl-revs">'+rs.map(function(r){return '<span class="syl-rev '+(r.state==='over'?'over':r.state==='due'?'due':'')+'" title="+'+r.off+'d">R'+(r.i+1)+' · '+fmtDate(r.due)+'</span>';}).join('')+'</div>';
+  else detail+='<div class="xs muted" style="padding:2px 0 6px">Mark first reading done to start the 1 / 7 / 30 / 60 / 90 revision schedule.</div>';
+  var chunks=sylChunks(sid,ci);
+  if(chunks.length)detail+='<div class="syl-d-lbl">Reading log</div>'+chunks.map(function(cu){return '<div class="syl-chunk"><div class="syl-chk-d">'+fmtDate(cu.date)+'</div><div class="f1 xs">'+fmtMin(cu.mins)+' · '+(cu.done?'done':'in progress')+(cu.note?' · '+esc(cu.note):'')+'</div></div>';}).join('');
+  if(cd.notes)detail+='<div class="syl-d-lbl">Notes</div><div class="syl-note">'+esc(cd.notes)+'</div>';
   var acts='<div class="syl-acts">';
   if(st==='done')acts+='<button class="btn btn-ghost btn-sm" onclick="startReading(\''+sid+'\','+ci+')">Read again</button>';
   else if(st==='inprogress')acts+='<button class="btn btn-p btn-sm" onclick="resumeReading(\''+sid+'\','+ci+')">Continue reading</button>';
   else acts+='<button class="btn btn-p btn-sm" onclick="startReading(\''+sid+'\','+ci+')">Start reading</button>';
+  if(cd.firstReadDone)acts+='<button class="btn btn-ghost btn-sm" onclick="toggleFirstRead(\''+sid+'\','+ci+')">Reopen first read</button>';
+  else if(st==='inprogress')acts+='<button class="btn btn-suc btn-sm" onclick="toggleFirstRead(\''+sid+'\','+ci+')">Mark first-read done</button>';
+  acts+='<button class="btn btn-ghost btn-sm" onclick="sylNotes(\''+sid+'\','+ci+')">'+(cd.notes?'Notes •':'Notes')+'</button>';
   acts+='<button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'first-reading\',subjectId:\''+sid+'\',chapterIdx:'+ci+'})">Quick-log</button></div>';
-  return '<details class="syl-ch"><summary class="syl-sum"><span class="syl-cv">'+ICON.caret+'</span><div class="syl-ci"><div class="syl-cn">'+(ci+1)+'. '+esc(cn)+'</div><div class="syl-cm">'+sylBadge(st)+' \u00b7 '+meta+'</div></div></summary><div class="syl-body">'+body+acts+'</div></details>';
+  return '<details class="syl-ch"><summary class="syl-sum"><span class="syl-cv">'+ICON.caret+'</span>'+
+    '<div class="syl-ci"><div class="syl-cn">'+(ci+1)+'. '+esc(cn)+'</div><div class="syl-cm">'+sylBadge(st)+' · '+metaStr+'</div></div>'+
+    '<span class="syl-dotwrap" title="revision schedule (1/7/30/60/90)">'+revDots(sid,ci)+'</span>'+sylStars(sid,ci)+
+    '</summary><div class="syl-body">'+detail+acts+'</div></details>';
 }
 function renderSyllabus(){
   var subs=activeSubjects();
   if(!subs.length){$('pg-syllabus').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
   if(!_sylSub||subs.indexOf(_sylSub)<0)_sylSub=subs[0];
   var sid=_sylSub,chs=chapList(sid);
-  var doneN=0,inprogN=0;
-  var statuses=chs.map(function(cn,ci){var st=chapReadStatus(sid,ci);if(st==='done')doneN++;else if(st==='inprogress')inprogN++;return st;});
-  var totMin=APP.entries.filter(function(e){return e.activityType==='first-reading'&&e.subjectId===sid;}).reduce(function(a,e){return a+(e.elapsedMin||0);},0);
+  var doneN=0,inprogN=0,confSum=0,ratedN=0;
+  chs.forEach(function(cn,ci){var st=chapStatus(sid,ci);if(st==='done')doneN++;else if(st==='inprogress')inprogN++;var cf=getCh(sid,ci).conf||0;if(cf>0){confSum+=cf;ratedN++;}});
+  var totMin=frEntries(sid,null).reduce(function(a,e){return a+(e.elapsedMin||0);},0);
   var pct=chs.length?Math.round(doneN/chs.length*100):0;
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Syllabus</div><div class="sub">First reading of each chapter. Each day you read = one chunk that schedules its own revisions.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'first-reading\'})">'+ICON.bolt+' Quick-log reading</button></div>';
+  var avgConf=ratedN?(confSum/ratedN):0;
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Syllabus</div><div class="sub">First reading of each chapter. Finish a chapter to start its revision clock.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'first-reading\'})">'+ICON.bolt+' Quick-log reading</button></div>';
   h+='<div class="stabs">'+subs.map(function(s){var on=s===sid,col=subjColor(s);return '<button class="stab" style="'+(on?'background:'+col+';border-color:'+col+';color:#0E0E0E':'')+'" onclick="_sylSub=\''+s+'\';renderSyllabus()"><span class="sdot" style="background:'+(on?'#0E0E0E':col)+'"></span>'+SYL[s].short+'</button>';}).join('')+'</div>';
-  h+='<div class="bento b4 mb20">'+
-    '<div class="bc bc-neutral"><span class="blbl">First reads done</span><div class="bnum"><span class="bn-v">'+doneN+'</span><span class="bn-u">/ '+chs.length+'</span></div><span class="bsub">'+pct+'% of chapters</span></div>'+
-    '<div class="bc bc-accent"><span class="blbl">Reading time</span><div class="bnum">'+bnumHTML(fmtMinParts(totMin))+'</div><span class="bsub">across all chunks</span></div>'+
-    '<div class="bc bc-amber"><span class="blbl">In progress</span><div class="bnum"><span class="bn-v">'+inprogN+'</span></div><span class="bsub">started, not done</span></div>'+
+  h+='<div class="bento b4 mb16">'+
+    '<div class="bc bc-neutral"><span class="blbl">First reads done</span><div class="bnum"><span class="bn-v">'+doneN+'</span><span class="bn-u">/ '+chs.length+'</span></div><span class="bsub">'+pct+'% · '+inprogN+' in progress</span></div>'+
+    '<div class="bc bc-accent"><span class="blbl">Reading time</span><div class="bnum">'+bnumHTML(fmtMinParts(totMin))+'</div><span class="bsub">first reading</span></div>'+
+    '<div class="bc bc-purple"><span class="blbl">Avg confidence</span><div class="bnum"><span class="bn-v">'+(avgConf?avgConf.toFixed(1):'—')+'</span>'+(avgConf?'<span class="bn-u">/ 5</span>':'')+'</div><span class="bsub">'+ratedN+' rated</span></div>'+
     '<div class="bc bc-neutral"><span class="blbl">Not started</span><div class="bnum"><span class="bn-v">'+Math.max(0,chs.length-doneN-inprogN)+'</span></div><span class="bsub">'+Math.max(0,chs.length-doneN)+' to finish</span></div>'+
   '</div>';
+  h+='<div class="syl-legend"><span class="syl-lg"><span class="syl-dot d-over"></span>overdue</span><span class="syl-lg"><span class="syl-dot d-due"></span>due today</span><span class="syl-lg"><span class="syl-dot d-up"></span>upcoming</span><span class="syl-lg" style="margin-left:auto">★ = your confidence · dots = revision schedule</span></div>';
   if(!chs.length)h+='<div class="empty"><div class="empty-t">No chapters</div><div>Add chapters for this subject in Settings.</div></div>';
-  else h+=chs.map(function(cn,ci){return sylChapRow(sid,ci,cn,statuses[ci]);}).join('');
+  else h+=chs.map(function(cn,ci){return sylChapRow(sid,ci,cn);}).join('');
   h+='</div>';
   $('pg-syllabus').innerHTML=h;
 }
@@ -1059,6 +1094,7 @@ function submitQC(){
   if(ov){toast('Overlaps an existing session ('+ov.startTime+'–'+ov.endTime+'). Pick a clear slot.','err');return false;}
   var e={id:uid(),createdAt:Date.now(),updatedAt:Date.now(),date:d,startTime:st,endTime:en,elapsedMin:dur,pauseMin:0,activityType:a,subjectId:sid,chapterIdx:+ci,lectureId:lid||null,status:status,mode:'quick',contentMin:dur,coveredNote:n,payload:{}};
   APP.entries.push(e);
+  if(a==='first-reading'&&status==='done'&&(+ci)>=0)markFirstRead(sid,+ci,d);
   if(lid){var l=APP.lectures.find(function(x){return x.id===lid;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+dur;l.lastNote=n||l.lastNote;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';}}
   save(true);toast('Logged · '+fmtMin(dur),'ok');showPage(currentPage);return true;
 }
