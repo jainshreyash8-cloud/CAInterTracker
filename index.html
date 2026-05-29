@@ -915,8 +915,35 @@ function paintWeek(id){
     return '<div class="wk-col"><span class="wk-v">'+(hh>0?hh.toFixed(1):'')+'</span><div class="wk-bar" style="height:'+Math.max(2,pct)+'%;background:'+(last?'var(--accent)':'color-mix(in srgb,var(--accent) 28%,transparent)')+'"></div><span class="wk-d">'+W[dn]+'</span></div>';}).join('');
 }
 function entryRow(e){var a=ACT[e.activityType]||{icon:'lecture',label:e.activityType};
-  return '<div class="srow"><div class="srow-ic">'+ICON[a.icon]+'</div><div class="stime">'+(e.startTime||'—')+' – '+(e.endTime||'—')+'</div><div class="sbody"><div class="sname">'+a.label+' · '+esc(chapName(e.subjectId,e.chapterIdx))+'</div><div class="smeta">'+(SYL[e.subjectId]?SYL[e.subjectId].short:'')+(e.coveredNote?' · '+esc(e.coveredNote):'')+'</div></div>'+(e.status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in prog</span>')+'<span class="sdur">'+fmtMin(e.elapsedMin)+'</span><button class="btn btn-icon btn-ghost" onclick="delEntry(\''+e.id+'\')">'+ICON.trash+'</button></div>';}
+  return '<div class="srow"><div class="srow-ic">'+ICON[a.icon]+'</div><div class="stime">'+(e.startTime||'—')+' – '+(e.endTime||'—')+'</div><div class="sbody"><div class="sname">'+a.label+' · '+esc(chapName(e.subjectId,e.chapterIdx))+'</div><div class="smeta">'+(SYL[e.subjectId]?SYL[e.subjectId].short:'')+(e.coveredNote?' · '+esc(e.coveredNote):'')+'</div></div>'+(e.status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in prog</span>')+'<span class="sdur">'+fmtMin(e.elapsedMin)+'</span><button class="btn btn-icon btn-ghost" onclick="editEntry(\''+e.id+'\')" title="Edit">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delEntry(\''+e.id+'\')" title="Delete">'+ICON.trash+'</button></div>';}
 function delEntry(id){confirmDlg('Delete this session entry?',function(){APP.entries=APP.entries.filter(function(e){return e.id!==id;});save(true);showPage(currentPage);},{danger:true,yes:'Delete'});}
+function editEntry(id){
+  var e=APP.entries.find(function(x){return x.id===id;});if(!e)return;
+  var subs=activeSubjects(),lecLocked=!!e.lectureId,actLabel=ACT[e.activityType]?ACT[e.activityType].label:e.activityType;
+  modal({size:'md',title:'Edit session',
+    body:'<div class="alert al-blue">Fixes this log entry. Progress already recorded (lecture %, first-read, revisions) isn\'t recalculated.</div>'+
+      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="ed-d" value="'+esc(e.date)+'"></div><div class="fld"><label>Activity</label><input type="text" value="'+esc(actLabel)+'" disabled></div></div>'+
+      '<div class="fld3"><div class="fld"><label>Start</label><input type="time" id="ed-s" value="'+esc(e.startTime||'')+'"></div><div class="fld"><label>End</label><input type="time" id="ed-e" value="'+esc(e.endTime||'')+'"></div><div class="fld"><label>Status</label><select id="ed-st"><option value="done" '+(e.status==='done'?'selected':'')+'>Done</option><option value="inprogress" '+(e.status!=='done'?'selected':'')+'>In progress</option></select></div></div>'+
+      (lecLocked
+        ?'<div class="fld"><label>Subject / Chapter</label><input type="text" value="'+esc(subjShort(e.subjectId)+' · '+chapName(e.subjectId,e.chapterIdx))+'" disabled><div class="hint">Lecture-linked — subject &amp; chapter come from the lecture.</div></div>'
+        :'<div class="fld2"><div class="fld"><label>Subject</label><select id="ed-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(e.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="ed-ch"></select></div></div>')+
+      '<div class="fld"><label>What did you cover?</label><textarea id="ed-n">'+esc(e.coveredNote||'')+'</textarea></div>',
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Save changes',kind:'primary',onClick:function(c){if(submitEdit(id))c();return true;}}],
+    onOpen:function(){if(!lecLocked){var fillCh=function(){var sid=$('ed-sub').value;$('ed-ch').innerHTML=chapList(sid).map(function(cn,i){return '<option value="'+i+'" '+(e.subjectId===sid&&e.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join('');};$('ed-sub').onchange=fillCh;fillCh();}}});
+}
+function submitEdit(id){
+  var e=APP.entries.find(function(x){return x.id===id;});if(!e)return false;
+  var d=$('ed-d').value,st=$('ed-s').value,en=$('ed-e').value,status=$('ed-st').value,n=$('ed-n').value.trim();
+  if(!isDate(d)){toast('Invalid date','err');return false;}
+  if(!st||!en){toast('Enter start and end time','err');return false;}
+  var sMin=hm2min(st),eMin=hm2min(en);if(eMin<sMin)eMin+=1440;var dur=eMin-sMin;
+  if(dur<=0){toast('End must be after start','err');return false;}
+  var ov=findOverlap(d,sMin,eMin,id);
+  if(ov){toast('Overlaps an existing session ('+ov.startTime+'–'+ov.endTime+').','err');return false;}
+  e.date=d;e.startTime=st;e.endTime=en;e.elapsedMin=dur;e.status=status;e.coveredNote=n;e.updatedAt=Date.now();
+  if(!e.lectureId){var sub=$('ed-sub'),ch=$('ed-ch');if(sub)e.subjectId=sub.value;if(ch&&ch.value!=='')e.chapterIdx=+ch.value;}
+  save(true);toast('Updated','ok');showPage(currentPage);return true;
+}
 function resumeLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;_sPick={activity:l.kind==='revision'?'revision-lecture':'lecture',lectureId:l.id,subjectId:l.subjectId,chapterIdx:l.chapterIdx,_resumeNote:l.lastNote||''};_sStep='config';showPage('session');}
 /* ═══════════ TIMELINE ═══════════ */
 function renderTimeline(){
@@ -1010,6 +1037,7 @@ function tlBlock(id){
     (e.coveredNote?'<span class="muted">Covered</span><span>'+esc(e.coveredNote)+'</span>':'')+
     '</div>';
   modal({title:a.label,body:body,actions:[
+    {label:'Edit',kind:'primary',onClick:function(close){close();editEntry(e.id);}},
     {label:'Delete',kind:'danger',onClick:function(close){confirmDlg('Delete this session entry? This removes it from the timeline (lecture progress is not changed).',function(){APP.entries=APP.entries.filter(function(x){return x.id!==e.id;});save(true);renderTimeline();},{danger:true,yes:'Delete'});close();}},
     {label:'Close',kind:'ghost'}]});
 }
@@ -1162,6 +1190,7 @@ function revItemHTML(it,kind){
     meta='Revision R'+it.r+' · scheduled '+fmtDate(it.due);
   }
   var acts='<div class="rev-acts">'+tag+'<button class="btn btn-p btn-sm" onclick="launchRevision(\''+it.sid+'\','+it.ci+')">'+(kind==='review'?'Review now':'Start revision')+'</button>';
+  acts+='<button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'revision\',subjectId:\''+it.sid+'\',chapterIdx:'+it.ci+'})" title="Log a revision you already did">Quick-log</button>';
   if(kind==='due')acts+='<button class="btn btn-ghost btn-sm" onclick="quickRevDone(\''+it.sid+'\','+it.ci+')" title="Mark done without a timer">✓ Done</button>';
   acts+='</div>';
   var rowCls=kind==='due'?(it.dd<0?' over':it.dd===0?' due':''):'';
@@ -1278,7 +1307,7 @@ function chapBlock(sid,ci,cn,col,misc){
 }
 function lecRow(l){
   var b=l.status==='done'?'<span class="badge bg-green">done</span>':l.status==='in-progress'?'<span class="badge bg-amber">'+(l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0)+'%</span>':'<span class="badge bg-gray">pending</span>';
-  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
+  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="quickComplete({activity:\''+(l.kind==='revision'?'revision-lecture':'lecture')+'\',subjectId:\''+l.subjectId+'\',chapterIdx:'+l.chapterIdx+'})" title="Quick-log">'+ICON.bolt+'</button><button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
 }
 function editDue(sid){modal({title:'Lecture completion target — '+SYL[sid].name,body:'<div class="fld"><label>Finish all lectures by</label><input type="date" id="du-d" value="'+(APP.subjectDue[sid]||'')+'"><div class="hint">This is your "phase 1" deadline for this subject.</div></div>',actions:[{label:'Clear',kind:'ghost',onClick:function(){delete APP.subjectDue[sid];save(true);renderLectures();}},{label:'Save',kind:'primary',onClick:function(){var d=$('du-d').value;if(d&&!isDate(d)){toast('Invalid date','err');return true;}if(d)APP.subjectDue[sid]=d;else delete APP.subjectDue[sid];save(true);renderLectures();}}]});}
 </script>
