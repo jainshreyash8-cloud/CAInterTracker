@@ -92,8 +92,13 @@ Test each step via raw.githack preview before moving on.
 - Stubs: syllabus, revisions, tests, flashpoints, dashboard.
 
 ## PENDING FIXES (do these FIRST in next session)
-1. **Remove the "Source" field from the Revision Lecture session config.** User confirmed it is useless / goes nowhere. Remove the `cf-src` field + `_sPick.source` handling for revision-lecture and drop `payload.source`.
-2. **Timeline is conceptually WRONG vs the v2 idea.** Current build renders Timeline as a simple list grouped by day. The v2 (correct) Timeline is a **visual day x hour GRID**: each row = one day, horizontal axis = time-of-day (hours), each session = a colored block positioned by start time and sized by duration, coloured by subject, showing partial vs complete — so you can SEE when in the day you did what. Rebuild as this grid. Reference v2 classes in `ca-tracker-v2.html`: `.tl-wrap .tl-hdr .tl-date .tl-hrs .tl-hr .tl-row .tl-grid .tl-blk .tl-tot`. Confirm exact desired form with user before building.
+1. ~~Remove the "Source" field from the Revision Lecture session config.~~ **DONE 2026-05-29** (commit `fix(session): remove useless Source field…`). Removed the `cf-src` input + its wiring, `_sPick.source`, `source` on `APP.active`, the `payload.source` write, and the source display on the running-session screen. Hint reworded to "leave it as ad-hoc".
+2. ~~Timeline as a visual day × hour grid.~~ **DONE 2026-05-29** (commit `feat(timeline): rebuild as visual day x hour grid`). Rebuilt `renderTimeline` as a day-by-hour grid using new `.tl-*` classes (themed to CSS vars for dark+light). Confirmed look with user before building:
+   - Rows = **every calendar day in range**, newest first, empty days shown as blank rows (capped 90).
+   - **Adaptive** hour window — widens to cover the earliest/latest session so nothing is clipped.
+   - Bars placed by start time, width = real study time (`elapsedMin`), colored by subject. **Complete = solid fill; in-progress = faded + dashed border** (user picked the faded/dashed option).
+   - **Click a bar → details popover** (activity, chapter, time range, duration, status, note) with a **Delete** action.
+   - Right-hand **day total** colored by a **user-adjustable** target (inputs on the Timeline page, persisted in `cfg.dayGoalH` / `cfg.dayOkH`; defaults green ≥8h, amber ≥6h, dim below).
 
-## NEXT SLICE (after the two fixes)
+## NEXT SLICE (in progress)
 First Reading + day-grouped chunks + Syllabus tab (per the data-model rules above).
