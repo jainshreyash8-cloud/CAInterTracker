@@ -3,245 +3,235 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tracker · Look Prototype v2</title>
+<title>Tracker · Look Prototype v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ─── THEME TOKENS ─── */
+/* ════ THEME TOKENS ════ */
 body.theme-dark{
-  --bg:#0E0E0E; --dc:#161614; --faint:#1A1816; --void:#060604;
-  --ink:#EDEAE3; --dim:#5A5750; --muted:#2A2825; --border:#2A2825;
-  --lime:#D6FF4B; --lime-ink:#0E0E0E;
-  --rose:#FF4D6D; --sky:#D0E8FF; --sky-ink:#0E1820;
-  --sand:#F0E6D0; --sand-ink:#1A1410;
-  --amber:#FFB84D; --purple:#C4B5FD; --green:#4ADE80; --blue:#93C5FD;
-  --card-bg:#161614; --card-border:#2A2825;
-  --chap-bg:#161614; --chap-inner:#1A1816;
-  --lec-bg:#1A1816; --lec-rev-bg:rgba(196,181,253,.04);
-  --resume-bg:linear-gradient(135deg,#1c1400,#161005);
-  --resume-border:#3a2600;
-  --top-bg:#0E0E0E;
+  --bg:#0E0E0E; --faint:#1A1816; --ink:#EDEAE3; --ink2:#B8B4AB; --dim:#6A6258; --border:#262420;
+  --card-bg:#151513; --card-border:#242220;
+  --hover:rgba(255,255,255,.03); --line:rgba(255,255,255,.06); --track:rgba(255,255,255,.08); --shadow:0 8px 30px rgba(0,0,0,.45);
+  --accent:#D6FF4B; --accent-ink:#0E0E0E;
+  --amber:#FFB84D; --purple:#C4B5FD; --green:#4ADE80; --blue:#93C5FD; --rose:#FF6B81;
+  --sky:#D0E8FF; --sky-ink:#0E1820;
+  --amber-card:linear-gradient(155deg,#1d1304,#150d02); --amber-cb:#33230a;
+  --purple-card:linear-gradient(155deg,#120d22,#0d0917); --purple-cb:#241a45;
+  --green-card:linear-gradient(155deg,#06140c,#040d08); --green-cb:#0e2e1d;
+  --top-bg:rgba(14,14,14,.85);
 }
-body.theme-warm{
-  --bg:#0F0C09; --dc:#1A1510; --faint:#1E1812; --void:#0A0806;
-  --ink:#EDE8DF; --dim:#6B6055; --muted:#2E2820; --border:#2E2820;
-  --lime:#E8C96B; --lime-ink:#1A1000;
-  --rose:#E05A6A; --sky:#C8D8E8; --sky-ink:#0A1020;
-  --sand:#E8D8B8; --sand-ink:#1A1208;
-  --amber:#D4904A; --purple:#B8A8E8; --green:#5AB878; --blue:#8AB8D8;
-  --card-bg:#1A1510; --card-border:#2E2820;
-  --chap-bg:#1A1510; --chap-inner:#1E1812;
-  --lec-bg:#1E1812; --lec-rev-bg:rgba(184,168,232,.04);
-  --resume-bg:linear-gradient(135deg,#1e1508,#18120a);
-  --resume-border:#3a2a10;
-  --top-bg:#0F0C09;
+body.theme-light{
+  --bg:#F5F4EF; --faint:#FFFFFF; --ink:#1C1A15; --ink2:#4A463E; --dim:#94907F; --border:#E4E0D5;
+  --card-bg:#FFFFFF; --card-border:#E7E3D8;
+  --hover:rgba(0,0,0,.022); --line:rgba(0,0,0,.06); --track:rgba(0,0,0,.07); --shadow:0 6px 22px rgba(60,50,30,.08);
+  --accent:#1C1A15; --accent-ink:#FFFFFF;
+  --amber:#B5791E; --purple:#7A5FCF; --green:#2E8B57; --blue:#3B7DC4; --rose:#D14860;
+  --sky:#DCECFB; --sky-ink:#0E2840;
+  --amber-card:#FBF3E4; --amber-cb:#EEDFC2;
+  --purple-card:#F4F1FD; --purple-cb:#E4DCF7;
+  --green-card:#EDF7F0; --green-cb:#D6ECDD;
+  --top-bg:rgba(245,244,239,.85);
 }
 </style>
 </head>
-<body class="theme-dark">
+<body class="theme-dark layout-padded">
 
 <style>
-/* ─── RESET ─── */
+/* ════ RESET ════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .3s,color .3s}
-button{cursor:pointer;font-family:inherit;border:none;transition:all .15s;outline:none}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .25s,color .25s}
+button{cursor:pointer;font-family:inherit;border:none;transition:all .14s;outline:none;color:inherit}
 ::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px}
-a{color:var(--lime);text-decoration:none}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+svg{display:block}
+.ico{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.ico-sm{width:13px;height:13px}
+.ico-lg{width:20px;height:20px}
 
-/* ─── TOPBAR ─── */
-.top{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:var(--top-bg);min-height:52px}
+/* ════ TOPBAR ════ */
+.top{display:flex;align-items:center;gap:16px;padding:0 22px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:var(--top-bg);backdrop-filter:blur(12px);min-height:56px}
 .brand{display:flex;flex-direction:column;line-height:1;flex-shrink:0;gap:3px}
-.brand-name{font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.02em;font-family:'Space Grotesk',sans-serif}
-.brand-by{font-size:8px;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase}
-.nav{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto;scrollbar-width:none;flex-shrink:1;min-width:0}
+.brand-name{font-size:21px;font-weight:800;color:var(--ink);letter-spacing:-.03em;font-family:'Sora',sans-serif}
+.brand-by{font-size:8px;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase}
+.nav{display:flex;gap:2px;flex-shrink:1;min-width:0;overflow-x:auto;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
-.nb{font-size:10px;font-weight:700;padding:7px 11px;color:var(--dim);background:transparent;border-right:1px solid var(--border);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;font-family:'JetBrains Mono',monospace}
-.nb:last-child{border-right:none}
-.nb:hover{color:var(--ink);background:var(--faint)}
-.nb.on{color:var(--bg);background:var(--ink)}
-.top-right{display:flex;align-items:center;gap:12px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-left:auto}
+.nb{font-size:11px;font-weight:600;padding:7px 12px;color:var(--dim);background:transparent;border-radius:8px;white-space:nowrap;flex-shrink:0;font-family:'Instrument Sans',sans-serif;letter-spacing:.01em}
+.nb:hover{color:var(--ink);background:var(--hover)}
+.nb.on{color:var(--accent-ink);background:var(--accent)}
+.top-right{display:flex;align-items:center;gap:14px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-left:auto}
+.tr-stat{display:flex;align-items:center;gap:5px}
 .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
-
-/* theme + layout toggles */
 .tog-group{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
-.tog-btn{padding:5px 11px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--dim);background:transparent;border-right:1px solid var(--border);letter-spacing:.04em;cursor:pointer}
-.tog-btn:last-child{border-right:none}
+.tog-btn{padding:5px 10px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--dim);background:transparent;letter-spacing:.05em}
 .tog-btn.on{background:var(--ink);color:var(--bg)}
 
-/* ─── PAGES ─── */
+/* ════ PAGES / LAYOUT ════ */
 .pg{display:none}
-.pg.on{display:block;animation:fade .18s ease}
-@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pg.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.pw{padding:22px 22px 56px}
+body.layout-padded .pw{padding:24px 44px 56px;max-width:1280px;margin:0 auto}
+@media(max-width:900px){body.layout-padded .pw{padding:18px 18px 48px}}
 
-/* ─── LAYOUT: full-width vs padded ─── */
-.pw{padding:16px 20px 52px}
-body.layout-padded .pw{padding:16px 48px 52px}
-@media(max-width:900px){body.layout-padded .pw{padding:14px 20px 48px}}
-
-/* ─── BENTO GRID ─── */
-.bento{display:grid;gap:11px}
-.b5{grid-template-columns:repeat(5,1fr)}
-.b4{grid-template-columns:repeat(4,1fr)}
-.b3{grid-template-columns:repeat(3,1fr)}
-.b2{grid-template-columns:repeat(2,1fr)}
-/* responsive */
-@media(max-width:1100px){.b5{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:820px){.b5,.b4{grid-template-columns:repeat(2,1fr)}.b3{grid-template-columns:1fr}}
-@media(max-width:500px){.b5,.b4,.b2{grid-template-columns:1fr}}
-
-/* ─── BENTO CARD ─── */
-.bc{border-radius:14px;padding:18px 20px;overflow:hidden;transition:transform .18s,box-shadow .18s}
-.bc:hover{transform:translateY(-2px);box-shadow:0 10px 34px rgba(0,0,0,.5)}
-.bc-dark{background:var(--card-bg);border:1px solid var(--card-border)}
-.bc-lime{background:var(--lime);color:var(--lime-ink)}
-.bc-sky{background:var(--sky);color:var(--sky-ink)}
-.bc-sand{background:var(--sand);color:var(--sand-ink)}
-.bc-amber{background:linear-gradient(150deg,#1f1400,#160e00);border:1px solid #3a2600;color:var(--amber)}
-body.theme-warm .bc-amber{background:linear-gradient(150deg,#201508,#180f04);border-color:#3a2808}
-.bc-purple{background:linear-gradient(150deg,#120c24,#0c0818);border:1px solid #281a4e;color:var(--purple)}
-body.theme-warm .bc-purple{background:linear-gradient(150deg,#161028,#100c20);border-color:#241848}
-.bc-green{background:linear-gradient(150deg,#04150b,#030f07);border:1px solid #0d3320;color:var(--green)}
-.bc-rose{background:linear-gradient(150deg,#1f0a12,#16070d);border:1px solid #3d1622;color:var(--rose)}
-
-.blbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
-.bc-dark .blbl{color:var(--dim)}
-.bc-lime .blbl,.bc-sky .blbl,.bc-sand .blbl{opacity:.5}
-.bc-amber .blbl,.bc-purple .blbl,.bc-green .blbl,.bc-rose .blbl{opacity:.6}
-
-.bnum{font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:.9;letter-spacing:-.03em;display:block}
-.bn-xl{font-size:64px}.bn-lg{font-size:50px}.bn-md{font-size:38px}.bn-sm{font-size:28px}
-.bsub{font-size:10px;opacity:.6;margin-top:8px;font-weight:500;display:block;line-height:1.45;font-family:'JetBrains Mono',monospace}
-.bc-lime .bsub,.bc-sky .bsub,.bc-sand .bsub{opacity:.65}
-
-/* expandable exam card */
-.exam-card{cursor:pointer;user-select:none}
-.exam-more{max-height:0;overflow:hidden;transition:max-height .35s ease,margin-top .3s ease}
-.exam-card.open .exam-more{max-height:380px;margin-top:16px}
-.phase-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid rgba(255,255,255,.1)}
-body.theme-warm .phase-row{border-top-color:rgba(255,220,140,.12)}
-.phase-pill{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.14);white-space:nowrap;margin-top:1px}
-body.theme-warm .phase-pill{background:rgba(255,200,100,.14)}
-</style>
-
-<style>
-/* ─── GENERIC CARDS ─── */
-.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:18px 20px}
-.card-flat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;overflow:hidden}
-.card-h{padding:14px 20px;border-bottom:1px solid var(--card-border);display:flex;justify-content:space-between;align-items:center}
-.card-t{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.01em}
-
-/* ─── TYPE ─── */
-.h1{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.02em}
-.sub{font-size:12px;color:var(--dim);margin-top:3px}
-.slbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-family:'JetBrains Mono',monospace}
+/* ════ SECTION HEAD ════ */
+.h1{font-family:'Sora',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:12px;color:var(--dim);margin-top:4px}
+.slbl{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-family:'JetBrains Mono',monospace}
 .mono{font-family:'JetBrains Mono',monospace}.muted{color:var(--dim)}
 .sm{font-size:12px}.xs{font-size:10px}.xxs{font-size:9px}
 .fw6{font-weight:600}.fw7{font-weight:700}
-.row{display:flex;align-items:center;gap:8px}
-.rowb{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.wrap{flex-wrap:wrap}
-.mb6{margin-bottom:6px}.mb8{margin-bottom:8px}.mb10{margin-bottom:10px}.mb12{margin-bottom:12px}
-.mb14{margin-bottom:14px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}
-.mt4{margin-top:4px}.mt6{margin-top:6px}.mt8{margin-top:8px}.mt10{margin-top:10px}
+.row{display:flex;align-items:center;gap:8px}.rowb{display:flex;align-items:center;justify-content:space-between;gap:8px}.wrap{flex-wrap:wrap}
+.mb6{margin-bottom:6px}.mb8{margin-bottom:8px}.mb10{margin-bottom:10px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb28{margin-bottom:28px}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.ml8{margin-left:8px}
+</style>
 
-/* ─── BADGES ─── */
-.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;white-space:nowrap;line-height:1.5}
-.bg-lime{background:rgba(214,255,75,.12);color:var(--lime);border:1px solid rgba(214,255,75,.25)}
-.bg-amber{background:rgba(255,184,77,.12);color:var(--amber);border:1px solid rgba(255,184,77,.25)}
-.bg-green{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25)}
-.bg-gray{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--border)}
-.bg-blue{background:rgba(147,197,253,.12);color:var(--blue);border:1px solid rgba(147,197,253,.25)}
-body.theme-warm .bg-lime{background:rgba(232,201,107,.12);color:var(--lime);border-color:rgba(232,201,107,.25)}
+<style>
+/* ════ BENTO GRID ════ */
+.bento{display:grid;gap:12px}
+.b5{grid-template-columns:repeat(5,1fr)}.b4{grid-template-columns:repeat(4,1fr)}
+.b3{grid-template-columns:repeat(3,1fr)}.b2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1120px){.b5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:840px){.b5,.b4{grid-template-columns:repeat(2,1fr)}.b3{grid-template-columns:1fr}}
+@media(max-width:520px){.b5,.b4,.b2{grid-template-columns:1fr}}
 
-/* ─── SUBJECT CHIP ─── */
-.schip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;font-family:'JetBrains Mono',monospace;white-space:nowrap}
-.sdot{width:6px;height:6px;border-radius:50%}
+/* ════ BENTO CARD ════ */
+.bc{border-radius:16px;padding:18px;transition:transform .16s ease,box-shadow .16s ease;display:flex;flex-direction:column;min-height:118px}
+.bc:hover{box-shadow:var(--shadow)}
+.bc-neutral{background:var(--card-bg);border:1px solid var(--card-border)}
+.bc-accent{background:var(--accent);color:var(--accent-ink)}
+.bc-sky{background:var(--sky);color:var(--sky-ink)}
+.bc-amber{background:var(--amber-card);border:1px solid var(--amber-cb);color:var(--amber)}
+.bc-purple{background:var(--purple-card);border:1px solid var(--purple-cb);color:var(--purple)}
+.bc-green{background:var(--green-card);border:1px solid var(--green-cb);color:var(--green)}
+.blbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;opacity:.75}
+.bc-accent .blbl,.bc-sky .blbl{opacity:.55}
+/* number row: one consistent size + small unit, baseline aligned */
+.bnum{font-family:'Sora',sans-serif;font-weight:700;letter-spacing:-.03em;display:flex;align-items:baseline;gap:3px;margin-top:auto;line-height:1}
+.bn-v{font-size:44px}
+.bn-u{font-size:16px;font-weight:600;opacity:.55;font-family:'Sora',sans-serif}
+.bsub{font-size:10px;opacity:.55;margin-top:7px;font-weight:500;line-height:1.4;font-family:'JetBrains Mono',monospace}
 
-/* ─── BUTTONS ─── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 15px;border-radius:9px;border:1px solid var(--border);background:var(--faint);color:var(--ink);font-weight:600;font-size:12px;white-space:nowrap;font-family:'Instrument Sans',sans-serif}
-.btn:hover{border-color:#555;background:var(--card-bg)}
-.btn-p{background:var(--lime)!important;border-color:var(--lime)!important;color:var(--lime-ink)!important;font-weight:700}
-.btn-p:hover{filter:brightness(1.08)}
-.btn-suc{background:rgba(74,222,128,.1)!important;border-color:rgba(74,222,128,.3)!important;color:var(--green)!important}
-.btn-ghost{background:transparent!important;border-color:transparent!important;color:var(--dim)!important}
-.btn-ghost:hover{color:var(--ink)!important;background:rgba(255,255,255,.04)!important}
-.btn-sm{padding:6px 12px!important;font-size:11px!important;border-radius:7px!important}
-.btn-xs{padding:4px 9px!important;font-size:10px!important;border-radius:6px!important}
+/* exam card expand */
+.exam-card{cursor:pointer;user-select:none}
+.exam-more{max-height:0;overflow:hidden;transition:max-height .35s ease,margin-top .3s ease}
+.exam-card.open .exam-more{max-height:320px;margin-top:14px}
+.phase-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-top:1px solid var(--line)}
+.phase-pill{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:.05em;text-transform:uppercase;background:var(--line);white-space:nowrap;margin-top:1px}
 
-/* ─── SUBJECT TABS ─── */
-.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.stab{padding:7px 14px;border-radius:22px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:11px;font-weight:700;font-family:'Instrument Sans',sans-serif;display:inline-flex;align-items:center;gap:7px}
-.stab:hover{border-color:#555;color:var(--ink)}
+/* ════ GENERIC CARD ════ */
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:18px 20px}
+.card-flat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;overflow:hidden}
+.card-h{padding:15px 20px;border-bottom:1px solid var(--card-border);display:flex;justify-content:space-between;align-items:center}
+.card-t{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.01em}
 
-/* ─── PROGRESS BAR ─── */
-.pbar{height:5px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
+/* ════ BADGES ════ */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:7px;letter-spacing:.03em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.bg-accent{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.bg-amber{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber)}
+.bg-green{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+.bg-gray{background:var(--line);color:var(--dim)}
+body.theme-light .bg-accent{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+
+/* ════ SUBJECT CHIP ════ */
+.schip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:7px;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ════ BUTTONS ════ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 15px;border-radius:10px;border:1px solid var(--border);background:var(--faint);color:var(--ink);font-weight:600;font-size:12px;white-space:nowrap;font-family:'Instrument Sans',sans-serif}
+.btn:hover{border-color:var(--dim);background:var(--hover)}
+.btn-p{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn-p:hover{filter:brightness(1.06);background:var(--accent)}
+.btn-suc{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:color-mix(in srgb,var(--green) 30%,transparent);color:var(--green)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--dim)}
+.btn-ghost:hover{color:var(--ink);background:var(--hover)}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px}
+.btn-xs{padding:5px 8px;font-size:10px;border-radius:7px}
+.btn-icon{padding:6px;border-radius:7px}
+</style>
+
+<style>
+/* ════ SUBJECT TABS ════ */
+.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.stab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:11px;font-weight:600;font-family:'Instrument Sans',sans-serif;display:inline-flex;align-items:center;gap:7px}
+.stab:hover{border-color:var(--dim);color:var(--ink)}
+
+/* ════ PROGRESS BAR ════ */
+.pbar{height:6px;background:var(--track);border-radius:99px;overflow:hidden}
 .pbar-f{height:100%;border-radius:99px}
 
-/* ─── RESUME STRIP ─── */
-.resume{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--resume-bg);border:1px solid var(--resume-border);border-radius:12px;margin-bottom:8px}
-.resume-ico{width:38px;height:38px;border-radius:10px;background:rgba(255,184,77,.14);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-body.theme-warm .resume-ico{background:rgba(212,144,74,.18)}
+/* ════ RESUME STRIP ════ */
+.resume{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:13px;margin-bottom:8px}
+.resume-ico{width:38px;height:38px;border-radius:10px;background:color-mix(in srgb,var(--amber) 14%,transparent);color:var(--amber);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .resume-body{flex:1;min-width:0}
 .resume-title{font-size:13px;font-weight:700;color:var(--ink)}
 .resume-meta{font-size:10px;color:var(--amber);font-family:'JetBrains Mono',monospace;margin-top:3px}
-.resume-where{font-size:11px;color:var(--dim);margin-top:4px}
+.resume-where{font-size:11px;color:var(--ink2);margin-top:4px}
 .resume-where b{color:var(--ink);font-weight:600}
-.mini-pb{height:4px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:8px;max-width:280px}
+.mini-pb{height:5px;background:var(--track);border-radius:99px;overflow:hidden;margin-top:8px;max-width:300px}
 .mini-pb-f{height:100%;background:var(--amber);border-radius:99px}
 
-/* ─── SESSION ROW ─── */
-.srow{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+/* ════ SESSION ROW ════ */
+.srow{display:flex;align-items:center;gap:13px;padding:12px 20px;border-bottom:1px solid var(--line)}
 .srow:last-child{border-bottom:none}
-.srow:hover{background:rgba(255,255,255,.015)}
-.stime{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);width:106px;flex-shrink:0}
+.srow:hover{background:var(--hover)}
+.srow-ic{width:30px;height:30px;border-radius:8px;background:var(--faint);display:flex;align-items:center;justify-content:center;color:var(--ink2);flex-shrink:0}
+.stime{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);width:104px;flex-shrink:0}
 .sbody{flex:1;min-width:0}
 .sname{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .smeta{font-size:10px;color:var(--dim);margin-top:2px;font-family:'JetBrains Mono',monospace}
 .sdur{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0}
 
-/* ─── CHAPTER ACCORDION ─── */
-.chap{border:1px solid var(--card-border);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--chap-bg)}
+/* ════ CHAPTER ACCORDION ════ */
+.chap{border:1px solid var(--card-border);border-radius:13px;margin-bottom:8px;overflow:hidden;background:var(--card-bg)}
 .chap-h{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none}
-.chap-h:hover{background:rgba(255,255,255,.015)}
-.chap-caret{font-size:10px;color:var(--dim);width:12px;transition:transform .2s;font-family:'JetBrains Mono',monospace}
+.chap-h:hover{background:var(--hover)}
+.chap-caret{color:var(--dim);width:14px;flex-shrink:0;transition:transform .2s}
 .chap.open .chap-caret{transform:rotate(90deg)}
 .chap-name{flex:1;font-size:13px;font-weight:700;min-width:0}
 .chap-prog{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.chap-prog-bar{width:64px;height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
-.chap-prog-pct{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;width:34px;text-align:right;color:var(--dim)}
-.chap-body{max-height:0;overflow:hidden;transition:max-height .32s ease}
-.chap.open .chap-body{max-height:900px}
-.chap-inner{padding:6px 16px 14px;background:var(--chap-inner)}
-
-/* ─── LECTURE ROW ─── */
-.lec{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;background:var(--lec-bg);margin-bottom:6px;border:1px solid transparent}
-.lec.rev{background:var(--lec-rev-bg);border-color:rgba(196,181,253,.12)}
-.lec-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);width:26px;flex-shrink:0;text-align:center}
-.lec-body{flex:1;min-width:0}
-.lec-title{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lec-where{font-size:10px;color:var(--amber);margin-top:3px;font-family:'JetBrains Mono',monospace}
-.lec-meta{font-size:10px;color:var(--dim);margin-top:2px;font-family:'JetBrains Mono',monospace}
-.lec-acts{display:flex;gap:4px;flex-shrink:0}
-.addlec{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
-
-/* ─── EMPTY ─── */
-.empty{padding:28px;text-align:center;color:var(--dim);font-size:12px}
-.empty-t{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:5px;letter-spacing:-.01em}
-
-/* ─── BRAND OPTIONS ─── */
-.brandopt{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:7px;cursor:pointer;background:var(--faint)}
-.brandopt:hover{border-color:#666}
-.brandopt.sel{border-color:var(--lime);background:rgba(214,255,75,.05)}
-
-/* ─── NOTE BANNER ─── */
-.note-banner{background:rgba(147,197,253,.06);border:1px solid rgba(147,197,253,.18);border-radius:10px;padding:11px 14px;font-size:11px;color:var(--blue);line-height:1.55;margin-bottom:16px}
+.chap-prog-bar{width:60px;height:6px;background:var(--track);border-radius:99px;overflow:hidden}
+.chap-prog-pct{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;width:32px;text-align:right;color:var(--dim)}
+.chap-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.chap.open .chap-body{max-height:960px}
+.chap-inner{padding:4px 14px 14px}
 </style>
 
+<style>
+/* ════ LECTURE ROW ════ */
+.lec{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;background:var(--faint);margin-bottom:6px;border:1px solid transparent}
+.lec.rev{background:color-mix(in srgb,var(--purple) 6%,transparent);border-color:color-mix(in srgb,var(--purple) 16%,transparent)}
+.lec-ic{width:26px;height:26px;border-radius:7px;background:var(--card-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2);flex-shrink:0;border:1px solid var(--border)}
+.lec-body{flex:1;min-width:0}
+.lec-title{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lec-where{font-size:10px;color:var(--amber);margin-top:3px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:5px}
+.lec-meta{font-size:10px;color:var(--dim);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.lec-acts{display:flex;gap:4px;flex-shrink:0}
+.addlec{display:flex;gap:8px;margin-top:10px;padding-top:11px;border-top:1px dashed var(--border)}
 
-<!-- ═══ TOPBAR ═══ -->
+/* ════ WEEK CHART ════ */
+.wk{display:flex;align-items:flex-end;gap:7px;height:118px}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.wk-v{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)}
+.wk-bar{width:100%;border-radius:5px 5px 0 0;min-height:3px}
+.wk-d{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)}
+
+/* ════ SUBJECT READINESS ROW ════ */
+.sr{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.sr:last-child{margin-bottom:0}
+.sr-chip{width:50px;justify-content:center}
+.sr-pct{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--dim);width:30px;text-align:right}
+
+/* ════ EMPTY / BANNER / BRAND PICKER ════ */
+.empty{padding:26px;text-align:center;color:var(--dim);font-size:12px}
+.note-banner{background:color-mix(in srgb,var(--blue) 8%,transparent);border:1px solid color-mix(in srgb,var(--blue) 22%,transparent);border-radius:11px;padding:11px 14px;font-size:11px;color:var(--blue);line-height:1.55;margin-bottom:18px}
+.brandopt{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--border);border-radius:11px;margin-bottom:7px;cursor:pointer;background:var(--faint)}
+.brandopt:hover{border-color:var(--dim)}
+.brandopt.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+</style>
+
+<!-- ════════ TOPBAR ════════ -->
 <div class="top">
   <div class="brand">
     <span class="brand-name" id="brand-name">Tracker</span>
@@ -258,283 +248,279 @@ body.theme-warm .resume-ico{background:rgba(212,144,74,.18)}
     <button class="nb" style="opacity:.35">Timeline</button>
   </div>
   <div class="top-right">
-    <span style="color:var(--amber)" class="mono xs">109d to exam</span>
-    <span class="mono xs">12 🔥</span>
-    <span class="mono xs"><span class="dot" style="background:var(--green)"></span> synced</span>
-    <!-- prototype controls -->
-    <div class="tog-group" title="Colour scheme">
+    <span class="tr-stat" style="color:var(--amber)">109d</span>
+    <span class="tr-stat">12 streak</span>
+    <span class="tr-stat"><span class="dot" style="background:var(--green)"></span>synced</span>
+    <div class="tog-group" title="Theme">
       <button class="tog-btn on" id="thm-dark" onclick="setTheme('dark')">DARK</button>
-      <button class="tog-btn" id="thm-warm" onclick="setTheme('warm')">WARM</button>
-    </div>
-    <div class="tog-group" title="Layout width">
-      <button class="tog-btn on" id="lay-full" onclick="setLayout('full')">FULL</button>
-      <button class="tog-btn" id="lay-pad" onclick="setLayout('padded')">PADDED</button>
+      <button class="tog-btn" id="thm-light" onclick="setTheme('light')">LIGHT</button>
     </div>
   </div>
 </div>
 
 <div id="pages">
 
-<!-- ═══════════════════════════════ TODAY ═══════════════════════════════ -->
+<!-- ════════ TODAY ════════ -->
 <div class="pg on" id="pg-today"><div class="pw">
 
-<div class="note-banner mb16">
-  👀 <b>Look-only prototype v2.</b> Fake data. Toggle <b>DARK / WARM</b> and <b>FULL / PADDED</b> in the topbar. Pick a font at the bottom of this tab. Nothing saves.
-</div>
+<div class="note-banner">Look-only prototype v3. Toggle DARK / LIGHT in the topbar. Pick a brand font at the bottom. Icons replace emojis; numbers now share one baseline. Nothing saves.</div>
 
-<div class="rowb wrap mb16">
+<div class="rowb wrap mb20">
   <div>
     <div class="h1">Good evening, Shreyash.</div>
     <div class="sub mono">Friday, 29 May 2026</div>
   </div>
-  <button class="btn btn-p">+ Start Session</button>
+  <button class="btn btn-p"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg> Start Session</button>
 </div>
 
-<!-- 5-card bento row -->
-<div class="bento b5 mb12">
+
+<!-- hero bento -->
+<div class="bento b5 mb16">
   <div class="bc bc-amber exam-card" id="examCard" onclick="this.classList.toggle('open')">
-    <span class="blbl">Days to exam ▾</span>
-    <span class="bnum bn-lg">109</span>
+    <span class="blbl">Days to exam <svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+    <div class="bnum"><span class="bn-v">109</span></div>
     <span class="bsub">Group 1 · 15 Sep 2026</span>
     <div class="exam-more">
-      <div class="phase-row" style="border-top:none;padding-top:0">
+      <div class="phase-row" style="border-top:none;padding-top:2px">
         <span class="phase-pill">now</span>
-        <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Lecture + First Reading</div><div class="xxs mono muted" style="margin-top:2px">ongoing until ~1 Aug</div></div>
+        <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Lectures + First Reading</div><div class="xxs mono muted mt4">until ~1 Aug</div></div>
       </div>
       <div class="phase-row">
         <span class="phase-pill">running</span>
-        <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Revisions R1 · R7 · R30</div><div class="xxs mono muted" style="margin-top:2px">auto-scheduled alongside</div></div>
+        <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Revisions R1 · R7 · R30</div><div class="xxs mono muted mt4">auto-scheduled alongside</div></div>
       </div>
       <div class="phase-row">
         <span class="phase-pill">final</span>
-        <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Consolidated revision · 3 passes</div><div class="xxs mono muted" style="margin-top:2px">7·3·1 days/paper · starts 28 Aug · 2d buffer</div></div>
+        <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Consolidated revision · 3 passes</div><div class="xxs mono muted mt4">7·3·1 days/paper · from 28 Aug</div></div>
       </div>
     </div>
   </div>
-  <div class="bc bc-lime">
+  <div class="bc bc-accent">
     <span class="blbl">Today</span>
-    <span class="bnum bn-lg">3h<span style="font-size:26px">20m</span></span>
+    <div class="bnum"><span class="bn-v">3</span><span class="bn-u">h</span><span class="bn-v">20</span><span class="bn-u">m</span></div>
     <span class="bsub">4 sessions</span>
   </div>
-  <div class="bc bc-dark">
+  <div class="bc bc-neutral">
     <span class="blbl">Streak</span>
-    <span class="bnum bn-lg">12</span>
-    <span class="bsub">days 🔥</span>
+    <div class="bnum"><span class="bn-v">12</span><span class="bn-u">days</span></div>
+    <span class="bsub">keep it alive</span>
   </div>
   <div class="bc bc-purple">
     <span class="blbl">Last 7 days</span>
-    <span class="bnum bn-md">22h</span>
-    <span class="bsub">avg 3h 8m/day</span>
+    <div class="bnum"><span class="bn-v">22</span><span class="bn-u">h</span></div>
+    <span class="bsub">avg 3h 8m / day</span>
   </div>
   <div class="bc bc-green">
     <span class="blbl">Revisions due</span>
-    <span class="bnum bn-md">3</span>
+    <div class="bnum"><span class="bn-v">3</span></div>
     <span class="bsub">1 overdue · 2 today</span>
   </div>
 </div>
 
-<!-- subject progress + week chart -->
-<div class="bento b2 mb16">
+
+<!-- readiness + week -->
+<div class="bento b2 mb20">
   <div class="card">
-    <div class="rowb mb12"><span class="slbl">Subject readiness</span><span class="xs mono muted">lec · reading · revision</span></div>
+    <div class="rowb mb16"><span class="slbl">Subject readiness</span><span class="xs mono muted">lectures · reading · revision</span></div>
     <div id="subjProg"></div>
   </div>
   <div class="card">
-    <div class="rowb mb12"><span class="slbl">This week</span><span class="xs mono muted">hours / day</span></div>
-    <div id="weekChart" style="display:flex;align-items:flex-end;gap:6px;height:120px"></div>
+    <div class="rowb mb16"><span class="slbl">This week</span><span class="xs mono muted">hours / day</span></div>
+    <div class="wk" id="weekChart"></div>
   </div>
 </div>
 
-<!-- resume strip -->
-<div class="rowb mb8"><span class="slbl">Resume</span><span class="xs mono muted">2 in progress</span></div>
-<div class="mb20">
+<!-- resume -->
+<div class="rowb mb10"><span class="slbl">Resume</span><span class="xs mono muted">2 in progress</span></div>
+<div class="mb28">
   <div class="resume">
-    <div class="resume-ico">🎓</div>
+    <div class="resume-ico"><svg class="ico ico-lg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
     <div class="resume-body">
-      <div class="row wrap mb4" style="gap:7px"><span class="schip" style="background:#A78BFA22;color:#A78BFA;border:1px solid #A78BFA44"><span class="sdot" style="background:#A78BFA"></span>AA</span><span class="resume-title">AS-19 Leases · Lecture 3</span></div>
+      <div class="row wrap mb4" style="gap:7px"><span class="schip" style="background:#A78BFA22;color:#A78BFA"><span class="sdot" style="background:#A78BFA"></span>AA</span><span class="resume-title">AS-19 Leases · Lecture 3</span></div>
       <div class="resume-where">stopped at: <b>Operating lease classification</b></div>
-      <div class="resume-meta">40m of 120m watched · 33%</div>
-      <div class="mini-pb mt4"><div class="mini-pb-f" style="width:33%"></div></div>
+      <div class="resume-meta">40m of 120m · 33%</div>
+      <div class="mini-pb"><div class="mini-pb-f" style="width:33%"></div></div>
     </div>
-    <button class="btn btn-suc btn-sm">▶ Resume</button>
+    <button class="btn btn-suc btn-sm"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg> Resume</button>
   </div>
   <div class="resume">
-    <div class="resume-ico">📖</div>
+    <div class="resume-ico"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M4 4h7a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5H20z"/></svg></div>
     <div class="resume-body">
-      <div class="row wrap mb4" style="gap:7px"><span class="schip" style="background:#34D39922;color:#34D399;border:1px solid #34D39944"><span class="sdot" style="background:#34D399"></span>LAW</span><span class="resume-title">Incorporation of Company · First Reading</span></div>
+      <div class="row wrap mb4" style="gap:7px"><span class="schip" style="background:#34D39922;color:#34D399"><span class="sdot" style="background:#34D399"></span>LAW</span><span class="resume-title">Incorporation of Company · First Reading</span></div>
       <div class="resume-where">stopped at: <b>Doctrine of indoor management</b></div>
       <div class="resume-meta">1h 5m so far</div>
-      <div class="mini-pb mt4"><div class="mini-pb-f" style="width:55%"></div></div>
+      <div class="mini-pb"><div class="mini-pb-f" style="width:55%"></div></div>
     </div>
-    <button class="btn btn-suc btn-sm">▶ Resume</button>
+    <button class="btn btn-suc btn-sm"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg> Resume</button>
   </div>
 </div>
+
 
 <!-- today sessions -->
 <div class="card-flat mb20">
   <div class="card-h"><span class="card-t">Today's sessions</span><span class="xs mono muted">3h 20m total</span></div>
-  <div class="srow"><div class="stime">06:40 – 07:35</div><div class="sbody"><div class="sname">🎓 Lecture · AS-19 Leases · Lec 2</div><div class="smeta">AA · "finished finance lease accounting"</div></div><span class="badge bg-green" style="margin-right:6px">done</span><span class="sdur">55m</span></div>
-  <div class="srow"><div class="stime">10:15 – 11:00</div><div class="sbody"><div class="sname">📖 First Reading · Incorporation of Company</div><div class="smeta">LAW · "up to doctrine of indoor management"</div></div><span class="badge bg-amber" style="margin-right:6px">in progress</span><span class="sdur">45m</span></div>
-  <div class="srow"><div class="stime">14:30 – 15:10</div><div class="sbody"><div class="sname">🎓 Lecture · AS-19 Leases · Lec 3</div><div class="smeta">AA · "operating lease classification"</div></div><span class="badge bg-amber" style="margin-right:6px">in progress</span><span class="sdur">40m</span></div>
-  <div class="srow"><div class="stime">19:00 – 19:40</div><div class="sbody"><div class="sname">✍️ Questions · AS-14 Amalgamations</div><div class="smeta">CMA · "ICAI module Q1–Q8"</div></div><span class="badge bg-green" style="margin-right:6px">done</span><span class="sdur">40m</span></div>
+  <div class="srow">
+    <div class="srow-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+    <div class="stime">06:40 – 07:35</div>
+    <div class="sbody"><div class="sname">Lecture · AS-19 Leases · Lec 2</div><div class="smeta">AA · finished finance lease accounting</div></div>
+    <span class="badge bg-green">done</span><span class="sdur">55m</span>
+  </div>
+  <div class="srow">
+    <div class="srow-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M4 4h7a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5H20z"/></svg></div>
+    <div class="stime">10:15 – 11:00</div>
+    <div class="sbody"><div class="sname">First Reading · Incorporation of Company</div><div class="smeta">LAW · up to doctrine of indoor management</div></div>
+    <span class="badge bg-amber">in progress</span><span class="sdur">45m</span>
+  </div>
+  <div class="srow">
+    <div class="srow-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+    <div class="stime">14:30 – 15:10</div>
+    <div class="sbody"><div class="sname">Lecture · AS-19 Leases · Lec 3</div><div class="smeta">AA · operating lease classification</div></div>
+    <span class="badge bg-amber">in progress</span><span class="sdur">40m</span>
+  </div>
+  <div class="srow">
+    <div class="srow-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
+    <div class="stime">19:00 – 19:40</div>
+    <div class="sbody"><div class="sname">Questions · AS-14 Amalgamations</div><div class="smeta">CMA · ICAI module Q1–Q8</div></div>
+    <span class="badge bg-green">done</span><span class="sdur">40m</span>
+  </div>
 </div>
 
-<!-- brand font picker -->
+<!-- brand picker -->
 <div class="card">
-  <div class="slbl mb12">⚙ Prototype: pick brand font — click one</div>
-  <div class="brandopt sel" onclick="setBrand(this,'Space Grotesk',700,'-.02em')"><span style="font-family:'Space Grotesk';font-weight:700;font-size:22px;letter-spacing:-.02em">Tracker</span> <span class="xs mono muted ml8">Space Grotesk — default</span><span class="badge bg-lime" style="margin-left:auto">on</span></div>
-  <div class="brandopt" onclick="setBrand(this,'Sora',800,'-.03em')"><span style="font-family:'Sora';font-weight:800;font-size:22px;letter-spacing:-.03em">Tracker</span> <span class="xs mono muted ml8">Sora — bold, tight</span></div>
-  <div class="brandopt" onclick="setBrand(this,'Fraunces',600,'-.01em')"><span style="font-family:'Fraunces';font-weight:600;font-size:22px">Tracker</span> <span class="xs mono muted ml8">Fraunces — warm serif, upright</span></div>
-  <div class="brandopt" onclick="setBrand(this,'Instrument Sans',700,'-.01em')"><span style="font-family:'Instrument Sans';font-weight:700;font-size:22px">Tracker</span> <span class="xs mono muted ml8">Instrument Sans — clean sans</span></div>
-  <div class="brandopt" onclick="setBrand(this,'JetBrains Mono',700,'-.01em')"><span style="font-family:'JetBrains Mono';font-weight:700;font-size:19px">Tracker</span> <span class="xs mono muted ml8">JetBrains Mono — techy/terminal</span></div>
+  <div class="slbl mb12">Prototype · pick brand font</div>
+  <div class="brandopt" onclick="setBrand(this,'Space Grotesk',700,'-.02em')"><span style="font-family:'Space Grotesk';font-weight:700;font-size:21px;letter-spacing:-.02em">Tracker</span><span class="xs mono muted">Space Grotesk</span></div>
+  <div class="brandopt sel" onclick="setBrand(this,'Sora',800,'-.03em')"><span style="font-family:'Sora';font-weight:800;font-size:21px;letter-spacing:-.03em">Tracker</span><span class="xs mono muted">Sora bold tight</span><span class="badge bg-accent" style="margin-left:auto">selected</span></div>
+  <div class="brandopt" onclick="setBrand(this,'Fraunces',600,'-.01em')"><span style="font-family:'Fraunces';font-weight:600;font-size:21px">Tracker</span><span class="xs mono muted">Fraunces serif</span></div>
+  <div class="brandopt" onclick="setBrand(this,'Instrument Sans',700,'-.01em')"><span style="font-family:'Instrument Sans';font-weight:700;font-size:21px">Tracker</span><span class="xs mono muted">Instrument Sans</span></div>
 </div>
 
 </div></div>
 
 
-<!-- ═══════════════════════════════ LECTURES ═══════════════════════════════ -->
+<!-- ════════ LECTURES ════════ -->
 <div class="pg" id="pg-lectures"><div class="pw">
 
-<div class="rowb wrap mb16">
-  <div><div class="h1">Lectures</div><div class="sub">Lives inside chapters. Add as you receive them — no upfront count needed.</div></div>
-  <button class="btn btn-ghost btn-sm">⚡ Quick-log past lecture</button>
+<div class="rowb wrap mb20">
+  <div><div class="h1">Lectures</div><div class="sub">Lectures live inside chapters. Add them as you receive them.</div></div>
+  <button class="btn btn-ghost btn-sm"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7z" fill="currentColor" stroke="none"/></svg> Quick-log past lecture</button>
 </div>
 
 <div class="stabs" id="lecTabs"></div>
 
-<div class="bento b4 mb16">
-  <div class="bc bc-dark"><span class="blbl">Done</span><span class="bnum bn-md">8 / 14</span><span class="bsub">3 chapters · 1 in progress</span></div>
-  <div class="bc bc-lime"><span class="blbl">Watched</span><span class="bnum bn-md">11h 05m</span><span class="bsub">of ~19h total</span></div>
-  <div class="bc bc-amber"><span class="blbl">Actually remaining</span><span class="bnum bn-md">7h 55m</span><span class="bsub">6 pending + 1 partial</span></div>
-  <div class="bc bc-sky"><span class="blbl">Finish all by</span><span class="bnum bn-sm">1 Aug</span><span class="bsub">64 days · ~7m/day needed</span></div>
+<div class="bento b4 mb20">
+  <div class="bc bc-neutral"><span class="blbl">Done</span><div class="bnum"><span class="bn-v">8</span><span class="bn-u">/ 14</span></div><span class="bsub">1 in progress</span></div>
+  <div class="bc bc-accent"><span class="blbl">Watched</span><div class="bnum"><span class="bn-v">11</span><span class="bn-u">h</span><span class="bn-v">05</span><span class="bn-u">m</span></div><span class="bsub">of ~19h total</span></div>
+  <div class="bc bc-amber"><span class="blbl">Actually remaining</span><div class="bnum"><span class="bn-v">7</span><span class="bn-u">h</span><span class="bn-v">55</span><span class="bn-u">m</span></div><span class="bsub">6 pending + 1 partial</span></div>
+  <div class="bc bc-neutral"><span class="blbl">Finish all by</span><div class="bnum"><span class="bn-v">1</span><span class="bn-u">Aug</span></div><span class="bsub">64 days · ~7m/day</span></div>
 </div>
 
-<div class="rowb mb10"><span class="slbl">Advanced Accounting · chapters</span><span class="xs mono muted">click chapter to expand</span></div>
+<div class="rowb mb10"><span class="slbl">Advanced Accounting · chapters</span><span class="xs mono muted">click to expand</span></div>
 
 <div class="chap open">
   <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span>
+    <svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
     <span class="chap-name">AS-19 — Leases</span>
-    <div class="chap-prog">
-      <span class="xs mono muted">3/4 lec</span>
-      <div class="chap-prog-bar"><div class="pbar-f" style="width:62%;background:#A78BFA"></div></div>
-      <span class="chap-prog-pct">62%</span>
-    </div>
+    <div class="chap-prog"><span class="xs mono muted">3/4</span><div class="chap-prog-bar"><div class="pbar-f" style="width:62%;background:#A78BFA"></div></div><span class="chap-prog-pct">62%</span></div>
   </div>
   <div class="chap-body"><div class="chap-inner">
-    <div class="lec"><span class="lec-num">L1</span><div class="lec-body"><div class="lec-title">Intro, definitions &amp; scope</div><div class="lec-meta">95m · done 6 May</div></div><span class="badge bg-green">done</span><div class="lec-acts"><button class="btn btn-xs btn-ghost">✎</button></div></div>
-    <div class="lec"><span class="lec-num">L2</span><div class="lec-body"><div class="lec-title">Finance lease accounting</div><div class="lec-meta">110m · done today</div></div><span class="badge bg-green">done</span><div class="lec-acts"><button class="btn btn-xs btn-ghost">✎</button></div></div>
-    <div class="lec"><span class="lec-num">L3</span><div class="lec-body"><div class="lec-title">Operating lease &amp; disclosures</div><div class="lec-where">⏸ stopped: operating lease classification</div><div class="lec-meta">40m of 120m · 33%</div></div><span class="badge bg-amber">in progress</span><div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div></div>
-    <div class="lec"><span class="lec-num">L4</span><div class="lec-body"><div class="lec-title">Sale &amp; leaseback transactions</div><div class="lec-meta">~90m · not started</div></div><span class="badge bg-gray">pending</span><div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div></div>
-    <div class="lec rev"><span class="lec-num" style="color:var(--purple)">↻</span><div class="lec-body"><div class="lec-title" style="color:var(--purple)">Revision lecture · full chapter recap</div><div class="lec-meta">not started</div></div><span class="badge bg-gray">pending</span><div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div></div>
+    <div class="lec"><div class="lec-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></div><div class="lec-body"><div class="lec-title">Intro, definitions &amp; scope</div><div class="lec-meta">95m · done 6 May</div></div><span class="badge bg-green">done</span><div class="lec-acts"><button class="btn btn-icon btn-ghost"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div></div>
+    <div class="lec"><div class="lec-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></div><div class="lec-body"><div class="lec-title">Finance lease accounting</div><div class="lec-meta">110m · done today</div></div><span class="badge bg-green">done</span><div class="lec-acts"><button class="btn btn-icon btn-ghost"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div></div>
+    <div class="lec"><div class="lec-ic" style="color:var(--amber)"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></div><div class="lec-body"><div class="lec-title">Operating lease &amp; disclosures</div><div class="lec-where"><svg class="ico" style="width:11px;height:11px" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>stopped: operating lease classification</div><div class="lec-meta">40m of 120m · 33%</div></div><span class="badge bg-amber">in progress</span><div class="lec-acts"><button class="btn btn-icon btn-suc"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg></button></div></div>
+    <div class="lec"><div class="lec-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></div><div class="lec-body"><div class="lec-title">Sale &amp; leaseback transactions</div><div class="lec-meta">~90m · not started</div></div><span class="badge bg-gray">pending</span><div class="lec-acts"><button class="btn btn-icon btn-suc"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg></button></div></div>
+    <div class="lec rev"><div class="lec-ic" style="color:var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div><div class="lec-body"><div class="lec-title" style="color:var(--purple)">Revision lecture · chapter recap</div><div class="lec-meta">not started</div></div><span class="badge bg-gray">pending</span><div class="lec-acts"><button class="btn btn-icon btn-suc"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg></button></div></div>
     <div class="addlec"><button class="btn btn-xs">+ Add lecture</button><button class="btn btn-xs btn-ghost">+ Add revision lecture</button></div>
   </div></div>
 </div>
 
 <div class="chap">
   <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name">AS-14 — Amalgamations</span>
+    <svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="chap-name">AS-14 — Amalgamations</span>
     <div class="chap-prog"><span class="xs mono muted">1/2</span><div class="chap-prog-bar"><div class="pbar-f" style="width:50%;background:#A78BFA"></div></div><span class="chap-prog-pct">50%</span></div>
   </div>
   <div class="chap-body"><div class="chap-inner">
-    <div class="lec"><span class="lec-num">L1</span><div class="lec-body"><div class="lec-title">Pooling &amp; purchase methods</div><div class="lec-meta">105m · done 2 May</div></div><span class="badge bg-green">done</span><div class="lec-acts"><button class="btn btn-xs btn-ghost">✎</button></div></div>
-    <div class="lec"><span class="lec-num">L2</span><div class="lec-body"><div class="lec-title">Inter-company holdings</div><div class="lec-meta">~120m · not started</div></div><span class="badge bg-gray">pending</span><div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div></div>
+    <div class="lec"><div class="lec-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></div><div class="lec-body"><div class="lec-title">Pooling &amp; purchase methods</div><div class="lec-meta">105m · done 2 May</div></div><span class="badge bg-green">done</span></div>
+    <div class="lec"><div class="lec-ic"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></div><div class="lec-body"><div class="lec-title">Inter-company holdings</div><div class="lec-meta">~120m · not started</div></div><span class="badge bg-gray">pending</span></div>
     <div class="addlec"><button class="btn btn-xs">+ Add lecture</button><button class="btn btn-xs btn-ghost">+ Add revision lecture</button></div>
   </div></div>
 </div>
 
 <div class="chap">
   <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name">AS-3 — Cash Flow Statement</span>
-    <div class="chap-prog"><span class="xs mono muted">0 lec</span><div class="chap-prog-bar"></div><span class="chap-prog-pct">—</span></div>
-  </div>
-  <div class="chap-body"><div class="chap-inner">
-    <div class="empty">No lectures added yet.</div>
-    <div class="addlec" style="border-top:none"><button class="btn btn-xs">+ Add lecture</button></div>
-  </div></div>
-</div>
-
-<div class="chap">
-  <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name" style="color:var(--dim);font-weight:500">Misc / Bonus (not tied to a chapter)</span>
+    <svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="chap-name" style="color:var(--dim);font-weight:500">Misc / Bonus (not tied to a chapter)</span>
     <div class="chap-prog"><span class="xs mono muted">0 lec</span></div>
   </div>
   <div class="chap-body"><div class="chap-inner">
-    <div class="empty">Doubt sessions, special lectures, etc. Still counts toward hours.</div>
+    <div class="empty">Doubt sessions, marathons, etc. Still counts toward hours.</div>
     <div class="addlec" style="border-top:none"><button class="btn btn-xs">+ Add misc lecture</button></div>
   </div></div>
 </div>
 
 </div></div>
 
-<!-- ═══════════════════════════════ SYLLABUS ═══════════════════════════════ -->
+
+<!-- ════════ SYLLABUS ════════ -->
 <div class="pg" id="pg-syllabus"><div class="pw">
 
-<div class="rowb wrap mb16">
+<div class="rowb wrap mb20">
   <div><div class="h1">Syllabus · First Reading</div><div class="sub">Your own read-through. Revisions auto-schedule from here.</div></div>
-  <button class="btn btn-ghost btn-sm">⚡ Quick-log past reading</button>
+  <button class="btn btn-ghost btn-sm"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7z" fill="currentColor" stroke="none"/></svg> Quick-log past reading</button>
 </div>
 
 <div class="stabs" id="sylTabs"></div>
 
-<div class="bento b4 mb16">
-  <div class="bc bc-dark"><span class="blbl">Chapters read</span><span class="bnum bn-md">5 / 35</span><span class="bsub">2 in progress</span></div>
-  <div class="bc bc-lime"><span class="blbl">Reading time</span><span class="bnum bn-md">9h 40m</span><span class="bsub">7 sessions</span></div>
-  <div class="bc bc-purple"><span class="blbl">Revisions due</span><span class="bnum bn-md">3</span><span class="bsub">1 overdue · 2 today</span></div>
-  <div class="bc bc-sky"><span class="blbl">Coverage</span><span class="bnum bn-md">14%</span><span class="bsub">of AA reading</span></div>
+<div class="bento b4 mb20">
+  <div class="bc bc-neutral"><span class="blbl">Chapters read</span><div class="bnum"><span class="bn-v">5</span><span class="bn-u">/ 35</span></div><span class="bsub">2 in progress</span></div>
+  <div class="bc bc-accent"><span class="blbl">Reading time</span><div class="bnum"><span class="bn-v">9</span><span class="bn-u">h</span><span class="bn-v">40</span><span class="bn-u">m</span></div><span class="bsub">7 sessions</span></div>
+  <div class="bc bc-purple"><span class="blbl">Revisions due</span><div class="bnum"><span class="bn-v">3</span></div><span class="bsub">1 overdue · 2 today</span></div>
+  <div class="bc bc-neutral"><span class="blbl">Coverage</span><div class="bnum"><span class="bn-v">14</span><span class="bn-u">%</span></div><span class="bsub">of AA reading</span></div>
 </div>
 
 <div class="slbl mb10">Advanced Accounting · chapters</div>
 
 <div class="chap open">
   <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name">AS-19 — Leases</span>
+    <svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="chap-name">AS-19 — Leases</span>
     <div class="chap-prog"><span class="badge bg-amber">in progress</span></div>
   </div>
   <div class="chap-body"><div class="chap-inner">
     <div class="resume" style="margin-bottom:0">
-      <div class="resume-ico">📖</div>
+      <div class="resume-ico"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M4 4h7a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5H20z"/></svg></div>
       <div class="resume-body">
         <div class="resume-where">stopped at: <b>Sale and leaseback transactions</b></div>
-        <div class="resume-meta">1h 20m so far · 2 sessions (Mon + Tue)</div>
-        <div class="mini-pb mt4"><div class="mini-pb-f" style="width:70%"></div></div>
+        <div class="resume-meta">1h 20m · 2 sessions (Mon + Tue)</div>
+        <div class="mini-pb"><div class="mini-pb-f" style="width:70%"></div></div>
       </div>
-      <button class="btn btn-suc btn-sm">▶ Resume reading</button>
+      <button class="btn btn-suc btn-sm"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg> Resume</button>
     </div>
   </div></div>
 </div>
 
 <div class="chap open">
   <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name">AS-1 — Accounting Policies</span>
-    <div class="chap-prog"><span class="badge bg-green">read ✓</span></div>
+    <svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="chap-name">AS-1 — Accounting Policies</span>
+    <div class="chap-prog"><span class="badge bg-green">read</span></div>
   </div>
   <div class="chap-body"><div class="chap-inner">
-    <div class="row wrap mb10" style="gap:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)"><span>First read 20 May · 45m total</span></div>
-    <div class="rowb" style="background:var(--faint);border-radius:9px;padding:10px 13px;flex-wrap:wrap;gap:8px">
-      <div class="row wrap" style="gap:6px"><span class="badge bg-green">R1 ✓ · 22 May</span><span class="badge bg-amber">R2 due in 3d</span><span class="badge bg-gray">R3 · 19 Jun</span><span class="badge bg-gray">R4 · 19 Jul</span></div>
-      <button class="btn btn-xs btn-ghost">⚡ log past revision</button>
+    <div class="xs mono muted mb10">First read 20 May · 45m total</div>
+    <div class="rowb wrap" style="background:var(--faint);border-radius:10px;padding:11px 13px;gap:8px">
+      <div class="row wrap" style="gap:6px"><span class="badge bg-green">R1 done</span><span class="badge bg-amber">R2 in 3d</span><span class="badge bg-gray">R3 · 19 Jun</span><span class="badge bg-gray">R4 · 19 Jul</span></div>
+      <button class="btn btn-xs btn-ghost">Quick-log revision</button>
     </div>
   </div></div>
 </div>
 
 <div class="chap">
   <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name">AS-2 — Valuation of Inventory</span>
+    <svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="chap-name">AS-2 — Valuation of Inventory</span>
     <div class="chap-prog"><span class="badge bg-gray">not started</span></div>
   </div>
   <div class="chap-body"><div class="chap-inner">
-    <div class="row" style="gap:8px"><button class="btn btn-sm btn-p">▶ Start reading</button><button class="btn btn-sm btn-ghost">⚡ Log past reading</button></div>
-  </div></div>
-</div>
-
-<div class="chap">
-  <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
-    <span class="chap-caret">▶</span><span class="chap-name">AS-3 — Cash Flow Statement</span>
-    <div class="chap-prog"><span class="badge bg-gray">not started</span></div>
-  </div>
-  <div class="chap-body"><div class="chap-inner">
-    <div class="row" style="gap:8px"><button class="btn btn-sm btn-p">▶ Start reading</button><button class="btn btn-sm btn-ghost">⚡ Log past reading</button></div>
+    <div class="row" style="gap:8px"><button class="btn btn-sm btn-p"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg> Start reading</button><button class="btn btn-sm btn-ghost">Quick-log past reading</button></div>
   </div></div>
 </div>
 
@@ -544,7 +530,7 @@ body.theme-warm .resume-ico{background:rgba(212,144,74,.18)}
 
 
 <script>
-// ── tab switching ──
+// tab switching
 document.querySelectorAll('.nb[data-p]').forEach(function(b){
   b.onclick=function(){
     document.querySelectorAll('.nb[data-p]').forEach(function(x){x.classList.remove('on');});
@@ -554,77 +540,56 @@ document.querySelectorAll('.nb[data-p]').forEach(function(b){
     window.scrollTo(0,0);
   };
 });
-
-// ── theme toggle ──
+// theme toggle
 function setTheme(t){
-  document.body.classList.toggle('theme-dark', t==='dark');
-  document.body.classList.toggle('theme-warm', t==='warm');
-  document.getElementById('thm-dark').classList.toggle('on', t==='dark');
-  document.getElementById('thm-warm').classList.toggle('on', t==='warm');
+  document.body.classList.toggle('theme-dark',t==='dark');
+  document.body.classList.toggle('theme-light',t==='light');
+  document.getElementById('thm-dark').classList.toggle('on',t==='dark');
+  document.getElementById('thm-light').classList.toggle('on',t==='light');
 }
-
-// ── layout toggle ──
-function setLayout(l){
-  document.body.classList.toggle('layout-padded', l==='padded');
-  document.getElementById('lay-full').classList.toggle('on', l==='full');
-  document.getElementById('lay-pad').classList.toggle('on', l==='padded');
-}
-
-// ── brand font picker ──
+// brand font picker
 function setBrand(el,font,weight,ls){
   document.querySelectorAll('.brandopt').forEach(function(x){
     x.classList.remove('sel');
-    var badge=x.querySelector('.badge');
-    if(badge) badge.remove();
+    var b=x.querySelector('.badge'); if(b) b.remove();
   });
   el.classList.add('sel');
   var badge=document.createElement('span');
-  badge.className='badge bg-lime';badge.style.marginLeft='auto';badge.textContent='on';
+  badge.className='badge bg-accent'; badge.style.marginLeft='auto'; badge.textContent='selected';
   el.appendChild(badge);
   var n=document.getElementById('brand-name');
-  n.style.fontFamily="'"+font+"',sans-serif";
-  n.style.fontWeight=weight;
-  n.style.letterSpacing=ls;
+  n.style.fontFamily="'"+font+"',sans-serif"; n.style.fontWeight=weight; n.style.letterSpacing=ls;
 }
-
-// ── subject data ──
-var SUBS=[['aa','AA','#A78BFA'],['law','LAW','#34D399'],['it','IT','#FB923C'],
-          ['gst','GST','#22D3EE'],['cma','CMA','#F472B6'],['audit','AUD','#FBBF24'],
-          ['fm','FM','#60A5FA'],['sm','SM','#E879F9']];
-
+// subjects
+var SUBS=[['AA','#A78BFA'],['LAW','#34D399'],['IT','#FB923C'],['GST','#22D3EE'],['CMA','#F472B6'],['AUD','#FBBF24'],['FM','#60A5FA'],['SM','#E879F9']];
 function buildTabs(id){
   document.getElementById(id).innerHTML=SUBS.map(function(s,i){
-    var on=i===0;
-    var st=on?'background:'+s[2]+';border-color:'+s[2]+';color:#0E0E0E':'';
-    return '<button class="stab" style="'+st+'"><span class="sdot" style="background:'+(on?'#0E0E0E':s[2])+'"></span>'+s[1]+'</button>';
+    var on=i===0, st=on?'background:'+s[1]+';border-color:'+s[1]+';color:#0E0E0E':'';
+    return '<button class="stab" style="'+st+'"><span class="sdot" style="background:'+(on?'#0E0E0E':s[1])+'"></span>'+s[0]+'</button>';
   }).join('');
 }
 buildTabs('lecTabs'); buildTabs('sylTabs');
-
-// ── subject readiness bars ──
-var PROG=[['AA','#A78BFA',62,40,15],['LAW','#34D399',30,55,10],['IT','#FB923C',80,60,40],
-          ['GST','#22D3EE',45,20,5],['CMA','#F472B6',70,50,30],['AUD','#FBBF24',20,10,0],
-          ['FM','#60A5FA',55,35,20],['SM','#E879F9',40,25,10]];
+// subject readiness
+var PROG=[['AA','#A78BFA',62],['LAW','#34D399',30],['IT','#FB923C',80],['GST','#22D3EE',45],['CMA','#F472B6',70],['AUD','#FBBF24',20],['FM','#60A5FA',55],['SM','#E879F9',40]];
 document.getElementById('subjProg').innerHTML=PROG.map(function(p){
-  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
-    '<span class="schip" style="background:'+p[1]+'22;color:'+p[1]+';border:1px solid '+p[1]+'44;width:52px;justify-content:center"><span class="sdot" style="background:'+p[1]+'"></span>'+p[0]+'</span>'+
+  return '<div class="sr"><span class="schip sr-chip" style="background:'+p[1]+'22;color:'+p[1]+'"><span class="sdot" style="background:'+p[1]+'"></span>'+p[0]+'</span>'+
     '<div style="flex:1"><div class="pbar"><div class="pbar-f" style="width:'+p[2]+'%;background:'+p[1]+'"></div></div></div>'+
-    '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;font-weight:700;color:var(--dim);width:30px;text-align:right">'+p[2]+'%</span>'+
-  '</div>';
+    '<span class="sr-pct">'+p[2]+'%</span></div>';
 }).join('');
-
-// ── week bar chart ──
+// week chart
 var WK=[['M',3.2],['T',4.1],['W',2.5],['T',3.8],['F',3.3],['S',2.9],['S',2.2]];
 var mx=Math.max.apply(null,WK.map(function(d){return d[1];}));
 document.getElementById('weekChart').innerHTML=WK.map(function(d,i){
-  var pct=Math.round(d[1]/mx*100);
-  var last=i===WK.length-1;
-  return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end">'+
-    '<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;color:var(--dim)">'+d[1]+'</span>'+
-    '<div style="width:100%;background:'+(last?'var(--lime)':'rgba(214,255,75,.22)')+';border-radius:4px 4px 0 0;height:'+pct+'%"></div>'+
-    '<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;color:var(--dim)">'+d[0]+'</span>'+
-  '</div>';
+  var pct=Math.round(d[1]/mx*100), last=i===WK.length-1;
+  return '<div class="wk-col"><span class="wk-v">'+d[1]+'</span>'+
+    '<div class="wk-bar" style="background:'+(last?'var(--accent)':'color-mix(in srgb,var(--accent) 28%,transparent)')+';height:'+pct+'%"></div>'+
+    '<span class="wk-d">'+d[0]+'</span></div>';
 }).join('');
+// default brand = Sora (already set in CSS); apply selected styling to Sora option on load
+(function(){
+  var soraOpt=document.querySelectorAll('.brandopt')[1];
+  if(soraOpt){ var n=document.getElementById('brand-name'); n.style.fontFamily="'Sora',sans-serif"; n.style.fontWeight=800; n.style.letterSpacing='-.03em'; }
+})();
 </script>
 </body>
 </html>
