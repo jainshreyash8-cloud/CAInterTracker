@@ -117,6 +117,13 @@ Two layers:
 In this slice the revision dots are a **read-only preview**. The actionable due-revisions queue **and** the daily "review yesterday" nudge are the NEXT slice.
 
 ## NEXT SLICE (after this)
-Revisions queue + revision sessions + the daily "review yesterday" nudge:
-- **Review-yesterday queue** (derived from entries: any chapter with a lecture/first-reading/questions session *yesterday* → a one-off review item today, fades after ~2 days).
-- **Chapter revision queue** (from `firstReadDone` + `revOffsets`): due-today / overdue list, start a revision session from it, mark a revision done (store completion per R on the chapter so dots fill in), advance to next offset. Surfaces on Today + the Revisions tab.
+Revisions queue + revision sessions + the daily "review yesterday" nudge — **DONE 2026-05-29** (commit `feat(revisions): two-layer revision queue + revision sessions`).
+
+- **Revision is now a real session activity** (subject → chapter, no lecture step). Finishing it as Complete ticks off the chapter's next due revision; a quick **✓ Done** button on each queue item does the same without a timer. Completion stored in `chData.revs` (keyed by R number → date) and shown as green dots in the Syllabus table. Added to Quick-complete too.
+- **Revisions tab** has the two locked layers:
+  1. **Review yesterday** — chapters with a lecture / first-reading / questions session in the last ~2 days that haven't been studied again today. Fully derived from entries (no extra state); fades after 2 days; clears once you study the chapter again. "Review now" starts a revision session.
+  2. **Revisions due** — chapter spaced revisions from `firstReadDone` + `revOffsets`, **sequential + fixed dates** (only the next undone R is active; due/overdue first), plus a "coming up this week" peek. Decision locked with user: fixed schedule, done in order.
+- **Today page** shows a "X due / Y to review" nudge linking to the Revisions tab.
+
+## NEXT SLICE (after this)
+Tests (dual-phase countdown) — per the "Tests tab specifics" section above. OR Questions + Flashpoints, then Dashboard + final-revision planner. Confirm order with user.
