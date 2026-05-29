@@ -131,3 +131,20 @@ Revisions queue + revision sessions + the daily "review yesterday" nudge — **D
 
 ## NEXT SLICE (after this)
 Tests (dual-phase countdown) — per the "Tests tab specifics" section above. OR Questions + Flashpoints, then Dashboard + final-revision planner. Confirm order with user.
+
+
+## Tests slice — DONE 2026-05-29 (commit `feat(tests): dual-phase countdown tests slice`, on `main`)
+
+Rebuilt cleanly after the previous session's uncommitted Tests code was lost. `index.html` now has a fully working Tests tab.
+
+- **Data:** `APP.tests=[]` (in freshState), each `{id,type:'full'|'chapter',source,name,subjectId,chapterIdx,readingMin,testMin,maxMarks,attempts:[],createdAt,updatedAt}`. Attempt `{id,date,startTime,endTime,durationMin,readingMin,marks,maxMarks,note,status:'completed'}`. `APP.activeTest` (separate from `APP.active`) holds the running test. `tests` added to the cloud-merge replace list. `ACT.test` = `on:true, pick:false` (never in the session picker — launched from the Tests tab, like Revisions).
+- **Tab:** bento (tests count / attempts / avg % / not-attempted) + Full-syllabus and Chapterwise sections. Each test = expandable card → chips (source / reading+test mins / max marks), attempt history (date · marks · % colour-coded · duration · note · delete), and actions Start / Log past attempt / Edit / Delete. New/Edit via `testForm`→`saveTest` (defaults: full 15+180, chapter 0+90, 100 marks; `tf-seg` type toggle swaps source/chapter fields + prefills).
+- **Dual-phase countdown engine** (`startTest`→`startTestLoop`/`testTick`/`paintTest`/`testPhaseLeft`/`clearActiveTest`, timestamp-based so it's drift-free + survives reload): reading phase then writing phase, big `.t-display` countdown coloured by phase (reading=accent, writing=ink→amber≤5m→rose at 0). `testSkipReading()` = "Start writing now". Only **Complete** or **Abort** (no pause — real-exam conditions).
+  - `completeTest`→`finalizeTest`: marks (optional, clamped 0..maxMarks) + note → pushes a `completed` attempt AND logs a `test` time entry (status done, payload{testId,testName,type,source,marks,maxMarks,readingMin}). Divide-by-zero guarded via `!=null` checks + `maxMarks>0`.
+  - `abortTest`: logs the time entry only (payload.aborted=true, no attempt) so the test stays un-attempted; confirms first.
+  - `quickTest`/`submitQuickTest`: log a past attempt (pick test + date/start/end + marks + note) with the no-overlap guard.
+- **Wiring:** `showPage` tests→`renderTests` (renders the running screen if `activeTest`). `wireShell` tb-timer click → `showPage('tests')` when a test is active, else `openFS()`. `init()` resumes `startTestLoop` if `activeTest`. `startSession` guarded against an active test (and `startTest` guarded against an active session). `entryTitle(e)` helper shows test name + marks in Today's list, the Timeline tooltip and the timeline block popover.
+- Verified: `node --check` on all 18 script blocks + a logic smoke-test (scoring guard + phase math) passed.
+
+### STILL TODO (unchanged, confirm look with user first)
+Questions (session activity, no tab) · Flashpoints tab · Dashboard tab + final-revision planner. Per user's standing request, CONFIRM the exact Flashpoints + Dashboard look before building (adapt from v2 `renderDash`/`renderFlashpoints` but drop "phases", no emojis, use our data model).
