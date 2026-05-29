@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tracker · Look Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E0E0E; --dc:#161614; --faint:#1A1816; --void:#060604;
+  --ink:#EDEAE3; --dim:#5A5750; --muted:#2A2825;
+  --lime:#D6FF4B; --lime-ink:#0E0E0E;
+  --rose:#FF4D6D; --sky:#D0E8FF; --sky-ink:#0E1820;
+  --sand:#F0E6D0; --sand-ink:#1A1410;
+  --amber:#FFB84D; --purple:#C4B5FD; --green:#4ADE80; --blue:#93C5FD;
+  --sans:'Instrument Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button{cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px}
+a{color:var(--lime);text-decoration:none}
+
+/* TOPBAR */
+.top{display:flex;align-items:center;justify-content:space-between;padding:11px 22px;border-bottom:1px solid var(--muted);position:sticky;top:0;z-index:100;background:var(--bg);gap:14px;min-height:54px}
+.brand{display:flex;flex-direction:column;line-height:1;flex-shrink:0}
+.brand-name{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.brand-by{font-size:8px;color:var(--dim);font-family:var(--mono);letter-spacing:.12em;margin-top:3px;text-transform:uppercase}
+.nav{display:flex;border:1px solid var(--muted);border-radius:8px;overflow:hidden;overflow-x:auto;scrollbar-width:none;flex-shrink:1;min-width:0}
+.nav::-webkit-scrollbar{display:none}
+.nb{font-size:10px;font-weight:700;padding:7px 11px;color:var(--dim);background:transparent;border-right:1px solid var(--muted);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;font-family:var(--mono)}
+.nb:last-child{border-right:none}
+.nb:hover{color:var(--ink);background:var(--faint)}
+.nb.on{color:var(--bg);background:var(--ink)}
+.top-right{display:flex;align-items:center;gap:14px;flex-shrink:0;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.tb-stat{display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%}
+
+/* PAGES */
+.pg{display:none}
+.pg.on{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pw{padding:16px 22px 48px;max-width:1180px;margin:0 auto}
+
+/* TYPE */
+.h1{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:12px;color:var(--dim);margin-top:3px}
+.slbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.mono{font-family:var(--mono)} .muted{color:var(--dim)}
+.sm{font-size:12px} .xs{font-size:10px} .xxs{font-size:9px}
+.fw6{font-weight:600} .fw7{font-weight:700}
+.tc{text-align:center} .tr{text-align:right}
+
+/* SPACING */
+.mb6{margin-bottom:6px}.mb8{margin-bottom:8px}.mb10{margin-bottom:10px}.mb12{margin-bottom:12px}.mb14{margin-bottom:14px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}
+.mt2{margin-top:2px}.mt4{margin-top:4px}.mt6{margin-top:6px}.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}
+.row{display:flex;align-items:center;gap:8px}
+.rowb{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wrap{flex-wrap:wrap}
+
+/* BENTO — the only card language */
+.bento{display:grid;gap:11px}
+.b4{grid-template-columns:repeat(4,1fr)}
+.b3{grid-template-columns:repeat(3,1fr)}
+.b2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:820px){.b4{grid-template-columns:repeat(2,1fr)}.b3{grid-template-columns:1fr}}
+@media(max-width:560px){.b4,.b2{grid-template-columns:1fr}}
+.bc{border-radius:14px;padding:18px 20px;position:relative;transition:transform .18s,box-shadow .18s;overflow:hidden}
+.bc:hover{transform:translateY(-2px);box-shadow:0 10px 34px rgba(0,0,0,.5)}
+.bc-dark{background:var(--dc);border:1px solid var(--muted)}
+.bc-void{background:var(--void);border:1px solid var(--muted)}
+.bc-lime{background:var(--lime);color:var(--lime-ink)}
+.bc-sky{background:var(--sky);color:var(--sky-ink)}
+.bc-sand{background:var(--sand);color:var(--sand-ink)}
+.bc-amber{background:linear-gradient(150deg,#1f1400,#160e00);border:1px solid #3a2600;color:var(--amber)}
+.bc-purple{background:linear-gradient(150deg,#120c24,#0c0818);border:1px solid #281a4e;color:var(--purple)}
+.bc-green{background:linear-gradient(150deg,#04150b,#030f07);border:1px solid #0d3320;color:var(--green)}
+.bc-rose{background:linear-gradient(150deg,#1f0a12,#16070d);border:1px solid #3d1622;color:var(--rose)}
+.blbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:8px;font-family:var(--mono)}
+.bc-dark .blbl,.bc-void .blbl{color:var(--dim)}
+.bc-lime .blbl,.bc-sky .blbl,.bc-sand .blbl{opacity:.5}
+.bc-amber .blbl,.bc-purple .blbl,.bc-green .blbl,.bc-rose .blbl{opacity:.6}
+.bnum{font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:.9;letter-spacing:-.03em;display:block}
+.bn-xl{font-size:64px}.bn-lg{font-size:50px}.bn-md{font-size:38px}.bn-sm{font-size:28px}
+.bsub{font-size:10px;opacity:.6;margin-top:8px;font-weight:500;display:block;line-height:1.45;font-family:var(--mono)}
+.bc-lime .bsub,.bc-sky .bsub,.bc-sand .bsub{opacity:.65}
+
+/* expandable exam card */
+.exam-card{cursor:pointer}
+.exam-more{max-height:0;overflow:hidden;transition:max-height .35s ease,margin .35s ease;margin-top:0}
+.exam-card.open .exam-more{max-height:340px;margin-top:16px}
+.phase-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.12)}
+.phase-pill{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.14)}
+
+/* generic flat card (NO colored outline) */
+.card{background:var(--dc);border:1px solid var(--muted);border-radius:14px;padding:18px 20px}
+.card-flat{background:var(--dc);border:1px solid var(--muted);border-radius:14px;overflow:hidden}
+.card-h{padding:15px 20px;border-bottom:1px solid var(--muted);display:flex;justify-content:space-between;align-items:center}
+.card-t{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;letter-spacing:-.01em}
+
+/* badges */
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase;font-family:var(--mono);white-space:nowrap;line-height:1.5}
+.bg-lime{background:rgba(214,255,75,.12);color:var(--lime);border:1px solid rgba(214,255,75,.25)}
+.bg-amber{background:rgba(255,184,77,.12);color:var(--amber);border:1px solid rgba(255,184,77,.25)}
+.bg-green{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25)}
+.bg-gray{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--muted)}
+.bg-blue{background:rgba(147,197,253,.12);color:var(--blue);border:1px solid rgba(147,197,253,.25)}
+
+/* subject chip */
+.schip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;font-family:var(--mono);white-space:nowrap}
+.sdot{width:6px;height:6px;border-radius:50%}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 15px;border-radius:9px;border:1px solid var(--muted);background:var(--faint);color:var(--ink);font-weight:600;font-size:12px;white-space:nowrap;font-family:var(--sans)}
+.btn:hover{border-color:#444;background:var(--dc)}
+.btn-p{background:var(--lime);border-color:var(--lime);color:var(--lime-ink);font-weight:700}
+.btn-p:hover{background:#c8f03a}
+.btn-suc{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);color:var(--green)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--dim)}
+.btn-ghost:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:7px}
+.btn-xs{padding:4px 9px;font-size:10px;border-radius:6px}
+
+/* subject tabs */
+.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.stab{padding:7px 14px;border-radius:22px;border:1px solid var(--muted);background:transparent;color:var(--dim);font-size:11px;font-weight:700;font-family:var(--sans);display:inline-flex;align-items:center;gap:7px}
+.stab:hover{border-color:#555;color:var(--ink)}
+
+/* progress bar */
+.pbar{height:5px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
+.pbar-f{height:100%;border-radius:99px}
+
+/* in-progress resume item */
+.resume{display:flex;align-items:center;gap:14px;padding:14px 16px;background:linear-gradient(135deg,#1c1400,#161005);border:1px solid #3a2600;border-radius:12px;margin-bottom:8px}
+.resume-ico{width:38px;height:38px;border-radius:10px;background:rgba(255,184,77,.14);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.resume-body{flex:1;min-width:0}
+.resume-title{font-size:13px;font-weight:700;color:var(--ink)}
+.resume-meta{font-size:10px;color:var(--amber);font-family:var(--mono);margin-top:3px}
+.resume-where{font-size:11px;color:var(--dim);margin-top:4px;font-style:normal}
+.resume-where b{color:var(--ink);font-weight:600}
+.mini-pbar{height:4px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:8px;max-width:260px}
+.mini-pbar-f{height:100%;background:var(--amber);border-radius:99px}
+
+/* session row */
+.srow{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+.srow:last-child{border-bottom:none}
+.srow:hover{background:rgba(255,255,255,.015)}
+.stime{font-family:var(--mono);font-size:10px;color:var(--dim);width:104px;flex-shrink:0}
+.sbody{flex:1;min-width:0}
+.sname{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smeta{font-size:10px;color:var(--dim);margin-top:2px;font-family:var(--mono)}
+.sdur{font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0}
+
+/* CHAPTER (lectures live inside) */
+.chap{border:1px solid var(--muted);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--dc)}
+.chap-h{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none}
+.chap-h:hover{background:rgba(255,255,255,.015)}
+.chap-caret{font-family:var(--mono);font-size:10px;color:var(--dim);width:12px;transition:transform .2s}
+.chap.open .chap-caret{transform:rotate(90deg)}
+.chap-name{flex:1;font-size:13px;font-weight:700;min-width:0}
+.chap-prog{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.chap-prog-bar{width:64px;height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.chap-prog-pct{font-family:var(--mono);font-size:10px;font-weight:700;width:34px;text-align:right;color:var(--dim)}
+.chap-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.chap.open .chap-body{max-height:800px}
+.chap-inner{padding:4px 16px 14px}
+.lec{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;background:var(--faint);margin-bottom:6px}
+.lec.rev{background:rgba(196,181,253,.04);border:1px solid rgba(196,181,253,.12)}
+.lec-num{font-family:var(--mono);font-size:10px;color:var(--dim);width:26px;flex-shrink:0;text-align:center}
+.lec-body{flex:1;min-width:0}
+.lec-title{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lec-where{font-size:10px;color:var(--amber);margin-top:3px;font-family:var(--mono)}
+.lec-meta{font-size:10px;color:var(--dim);margin-top:2px;font-family:var(--mono)}
+.lec-acts{display:flex;gap:4px;flex-shrink:0}
+.addlec{display:flex;gap:8px;margin-top:8px;padding-top:10px;border-top:1px dashed var(--muted)}
+
+/* misc */
+.empty{padding:30px;text-align:center;color:var(--dim);font-size:12px}
+.note-banner{background:rgba(147,197,253,.06);border:1px solid rgba(147,197,253,.18);border-radius:10px;padding:11px 14px;font-size:11px;color:var(--blue);line-height:1.5;margin-bottom:16px}
+
+/* brand options panel */
+.brandopt{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--muted);border-radius:10px;margin-bottom:7px;cursor:pointer;background:var(--faint)}
+.brandopt:hover{border-color:#555}
+.brandopt.sel{border-color:var(--lime);background:rgba(214,255,75,.05)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand" id="brand">
+    <span class="brand-name" id="brand-name">Tracker</span>
+    <span class="brand-by">by Shreyash Jain</span>
+  </div>
+  <div class="nav">
+    <button class="nb on" data-p="today">Today</button>
+    <button class="nb" data-p="lectures">Lectures</button>
+    <button class="nb" data-p="syllabus">Syllabus</button>
+    <button class="nb" style="opacity:.4">Revisions</button>
+    <button class="nb" style="opacity:.4">Tests</button>
+    <button class="nb" style="opacity:.4">Flashpoints</button>
+    <button class="nb" style="opacity:.4">Dashboard</button>
+    <button class="nb" style="opacity:.4">Timeline</button>
+  </div>
+  <div class="top-right">
+    <span class="tb-stat" style="color:var(--amber)">109d to exam</span>
+    <span class="tb-stat">12 🔥</span>
+    <span class="tb-stat"><span class="dot" style="background:var(--green)"></span>synced</span>
+  </div>
+</div>
+
+<!-- ════════ TODAY ════════ -->
+<div class="pg on" id="pg-today">
+<div class="pw">
+
+  <div class="note-banner">
+    👀 <b>Look-only prototype.</b> Fake data. Only tab-switching + expanding sections work. Nothing is saved. Judge the <b>design &amp; layout</b> only — tell me what to move, remove, or restyle.
+  </div>
+
+  <div class="rowb wrap mb16">
+    <div>
+      <div class="h1">Good evening, Shreyash.</div>
+      <div class="sub mono">Friday, 29 May 2026</div>
+    </div>
+    <button class="btn btn-p">+ Start Session</button>
+  </div>
+
+  <!-- BENTO STAT ROW -->
+  <div class="bento b4 mb12">
+    <!-- expandable exam countdown card -->
+    <div class="bc bc-amber exam-card" id="examCard" onclick="document.getElementById('examCard').classList.toggle('open')">
+      <span class="blbl">Days to exam ▾</span>
+      <span class="bnum bn-lg">109</span>
+      <span class="bsub">Group 1 · 15 Sep 2026 · tap for plan</span>
+      <div class="exam-more">
+        <div class="phase-row" style="border-top:none">
+          <span class="phase-pill">now</span>
+          <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Lecture + First Reading</div><div class="xxs mono" style="opacity:.7">running until lectures done (~1 Aug)</div></div>
+        </div>
+        <div class="phase-row">
+          <span class="phase-pill">next</span>
+          <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Revisions (R1 · R7 · R30)</div><div class="xxs mono" style="opacity:.7">ongoing alongside</div></div>
+        </div>
+        <div class="phase-row">
+          <span class="phase-pill">final</span>
+          <div style="flex:1"><div class="sm fw7" style="color:var(--ink)">Consolidated revision · 3 passes</div><div class="xxs mono" style="opacity:.7">7·3·1 days/paper · starts ~28 Aug</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bc bc-lime">
+      <span class="blbl">Today studied</span>
+      <span class="bnum bn-lg">3<span style="font-size:28px">h</span>20<span style="font-size:28px">m</span></span>
+      <span class="bsub">4 sessions logged</span>
+    </div>
+    <div class="bc bc-dark">
+      <span class="blbl">Streak</span>
+      <span class="bnum bn-lg">12</span>
+      <span class="bsub">days running 🔥</span>
+    </div>
+    <div class="bc bc-purple">
+      <span class="blbl">Last 7 days</span>
+      <span class="bnum bn-md">22<span style="font-size:24px">h</span></span>
+      <span class="bsub">avg 3h 8m / day</span>
+    </div>
+  </div>
+
+  <!-- SUBJECT PROGRESS as bento (replaces ugly "quick stats") -->
+  <div class="bento b2 mb16">
+    <div class="card">
+      <div class="rowb mb12"><span class="slbl">Subject readiness</span><span class="xs mono muted">lectures · reading · revision</span></div>
+      <div id="subjProg"></div>
+    </div>
+    <div class="card">
+      <div class="rowb mb12"><span class="slbl">This week</span><span class="xs mono muted">study hours / day</span></div>
+      <div id="weekChart" style="display:flex;align-items:flex-end;gap:8px;height:130px;padding-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- RESUME (in-progress, with full detail) -->
+  <div class="mb8 rowb"><span class="slbl">Resume where you left off</span><span class="xs mono muted">2 in progress</span></div>
+  <div class="mb20">
+    <div class="resume">
+      <div class="resume-ico">🎓</div>
+      <div class="resume-body">
+        <div class="row wrap" style="gap:8px"><span class="schip" style="background:#A78BFA22;color:#A78BFA"><span class="sdot" style="background:#A78BFA"></span>AA</span><span class="resume-title">AS-19 Leases · Lecture 3</span></div>
+        <div class="resume-where">stopped at: <b>Operating lease classification (finance vs operating)</b></div>
+        <div class="resume-meta">40m of 120m watched · 33%</div>
+        <div class="mini-pbar"><div class="mini-pbar-f" style="width:33%"></div></div>
+      </div>
+      <button class="btn btn-suc btn-sm">▶ Resume</button>
+    </div>
+    <div class="resume">
+      <div class="resume-ico">📖</div>
+      <div class="resume-body">
+        <div class="row wrap" style="gap:8px"><span class="schip" style="background:#34D39922;color:#34D399"><span class="sdot" style="background:#34D399"></span>LAW</span><span class="resume-title">Incorporation of Company · First Reading</span></div>
+        <div class="resume-where">stopped at: <b>Doctrine of indoor management</b></div>
+        <div class="resume-meta">1h 5m so far · ongoing</div>
+        <div class="mini-pbar"><div class="mini-pbar-f" style="width:55%"></div></div>
+      </div>
+      <button class="btn btn-suc btn-sm">▶ Resume</button>
+    </div>
+  </div>
+
+  <!-- TODAY SESSIONS -->
+  <div class="card-flat mb20">
+    <div class="card-h"><span class="card-t">Today's sessions</span><span class="xs mono muted">3h 20m total</span></div>
+    <div class="srow">
+      <div class="stime">06:40 – 07:35</div>
+      <div class="sbody"><div class="sname">🎓 Lecture · AS-19 Leases · Lec 2</div><div class="smeta">AA · "finished finance lease accounting"</div></div>
+      <span class="badge bg-green">done</span><span class="sdur">55m</span>
+    </div>
+    <div class="srow">
+      <div class="stime">10:15 – 11:00</div>
+      <div class="sbody"><div class="sname">📖 First Reading · Incorporation of Company</div><div class="smeta">LAW · "up to doctrine of indoor management"</div></div>
+      <span class="badge bg-amber">in progress</span><span class="sdur">45m</span>
+    </div>
+    <div class="srow">
+      <div class="stime">14:30 – 15:10</div>
+      <div class="sbody"><div class="sname">🎓 Lecture · AS-19 Leases · Lec 3</div><div class="smeta">AA · "operating lease classification"</div></div>
+      <span class="badge bg-amber">in progress</span><span class="sdur">40m</span>
+    </div>
+    <div class="srow">
+      <div class="stime">19:00 – 19:40</div>
+      <div class="sbody"><div class="sname">✍️ Questions · AS-14 Amalgamations</div><div class="smeta">CMA · "ICAI module Q1–Q8"</div></div>
+      <span class="badge bg-green">done</span><span class="sdur">40m</span>
+    </div>
+  </div>
+
+  <!-- BRAND PICKER (prototype only) -->
+  <div class="card">
+    <div class="slbl mb12">⚙ Pick the brand wordmark (prototype only — click one)</div>
+    <div class="brandopt sel" onclick="setBrand(this,'Space Grotesk',700,'-0.02em','Tracker')">
+      <div><span style="font-family:'Space Grotesk';font-weight:700;font-size:22px;letter-spacing:-.02em">Tracker</span> <span class="xs mono muted">Space Grotesk</span></div>
+      <span class="badge bg-lime">default</span>
+    </div>
+    <div class="brandopt" onclick="setBrand(this,'Sora',800,'-0.03em','Tracker')">
+      <div><span style="font-family:'Sora';font-weight:800;font-size:22px;letter-spacing:-.03em">Tracker</span> <span class="xs mono muted">Sora</span></div>
+    </div>
+    <div class="brandopt" onclick="setBrand(this,'Fraunces',600,'-0.01em','Tracker')">
+      <div><span style="font-family:'Fraunces';font-weight:600;font-size:22px">Tracker</span> <span class="xs mono muted">Fraunces (serif, upright)</span></div>
+    </div>
+    <div class="brandopt" onclick="setBrand(this,'JetBrains Mono',700,'-0.02em','Tracker')">
+      <div><span style="font-family:'JetBrains Mono';font-weight:700;font-size:20px">Tracker</span> <span class="xs mono muted">JetBrains Mono (techy)</span></div>
+    </div>
+    <div class="brandopt" onclick="setBrand(this,'Instrument Sans',700,'-0.01em','Tracker')">
+      <div><span style="font-family:'Instrument Sans';font-weight:700;font-size:22px">Tracker</span> <span class="xs mono muted">Instrument Sans (clean)</span></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════ LECTURES ════════ -->
+<div class="pg" id="pg-lectures">
+<div class="pw">
+  <div class="rowb wrap mb16">
+    <div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add as you receive them.</div></div>
+    <div class="row"><button class="btn btn-ghost btn-sm">⚡ Quick-log past lecture</button></div>
+  </div>
+
+  <!-- subject tabs -->
+  <div class="stabs" id="lecTabs"></div>
+
+  <!-- subject-completion due + stats (bento, no colored outlines) -->
+  <div class="bento b4 mb16">
+    <div class="bc bc-dark"><span class="blbl">Lectures done</span><span class="bnum bn-md">8 / 14</span><span class="bsub">3 chapters · 1 in progress</span></div>
+    <div class="bc bc-lime"><span class="blbl">Watched</span><span class="bnum bn-md">11<span style="font-size:22px">h</span>05<span style="font-size:22px">m</span></span><span class="bsub">of ~19h total</span></div>
+    <div class="bc bc-amber"><span class="blbl">Actually remaining</span><span class="bnum bn-md">7<span style="font-size:22px">h</span>55<span style="font-size:22px">m</span></span><span class="bsub">6 pending + 1 partial lecture</span></div>
+    <div class="bc bc-sky"><span class="blbl">Finish all by</span><span class="bnum bn-sm">1 Aug</span><span class="bsub">64 days left · ~7m/day needed</span></div>
+  </div>
+
+  <div class="rowb mb10">
+    <span class="slbl">Advanced Accounting · chapters</span>
+    <span class="xs mono muted">click a chapter to expand</span>
+  </div>
+
+  <!-- chapter with lectures inside -->
+  <div class="chap open">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-19 — Leases</span>
+      <div class="chap-prog">
+        <span class="xs mono muted">3 / 4 lec</span>
+        <div class="chap-prog-bar"><div class="pbar-f" style="width:62%;background:#A78BFA"></div></div>
+        <span class="chap-prog-pct">62%</span>
+      </div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="lec">
+        <span class="lec-num">L1</span>
+        <div class="lec-body"><div class="lec-title">Intro, definitions &amp; scope</div><div class="lec-meta">95m · watched 6 May</div></div>
+        <span class="badge bg-green">done</span>
+        <div class="lec-acts"><button class="btn btn-xs btn-ghost">✎</button></div>
+      </div>
+      <div class="lec">
+        <span class="lec-num">L2</span>
+        <div class="lec-body"><div class="lec-title">Finance lease accounting</div><div class="lec-meta">110m · watched today</div></div>
+        <span class="badge bg-green">done</span>
+        <div class="lec-acts"><button class="btn btn-xs btn-ghost">✎</button></div>
+      </div>
+      <div class="lec">
+        <span class="lec-num">L3</span>
+        <div class="lec-body"><div class="lec-title">Operating lease &amp; disclosures</div><div class="lec-where">⏸ stopped at: operating lease classification</div><div class="lec-meta">40m of 120m · 33%</div></div>
+        <span class="badge bg-amber">in progress</span>
+        <div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div>
+      </div>
+      <div class="lec">
+        <span class="lec-num">L4</span>
+        <div class="lec-body"><div class="lec-title">Sale &amp; leaseback transactions</div><div class="lec-meta">~90m · not started</div></div>
+        <span class="badge bg-gray">pending</span>
+        <div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div>
+      </div>
+      <!-- revision lecture sub-row -->
+      <div class="lec rev">
+        <span class="lec-num">↻</span>
+        <div class="lec-body"><div class="lec-title">Revision lecture — full chapter recap</div><div class="lec-meta">revision · not started</div></div>
+        <span class="badge bg-gray">pending</span>
+        <div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div>
+      </div>
+      <div class="addlec">
+        <button class="btn btn-xs">+ Add lecture</button>
+        <button class="btn btn-xs btn-ghost">+ Add revision lecture</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- collapsed chapters -->
+  <div class="chap">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-14 — Amalgamations</span>
+      <div class="chap-prog"><span class="xs mono muted">1 / 2 lec</span><div class="chap-prog-bar"><div class="pbar-f" style="width:50%;background:#A78BFA"></div></div><span class="chap-prog-pct">50%</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="lec"><span class="lec-num">L1</span><div class="lec-body"><div class="lec-title">Pooling &amp; purchase methods</div><div class="lec-meta">105m · watched 2 May</div></div><span class="badge bg-green">done</span><div class="lec-acts"><button class="btn btn-xs btn-ghost">✎</button></div></div>
+      <div class="lec"><span class="lec-num">L2</span><div class="lec-body"><div class="lec-title">Inter-company holdings</div><div class="lec-meta">~120m · not started</div></div><span class="badge bg-gray">pending</span><div class="lec-acts"><button class="btn btn-xs btn-suc">▶</button><button class="btn btn-xs btn-ghost">✎</button></div></div>
+      <div class="addlec"><button class="btn btn-xs">+ Add lecture</button><button class="btn btn-xs btn-ghost">+ Add revision lecture</button></div>
+    </div></div>
+  </div>
+
+  <div class="chap">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-3 — Cash Flow Statement</span>
+      <div class="chap-prog"><span class="xs mono muted">0 lec</span><div class="chap-prog-bar"><div class="pbar-f" style="width:0%"></div></div><span class="chap-prog-pct">—</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="empty">No lectures added to this chapter yet.</div>
+      <div class="addlec" style="border-top:none"><button class="btn btn-xs">+ Add lecture</button><button class="btn btn-xs btn-ghost">+ Add revision lecture</button></div>
+    </div></div>
+  </div>
+
+  <div class="chap">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name" style="color:var(--dim)">+ Misc / Bonus lectures (not tied to a chapter)</span>
+      <div class="chap-prog"><span class="xs mono muted">0 lec</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="empty">For doubt-solving sessions, marathon revisions, etc. These still count toward your hours.</div>
+      <div class="addlec" style="border-top:none"><button class="btn btn-xs">+ Add misc lecture</button></div>
+    </div></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════ SYLLABUS ════════ -->
+<div class="pg" id="pg-syllabus">
+<div class="pw">
+  <div class="rowb wrap mb16">
+    <div><div class="h1">Syllabus · First Reading</div><div class="sub">Your own self-study read-through. Revisions are scheduled from here.</div></div>
+    <button class="btn btn-ghost btn-sm">⚡ Quick-log past reading</button>
+  </div>
+
+  <div class="stabs" id="sylTabs"></div>
+
+  <div class="bento b4 mb16">
+    <div class="bc bc-dark"><span class="blbl">Chapters read</span><span class="bnum bn-md">5 / 35</span><span class="bsub">2 in progress</span></div>
+    <div class="bc bc-lime"><span class="blbl">Reading time</span><span class="bnum bn-md">9<span style="font-size:22px">h</span>40<span style="font-size:22px">m</span></span><span class="bsub">across 7 sessions</span></div>
+    <div class="bc bc-purple"><span class="blbl">Revisions due</span><span class="bnum bn-md">3</span><span class="bsub">1 overdue · 2 upcoming</span></div>
+    <div class="bc bc-sky"><span class="blbl">Coverage</span><span class="bnum bn-md">14<span style="font-size:22px">%</span></span><span class="bsub">of AA first reading</span></div>
+  </div>
+
+  <div class="slbl mb10">Advanced Accounting · chapters</div>
+
+  <!-- chapter: in progress with resume -->
+  <div class="chap open">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-19 — Leases</span>
+      <div class="chap-prog"><span class="badge bg-amber">in progress</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="resume" style="margin-bottom:0">
+        <div class="resume-ico">📖</div>
+        <div class="resume-body">
+          <div class="resume-where">stopped at: <b>Sale and leaseback transactions</b></div>
+          <div class="resume-meta">1h 20m so far · across 2 sessions (Mon, Tue)</div>
+          <div class="mini-pbar"><div class="mini-pbar-f" style="width:70%"></div></div>
+        </div>
+        <button class="btn btn-suc btn-sm">▶ Resume reading</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- chapter: done, revisions scheduled -->
+  <div class="chap open">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-1 — Accounting Policies</span>
+      <div class="chap-prog"><span class="badge bg-green">read</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="row wrap mb10" style="gap:8px;font-family:var(--mono);font-size:11px;color:var(--dim)">
+        <span>First read 20 May · 45m</span>
+      </div>
+      <div class="rowb" style="background:var(--faint);border-radius:9px;padding:10px 13px">
+        <div class="row" style="gap:8px"><span class="badge bg-green">R1 ✓</span><span class="badge bg-amber">R2 due in 3d</span><span class="badge bg-gray">R3 · 19 Jun</span></div>
+        <button class="btn btn-xs btn-ghost">⚡ log past revision</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- chapter: not started -->
+  <div class="chap">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-2 — Valuation of Inventory</span>
+      <div class="chap-prog"><span class="badge bg-gray">not started</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="row" style="gap:8px"><button class="btn btn-sm btn-p">▶ Start first reading</button><button class="btn btn-sm btn-ghost">⚡ Log past reading</button></div>
+    </div></div>
+  </div>
+
+  <div class="chap">
+    <div class="chap-h" onclick="this.parentElement.classList.toggle('open')">
+      <span class="chap-caret">▶</span>
+      <span class="chap-name">AS-3 — Cash Flow Statement</span>
+      <div class="chap-prog"><span class="badge bg-gray">not started</span></div>
+    </div>
+    <div class="chap-body"><div class="chap-inner">
+      <div class="row" style="gap:8px"><button class="btn btn-sm btn-p">▶ Start first reading</button><button class="btn btn-sm btn-ghost">⚡ Log past reading</button></div>
+    </div></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// tab switching
+document.querySelectorAll('.nb[data-p]').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nb').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+    document.getElementById('pg-'+b.dataset.p).classList.add('on');
+    window.scrollTo(0,0);
+  };
+});
+
+// brand picker
+function setBrand(el,font,weight,ls){
+  document.querySelectorAll('.brandopt').forEach(function(x){x.classList.remove('sel');});
+  el.classList.add('sel');
+  var n=document.getElementById('brand-name');
+  n.style.fontFamily="'"+font+"'";
+  n.style.fontWeight=weight;
+  n.style.letterSpacing=ls;
+}
+
+// subjects
+var SUBS=[['aa','AA','#A78BFA'],['law','LAW','#34D399'],['it','IT','#FB923C'],['gst','GST','#22D3EE'],['cma','CMA','#F472B6'],['audit','AUD','#FBBF24'],['fm','FM','#60A5FA'],['sm','SM','#E879F9']];
+function tabs(id){
+  document.getElementById(id).innerHTML=SUBS.map(function(s,i){
+    var on=i===0;
+    var st=on?'background:'+s[2]+';border-color:'+s[2]+';color:#0E0E0E':'';
+    return '<button class="stab" style="'+st+'"><span class="sdot" style="background:'+(on?'#0E0E0E':s[2])+'"></span>'+s[1]+'</button>';
+  }).join('');
+}
+tabs('lecTabs'); tabs('sylTabs');
+
+// subject readiness rows (today)
+var PROG=[['AA','#A78BFA',62,40,15],['LAW','#34D399',30,55,10],['IT','#FB923C',80,60,40],['GST','#22D3EE',45,20,5],['CMA','#F472B6',70,50,30],['AUD','#FBBF24',20,10,0],['FM','#60A5FA',55,35,20],['SM','#E879F9',40,25,10]];
+document.getElementById('subjProg').innerHTML=PROG.map(function(p){
+  return '<div class="row mb10" style="gap:10px"><span class="schip" style="background:'+p[1]+'22;color:'+p[1]+';width:54px"><span class="sdot" style="background:'+p[1]+'"></span>'+p[0]+'</span>'+
+    '<div style="flex:1"><div class="pbar"><div class="pbar-f" style="width:'+p[2]+'%;background:'+p[1]+'"></div></div></div>'+
+    '<span class="xs mono muted" style="width:34px;text-align:right">'+p[2]+'%</span></div>';
+}).join('');
+
+// week chart
+var WK=[['M',3.2],['T',4.1],['W',2.5],['T',3.8],['F',3.3],['S',2.9],['S',2.2]];
+var max=Math.max.apply(null,WK.map(function(d){return d[1];}));
+document.getElementById('weekChart').innerHTML=WK.map(function(d,i){
+  var h=Math.round(d[1]/max*100);
+  var last=i===WK.length-1;
+  return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">'+
+    '<div style="font-family:var(--mono);font-size:9px;color:var(--dim)">'+d[1]+'</div>'+
+    '<div style="width:100%;background:'+(last?'var(--lime)':'rgba(214,255,75,.25)')+';border-radius:5px 5px 0 0;height:'+h+'%"></div>'+
+    '<div style="font-family:var(--mono);font-size:9px;color:var(--dim)">'+d[0]+'</div></div>';
+}).join('');
+</script>
+</body>
+</html>
