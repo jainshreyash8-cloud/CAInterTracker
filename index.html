@@ -362,7 +362,7 @@ body.theme-light .t-display{color:var(--green)}
 /* ═══════════ ICONS (inline SVG, no emojis) ═══════════ */
 var ICON={
   lecture:'<svg class="ico" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg>',
-  revlec:'<svg class="ico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  revlec:'<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="11" rx="1.5"/><path d="M3 9l1.6-4.5h14.8L21 9M8.5 4.5L6.8 9M13.5 4.5L11.8 9M18 4.5L16.3 9"/></svg>',
   reading:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 4h7a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5H20z"/></svg>',
   revision:'<svg class="ico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
   questions:'<svg class="ico" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
@@ -583,7 +583,7 @@ async function init(){
   if(!window._topT)window._topT=setInterval(refreshTop,30000);
   if(APP.active){$('tb-timer').classList.remove('dn');startTimerLoop();}
 }
-function wireShell(){document.querySelectorAll('#nav .nb').forEach(function(b){b.onclick=function(){showPage(b.dataset.p);};});$('tb-timer').onclick=openFS;$('sync-i').onclick=function(){showPage('settings');};}
+function wireShell(){document.querySelectorAll('#nav .nb').forEach(function(b){b.onclick=function(){if(b.dataset.p==='session'&&!APP.active){_sStep='pick';_sPick=null;}showPage(b.dataset.p);};});$('tb-timer').onclick=openFS;$('sync-i').onclick=function(){showPage('settings');};}
 function applyTheme(){document.body.classList.toggle('theme-dark',APP.cfg.theme!=='light');document.body.classList.toggle('theme-light',APP.cfg.theme==='light');}
 function applyLayout(){document.body.classList.toggle('layout-padded',APP.cfg.layout!=='full');}
 function showPage(p){currentPage=p;document.querySelectorAll('#nav .nb').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id==='pg-'+p);});
@@ -643,7 +643,7 @@ function startSession(act,p){
 }
 function pauseSession(){var s=APP.active;if(!s||s.paused)return;s.paused=true;s.pausedAt=Date.now();save(true);renderSession();if($('fso')&&$('fso').classList.contains('show'))fsControls();}
 function resumeSession(){var s=APP.active;if(!s||!s.paused)return;var d=Date.now()-s.pausedAt;s.accumPausedMs+=d;s.startedAt+=d;s.phaseStartedAt+=d;s.paused=false;s.pausedAt=null;save(true);renderSession();if($('fso')&&$('fso').classList.contains('show'))fsControls();}
-function endSession(status){var s=APP.active;if(!s)return;if(status==='cancel'){confirmDlg('Cancel this session? Nothing will be logged.',function(){APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');closeFS();save(true);renderSession();},{danger:true,yes:'Cancel session'});return;}closeFS();showEndForm(status);}
+function endSession(status){var s=APP.active;if(!s)return;if(status==='cancel'){confirmDlg('Cancel this session? Nothing will be logged.',function(){APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');closeFS();_sStep='pick';_sPick=null;save(true);renderSession();},{danger:true,yes:'Cancel session'});return;}closeFS();showEndForm(status);}
 </script>
 
 
@@ -654,22 +654,24 @@ function findOverlap(date,sMin,eMin,exclId){if(eMin<sMin)eMin+=1440;var hit=null
 /* ═══════════ END FORM ═══════════ */
 function showEndForm(status){
   var s=APP.active;if(!s)return;var a=ACT[s.activityType],sm=Math.max(1,Math.round(studySec(s)/60));
-  var lecRow='';
-  if(s.activityType==='lecture'&&s.lectureId){var l=APP.lectures.find(function(x){return x.id===s.lectureId;});
-    if(l)lecRow='<div class="fld"><label>Lecture content covered (minutes)</label><div class="row" style="gap:8px"><input type="number" id="ef-c" min="0" value="'+sm+'" style="flex:1"><span class="xs muted mono">of '+(l.plannedMin||'?')+'m planned</span></div><div class="hint">Clock study time was '+sm+'m. If note-taking ate some, enter the actual lecture content covered.</div></div>'+
-      '<div class="fld"><label class="row" style="gap:6px;text-transform:none"><input type="checkbox" id="ef-hw" style="width:auto"> Homework was given</label></div>'+
-      '<div class="fld dn" id="ef-hww"><label>What homework?</label><textarea id="ef-hwt" placeholder="e.g. Practice Q12.4 to Q12.10"></textarea></div>';}
+  var watch=(s.activityType==='lecture'||s.activityType==='revision-lecture');
+  var l=s.lectureId?APP.lectures.find(function(x){return x.id===s.lectureId;}):null;
+  var rows='';
+  if(watch){
+    rows+='<div class="fld"><label>Minutes of lecture actually completed</label><div class="row" style="gap:8px"><input type="number" id="ef-c" min="0" value="'+sm+'" style="flex:1"><span class="xs muted mono">'+(l&&l.plannedMin?'of '+l.plannedMin+'m':'')+'</span></div><div class="hint">You spent '+sm+'m of study time. If pauses / note-taking ate some, enter the actual lecture content covered (e.g. 40 of 60).</div></div>';
+    if(s.activityType==='lecture')rows+='<div class="fld"><label class="row" style="gap:6px;text-transform:none"><input type="checkbox" id="ef-hw" style="width:auto"> Homework was given</label></div><div class="fld dn" id="ef-hww"><label>What homework?</label><textarea id="ef-hwt" placeholder="e.g. Practice Q12.4 to Q12.10"></textarea></div>';
+  }
   modal({size:'md',title:status==='done'?'Complete session':'Save as in-progress',
     body:'<div class="alert al-dim rowb" style="align-items:center"><div><div class="sm fw6">'+a.label+'</div><div class="xs muted mono mt4">'+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+esc(chapName(s.subjectId,s.chapterIdx))+' · '+s.startTime+'–'+nowHM()+'</div></div><div class="row"><span class="mono fw7" style="font-size:15px;color:var(--ink)">'+fmtMin(sm)+'</span>'+(status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in progress</span>')+'</div></div>'+
-      lecRow+
+      rows+
       '<div class="fld"><label>What did you cover / where did you stop?</label><textarea id="ef-n" placeholder="e.g. reached till operating lease classification">'+esc(s._resumeNote||'')+'</textarea><div class="hint">Shows when you resume, so you know where to continue.</div></div>',
-    actions:[{label:'Discard session',kind:'ghost',onClick:function(){confirmDlg('Discard the '+fmtMin(sm)+' entirely? Not logged.',function(){APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');save(true);renderSession();},{danger:true,yes:'Discard'});return true;}},
+    actions:[{label:'Discard session',kind:'ghost',onClick:function(){confirmDlg('Discard the '+fmtMin(sm)+' entirely? Not logged.',function(){APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);renderSession();},{danger:true,yes:'Discard'});return true;}},
       {label:status==='done'?'Mark complete':'Save in-progress',kind:'primary',onClick:function(){finalizeSession(status);return false;}}],
     onOpen:function(){if($('ef-hw'))$('ef-hw').onchange=function(){$('ef-hww').classList.toggle('dn',!$('ef-hw').checked);};}});
 }
 function finalizeSession(status){
   var s=APP.active;if(!s)return;var sm=Math.max(1,Math.round(studySec(s)/60)),cm=sm;
-  if(s.activityType==='lecture'&&$('ef-c')){var v=parseInt($('ef-c').value,10);if(!isNaN(v)&&v>=0)cm=v;}
+  if($('ef-c')){var v=parseInt($('ef-c').value,10);if(!isNaN(v)&&v>=0)cm=v;}
   var hw=$('ef-hw')?$('ef-hw').checked:false,hwt=$('ef-hwt')?$('ef-hwt').value.trim():'',note=$('ef-n')?$('ef-n').value.trim():'';
   var e={id:s.id,createdAt:s.startedAt,updatedAt:Date.now(),date:s.date,startTime:s.startTime,endTime:nowHM(),elapsedMin:sm,pauseMin:Math.round(s.accumPausedMs/60000),
     activityType:s.activityType,subjectId:s.subjectId,chapterIdx:s.chapterIdx,lectureId:s.lectureId,status:status,mode:s.mode,contentMin:cm,coveredNote:note,payload:{}};
@@ -677,7 +679,7 @@ function finalizeSession(status){
   if(s.activityType==='revision-lecture'&&s.source)e.payload.source=s.source;
   APP.entries.push(e);
   if(s.lectureId){var l=APP.lectures.find(function(x){return x.id===s.lectureId;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+cm;l.lastNote=note;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';if(s.activityType==='lecture'&&hw){l.homeworkGiven=true;if(hwt)l.homeworkText=hwt;}}}
-  APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
+  APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
 }
 /* ═══════════ FULLSCREEN ═══════════ */
 function ensureFS(){if($('fso'))return;var d=document.createElement('div');d.id='fso';d.style.cssText='position:fixed;inset:0;background:#000;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px';d.innerHTML='<div class="t-phase" id="fs-sub"></div><div class="t-display" id="fs-big" style="font-size:min(22vw,170px)">00:00:00</div><div class="pomo-ph" id="fs-pomo"></div><div class="t-ref" id="fs-ref"></div><div class="sctrl" id="fs-ctrl"></div>';document.body.appendChild(d);}
@@ -700,52 +702,50 @@ function renderSession(){
   h+='</div></div></div>';
   $('pg-session').innerHTML=h;
 }
-function pickAct(k){_sPick={activity:k};_sStep='config';renderSession();}
+function pickAct(k){_sPick={activity:k,subjectId:null,chapterIdx:null,lectureId:null,source:''};_sStep='config';renderSession();}
+function sessReset(){_sStep='pick';_sPick=null;renderSession();}
 function renderConfig(){
-  var a=ACT[_sPick.activity];
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Set up, then start.</div></div><button class="btn btn-ghost btn-sm" onclick="_sStep=\'pick\';renderSession()">← Change activity</button></div>';
-  h+=(_sPick.activity==='lecture')?cfgLecturePicker():cfgRevLecPicker();
-  $('pg-session').innerHTML=h;wireConfig();
+  var a=ACT[_sPick.activity],kind=_sPick.activity==='lecture'?'main':'revision',subs=activeSubjects();
+  if(_sPick.subjectId==null)_sPick.subjectId=subs[0]||null;
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Pick what you\'re '+(kind==='main'?'watching':'revising')+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
+  h+='<div class="card mb12"><div class="slbl mb12">What are you studying?</div>';
+  h+='<div class="fld2"><div class="fld"><label>Subject</label><select id="cf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div>';
+  h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
+  h+='<div class="fld"><label>'+(kind==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(kind)+'</select><div class="hint">'+(kind==='main'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave as ad-hoc and add a source below.')+'</div></div>';
+  if(kind==='revision')h+='<div class="fld"><label>Source (optional)</label><input type="text" id="cf-src" placeholder="e.g. YouTube revision, faculty refresher" value="'+esc(_sPick.source||'')+'"></div>';
+  h+='</div>'+modeAndGo();
+  $('pg-session').innerHTML=h;wireConfig(kind);
 }
-function cfgLecturePicker(){
-  var pend=APP.lectures.filter(function(l){return l.kind==='main'&&l.status!=='done';});
-  var h='<div class="card mb12"><div class="slbl mb12">Pick a lecture</div>';
-  if(!pend.length){h+='<div class="empty"><div class="empty-t">No lectures in your backlog</div><div class="mb12">Add some in the Lectures tab first.</div><button class="btn btn-p btn-sm" onclick="showPage(\'lectures\')">Go to Lectures →</button></div></div>';return h+'';}
-  var grp={};pend.forEach(function(l){var k=l.subjectId+'|'+l.chapterIdx;(grp[k]=grp[k]||[]).push(l);});
-  Object.keys(grp).sort().forEach(function(k){var p=k.split('|'),sid=p[0],ci=+p[1];
-    h+='<div class="slbl" style="margin:12px 0 7px">'+subjChip(sid)+' '+esc(chapName(sid,ci))+'</div>';
-    grp[k].forEach(function(l){var pct=l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0;
-      h+='<div class="lec" style="cursor:pointer" onclick="pickLec(\''+l.id+'\')"><div class="lec-ic">'+ICON.lecture+'</div><div class="lec-body"><div class="lec-title">'+esc(l.label||'Lecture')+'</div><div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+'</div></div>'+(l.status==='in-progress'?'<span class="badge bg-amber">'+pct+'%</span>':'<span class="badge bg-gray">pending</span>')+'</div>';});});
-  return h+'</div>';
+function lecOptions(kind){
+  if(_sPick.subjectId==null||_sPick.chapterIdx==null)return '<option value="">pick a chapter first</option>';
+  var ls=APP.lectures.filter(function(l){return l.subjectId===_sPick.subjectId&&l.chapterIdx===_sPick.chapterIdx&&l.kind===kind&&l.status!=='done';});
+  if(kind==='main'&&!ls.length)return '<option value="">no lectures here — add them in the Lectures tab</option>';
+  var o='<option value="">'+(kind==='revision'?'— ad-hoc (no specific lecture) —':'— pick a lecture —')+'</option>';
+  o+=ls.map(function(l){var pct=l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0;return '<option value="'+l.id+'" '+(_sPick.lectureId===l.id?'selected':'')+'>'+esc((l.lectureNumber&&kind==='main'?'L'+l.lectureNumber+' · ':'')+(l.label||'Lecture'))+(l.status==='in-progress'?' ('+pct+'% done)':'')+'</option>';}).join('');
+  return o;
 }
-function cfgRevLecPicker(){
-  var subs=activeSubjects();
-  var h='<div class="card mb12"><div class="slbl mb12">Subject &amp; chapter</div><div class="fld2"><div class="fld"><label>Subject</label><select id="rl-sub"><option value="">— pick —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="rl-ch" '+(_sPick.subjectId?'':'disabled')+'>'+(_sPick.subjectId?'<option value="">— pick —</option>'+chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'<option>pick subject first</option>')+'</select></div></div><div class="fld"><label>Source (optional)</label><input type="text" id="rl-src" placeholder="e.g. YouTube revision, faculty refresher" value="'+esc(_sPick.source||'')+'"></div></div>';
-  return h+modeAndGo();
-}
-function pickLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;_sPick.lectureId=id;_sPick.subjectId=l.subjectId;_sPick.chapterIdx=l.chapterIdx;_sPick._resumeNote=l.lastNote||'';renderConfig();}
 function modeAndGo(){
-  var canStart=_sPick.subjectId!=null&&_sPick.chapterIdx!=null&&_sPick.chapterIdx!=='';
-  if(_sPick.activity==='lecture'&&!_sPick.lectureId)canStart=false;
-  var pm=APP.cfg.pomo;
-  var ref='';
-  if(_sPick.activity==='lecture'&&_sPick.lectureId){var l=APP.lectures.find(function(x){return x.id===_sPick.lectureId;});if(l&&l.plannedMin){var rem=Math.max(1,l.plannedMin-(l.contentDoneMin||0));ref='<div class="alert al-blue">Reference time: <b>'+fmtMin(rem)+'</b>'+(rem<l.plannedMin?' remaining':'')+'</div>';}}
-  var h='<div class="card mb12"><div class="slbl mb12">Timer mode</div><div class="seg mb12"><button class="seg-btn on" data-mode="live" type="button">Live timer</button><button class="seg-btn" data-mode="pomodoro" type="button">Pomodoro</button></div><div id="pomocfg" class="dn"><div class="fld3"><div class="fld"><label>Work</label><input type="number" id="pc-w" min="1" value="'+pm.workMin+'"></div><div class="fld"><label>Break</label><input type="number" id="pc-b" min="1" value="'+pm.breakMin+'"></div><div class="fld"><label>Long every</label><input type="number" id="pc-e" min="0" value="'+pm.longEvery+'"></div></div><div class="fld"><label>Long break (min)</label><input type="number" id="pc-l" min="1" value="'+pm.longMin+'"></div></div></div>'+ref+
-  '<div class="row" style="justify-content:flex-end;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" onclick="_sStep=\'pick\';renderSession()">Cancel</button><button class="btn btn-p" id="go" '+(canStart?'':'disabled')+'>Start session →</button></div>';
-  return h;
+  var kind=_sPick.activity==='lecture'?'main':'revision';
+  var canStart=_sPick.subjectId!=null&&_sPick.chapterIdx!=null;
+  if(kind==='main')canStart=canStart&&!!_sPick.lectureId;
+  var pm=APP.cfg.pomo,ref='';
+  if(_sPick.lectureId){var l=APP.lectures.find(function(x){return x.id===_sPick.lectureId;});if(l&&l.plannedMin){var rem=Math.max(1,l.plannedMin-(l.contentDoneMin||0));ref='<div class="alert al-blue">Reference time: <b>'+fmtMin(rem)+'</b>'+(rem<l.plannedMin?' remaining':'')+'</div>';}}
+  return '<div class="card mb12"><div class="slbl mb12">Timer mode</div><div class="seg mb12"><button class="seg-btn on" data-mode="live" type="button">Live timer</button><button class="seg-btn" data-mode="pomodoro" type="button">Pomodoro</button></div><div id="pomocfg" class="dn"><div class="fld3"><div class="fld"><label>Work</label><input type="number" id="pc-w" min="1" value="'+pm.workMin+'"></div><div class="fld"><label>Break</label><input type="number" id="pc-b" min="1" value="'+pm.breakMin+'"></div><div class="fld"><label>Long every</label><input type="number" id="pc-e" min="0" value="'+pm.longEvery+'"></div></div><div class="fld"><label>Long break (min)</label><input type="number" id="pc-l" min="1" value="'+pm.longMin+'"></div></div></div>'+ref+'<div class="row" style="justify-content:flex-end;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" onclick="sessReset()">Cancel</button><button class="btn btn-p" id="go" '+(canStart?'':'disabled')+'>Start session →</button></div></div>';
 }
-function wireConfig(){
-  var sub=$('rl-sub'),ch=$('rl-ch'),src=$('rl-src');
-  if(sub)sub.onchange=function(){_sPick.subjectId=sub.value||null;_sPick.chapterIdx=null;renderConfig();};
-  if(ch)ch.onchange=function(){_sPick.chapterIdx=ch.value===''?null:+ch.value;if($('go'))$('go').disabled=_sPick.chapterIdx==null;};
+function wireConfig(kind){
+  var sub=$('cf-sub'),ch=$('cf-ch'),lec=$('cf-lec'),src=$('cf-src');
+  if(sub)sub.onchange=function(){_sPick.subjectId=sub.value||null;_sPick.chapterIdx=null;_sPick.lectureId=null;renderConfig();};
+  if(ch)ch.onchange=function(){_sPick.chapterIdx=ch.value===''?null:+ch.value;_sPick.lectureId=null;renderConfig();};
+  if(lec)lec.onchange=function(){_sPick.lectureId=lec.value||null;var l=_sPick.lectureId?APP.lectures.find(function(x){return x.id===_sPick.lectureId;}):null;_sPick._resumeNote=l?(l.lastNote||''):'';if($('go'))$('go').disabled=(kind==='main'&&!_sPick.lectureId);};
   if(src)src.oninput=function(){_sPick.source=src.value;};
   document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){document.querySelectorAll('[data-mode]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');$('pomocfg').classList.toggle('dn',b.dataset.mode!=='pomodoro');};});
   if($('go'))$('go').onclick=function(){
     var mode=document.querySelector('[data-mode].on').dataset.mode,pomo=null;
     if(mode==='pomodoro')pomo={workMin:Math.max(1,+$('pc-w').value||25),breakMin:Math.max(1,+$('pc-b').value||5),longEvery:Math.max(0,+$('pc-e').value||0),longMin:Math.max(1,+$('pc-l').value||15)};
-    var ref=0;if(_sPick.activity==='lecture'&&_sPick.lectureId){var l=APP.lectures.find(function(x){return x.id===_sPick.lectureId;});if(l&&l.plannedMin)ref=Math.max(1,l.plannedMin-(l.contentDoneMin||0));}
-    var st={subjectId:_sPick.subjectId,chapterIdx:_sPick.chapterIdx,lectureId:_sPick.lectureId,source:_sPick.source,mode:mode,pomo:pomo,referenceMin:ref};
-    APP.active=null;startSession(_sPick.activity,st);if(APP.active)APP.active._resumeNote=_sPick._resumeNote||'';
+    var ref=0;if(_sPick.lectureId){var l=APP.lectures.find(function(x){return x.id===_sPick.lectureId;});if(l&&l.plannedMin)ref=Math.max(1,l.plannedMin-(l.contentDoneMin||0));}
+    var rn=_sPick._resumeNote||'';
+    startSession(_sPick.activity,{subjectId:_sPick.subjectId,chapterIdx:_sPick.chapterIdx,lectureId:_sPick.lectureId,source:_sPick.source,mode:mode,pomo:pomo,referenceMin:ref});
+    if(APP.active)APP.active._resumeNote=rn;
   };
 }
 function renderRunning(){
@@ -818,7 +818,7 @@ function paintWeek(id){
 function entryRow(e){var a=ACT[e.activityType]||{icon:'lecture',label:e.activityType};
   return '<div class="srow"><div class="srow-ic">'+ICON[a.icon]+'</div><div class="stime">'+(e.startTime||'—')+' – '+(e.endTime||'—')+'</div><div class="sbody"><div class="sname">'+a.label+' · '+esc(chapName(e.subjectId,e.chapterIdx))+'</div><div class="smeta">'+(SYL[e.subjectId]?SYL[e.subjectId].short:'')+(e.coveredNote?' · '+esc(e.coveredNote):'')+'</div></div>'+(e.status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in prog</span>')+'<span class="sdur">'+fmtMin(e.elapsedMin)+'</span><button class="btn btn-icon btn-ghost" onclick="delEntry(\''+e.id+'\')">'+ICON.trash+'</button></div>';}
 function delEntry(id){confirmDlg('Delete this session entry?',function(){APP.entries=APP.entries.filter(function(e){return e.id!==id;});save(true);showPage(currentPage);},{danger:true,yes:'Delete'});}
-function resumeLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;showPage('session');_sPick={activity:'lecture',lectureId:l.id,subjectId:l.subjectId,chapterIdx:l.chapterIdx,_resumeNote:l.lastNote||''};_sStep='config';renderSession();}
+function resumeLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;_sPick={activity:l.kind==='revision'?'revision-lecture':'lecture',lectureId:l.id,subjectId:l.subjectId,chapterIdx:l.chapterIdx,source:'',_resumeNote:l.lastNote||''};_sStep='config';showPage('session');}
 /* ═══════════ TIMELINE ═══════════ */
 function renderTimeline(){
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Timeline</div><div class="sub">Every session, by day. Time shown is real study time.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete()">'+ICON.bolt+' Quick-complete</button></div>';
@@ -918,7 +918,7 @@ function chapBlock(sid,ci,cn,col,misc){
 }
 function lecRow(l){
   var b=l.status==='done'?'<span class="badge bg-green">done</span>':l.status==='in-progress'?'<span class="badge bg-amber">'+(l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0)+'%</span>':'<span class="badge bg-gray">pending</span>';
-  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic"'+(l.kind==='revision'?' style="color:var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)"':'')+'>'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
+  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
 }
 function editDue(sid){modal({title:'Lecture completion target — '+SYL[sid].name,body:'<div class="fld"><label>Finish all lectures by</label><input type="date" id="du-d" value="'+(APP.subjectDue[sid]||'')+'"><div class="hint">This is your "phase 1" deadline for this subject.</div></div>',actions:[{label:'Clear',kind:'ghost',onClick:function(){delete APP.subjectDue[sid];save(true);renderLectures();}},{label:'Save',kind:'primary',onClick:function(){var d=$('du-d').value;if(d&&!isDate(d)){toast('Invalid date','err');return true;}if(d)APP.subjectDue[sid]=d;else delete APP.subjectDue[sid];save(true);renderLectures();}}]});}
 </script>
@@ -952,7 +952,7 @@ function delLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!
 <script>
 /* ═══════════ SETTINGS ═══════════ */
 function renderSettings(){
-  var c=APP.cfg,h='<div class="pw" style="max-width:820px"><div class="h1 mb16">Settings</div>';
+  var c=APP.cfg,h='<div class="pw" style="max-width:860px;margin:0 auto"><div class="h1 mb16">Settings</div>';
   // appearance
   h+='<div class="card mb10"><div class="slbl mb12">Appearance</div><div class="rowb wrap" style="gap:16px"><div><div class="sm fw6 mb6">Theme</div><div class="seg"><button class="seg-btn '+(c.theme!=='light'?'on':'')+'" id="th-d">Dark</button><button class="seg-btn '+(c.theme==='light'?'on':'')+'" id="th-l">Light</button></div></div><div><div class="sm fw6 mb6">Width</div><div class="seg"><button class="seg-btn '+(c.layout!=='full'?'on':'')+'" id="ly-p">Padded</button><button class="seg-btn '+(c.layout==='full'?'on':'')+'" id="ly-f">Full width</button></div></div></div></div>';
   // profile
@@ -1005,7 +1005,7 @@ function resetChap(sid){confirmDlg('Reset to ICAI default chapters?',function(){
 <script>
 /* ═══════════ HELP ═══════════ */
 function renderHelp(){
-  $('pg-help').innerHTML='<div class="pw" style="max-width:780px"><div class="h1 mb16">Help</div>'+
+  $('pg-help').innerHTML='<div class="pw" style="max-width:780px;margin:0 auto"><div class="h1 mb16">Help</div>'+
   '<div class="alert al-blue">This is the working app, built one flow at a time. Lecture + Revision-Lecture work fully. First Reading, Revisions, Tests, Questions, Flashpoints, Dashboard come next.</div>'+
   '<div class="card mb10"><div class="slbl mb10">Works now</div><ul style="padding-left:18px;line-height:1.9;font-size:13px"><li><b>Lectures</b> — added inside each chapter; main + revision lectures; computed totals; per-subject completion due date; Misc/Bonus chapter</li><li><b>Session</b> — pick a lecture, live or pomodoro timer (breaks don\'t count as study time), pause/resume, fullscreen, end as Complete or In-progress with "where I stopped" note + content-min</li><li><b>Quick-complete</b> — log past sessions; blocks time overlaps</li><li><b>Today</b> — bento stats, expandable exam plan, resume strip, today\'s sessions</li><li><b>Timeline</b> — every session by day</li><li><b>Settings</b> — theme (dark/light), width, profile, exemptions, Gist sync, pomodoro, revision offsets, chapter editor, backup</li></ul></div>'+
   '<div class="card mb10"><div class="slbl mb10">Cloud sync (across devices)</div><ol style="padding-left:18px;line-height:1.9;font-size:13px"><li>Open <a href="https://github.com/settings/tokens/new?scopes=gist&description=CA+Tracker" target="_blank">github.com/settings/tokens/new</a>, tick only <b>gist</b>, generate, copy token (ghp_…)</li><li>Settings → Cloud sync → paste → Connect (a private gist is created)</li><li>New device: Settings → Restore → paste same token + the gist id</li></ol><div class="alert al-amber mt10">Token lives in this browser only. Use a gist-scope-only token.</div></div>'+
