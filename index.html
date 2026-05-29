@@ -636,7 +636,7 @@ function paintTimer(s){
 function promptLong(){pauseSession();confirmDlg('This session has been running 8+ hours of study time. Did you forget to stop it? You can keep it or end it now and set the real finish time.',function(){endSession('done');},{yes:'End & review time',cancel:'Keep running'});}
 function startSession(act,p){
   var now=Date.now();
-  APP.active={id:uid(),activityType:act,subjectId:p.subjectId,chapterIdx:p.chapterIdx,lectureId:p.lectureId||null,source:p.source||'',
+  APP.active={id:uid(),activityType:act,subjectId:p.subjectId,chapterIdx:p.chapterIdx,lectureId:p.lectureId||null,
     mode:p.mode||'live',pomo:p.mode==='pomodoro'?p.pomo:null,startedAt:now,paused:false,pausedAt:null,accumPausedMs:0,
     phase:'work',phaseStartedAt:now,accumWorkMs:0,workCount:0,referenceMin:p.referenceMin||0,date:today(),startTime:nowHM()};
   save(true);$('tb-timer').classList.remove('dn');startTimerLoop();renderSession();
@@ -676,7 +676,6 @@ function finalizeSession(status){
   var e={id:s.id,createdAt:s.startedAt,updatedAt:Date.now(),date:s.date,startTime:s.startTime,endTime:nowHM(),elapsedMin:sm,pauseMin:Math.round(s.accumPausedMs/60000),
     activityType:s.activityType,subjectId:s.subjectId,chapterIdx:s.chapterIdx,lectureId:s.lectureId,status:status,mode:s.mode,contentMin:cm,coveredNote:note,payload:{}};
   if(s.activityType==='lecture'){e.payload.homeworkGiven=hw;if(hw)e.payload.homeworkText=hwt;}
-  if(s.activityType==='revision-lecture'&&s.source)e.payload.source=s.source;
   APP.entries.push(e);
   if(s.lectureId){var l=APP.lectures.find(function(x){return x.id===s.lectureId;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+cm;l.lastNote=note;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';if(s.activityType==='lecture'&&hw){l.homeworkGiven=true;if(hwt)l.homeworkText=hwt;}}}
   APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
@@ -702,7 +701,7 @@ function renderSession(){
   h+='</div></div></div>';
   $('pg-session').innerHTML=h;
 }
-function pickAct(k){_sPick={activity:k,subjectId:null,chapterIdx:null,lectureId:null,source:''};_sStep='config';renderSession();}
+function pickAct(k){_sPick={activity:k,subjectId:null,chapterIdx:null,lectureId:null};_sStep='config';renderSession();}
 function sessReset(){_sStep='pick';_sPick=null;renderSession();}
 function renderConfig(){
   var a=ACT[_sPick.activity],kind=_sPick.activity==='lecture'?'main':'revision',subs=activeSubjects();
@@ -711,8 +710,7 @@ function renderConfig(){
   h+='<div class="card mb12"><div class="slbl mb12">What are you studying?</div>';
   h+='<div class="fld2"><div class="fld"><label>Subject</label><select id="cf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div>';
   h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
-  h+='<div class="fld"><label>'+(kind==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(kind)+'</select><div class="hint">'+(kind==='main'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave as ad-hoc and add a source below.')+'</div></div>';
-  if(kind==='revision')h+='<div class="fld"><label>Source (optional)</label><input type="text" id="cf-src" placeholder="e.g. YouTube revision, faculty refresher" value="'+esc(_sPick.source||'')+'"></div>';
+  h+='<div class="fld"><label>'+(kind==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(kind)+'</select><div class="hint">'+(kind==='main'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
   h+='</div>'+modeAndGo();
   $('pg-session').innerHTML=h;wireConfig(kind);
 }
@@ -733,18 +731,17 @@ function modeAndGo(){
   return '<div class="card mb12"><div class="slbl mb12">Timer mode</div><div class="seg mb12"><button class="seg-btn on" data-mode="live" type="button">Live timer</button><button class="seg-btn" data-mode="pomodoro" type="button">Pomodoro</button></div><div id="pomocfg" class="dn"><div class="fld3"><div class="fld"><label>Work</label><input type="number" id="pc-w" min="1" value="'+pm.workMin+'"></div><div class="fld"><label>Break</label><input type="number" id="pc-b" min="1" value="'+pm.breakMin+'"></div><div class="fld"><label>Long every</label><input type="number" id="pc-e" min="0" value="'+pm.longEvery+'"></div></div><div class="fld"><label>Long break (min)</label><input type="number" id="pc-l" min="1" value="'+pm.longMin+'"></div></div></div>'+ref+'<div class="row" style="justify-content:flex-end;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" onclick="sessReset()">Cancel</button><button class="btn btn-p" id="go" '+(canStart?'':'disabled')+'>Start session →</button></div></div>';
 }
 function wireConfig(kind){
-  var sub=$('cf-sub'),ch=$('cf-ch'),lec=$('cf-lec'),src=$('cf-src');
+  var sub=$('cf-sub'),ch=$('cf-ch'),lec=$('cf-lec');
   if(sub)sub.onchange=function(){_sPick.subjectId=sub.value||null;_sPick.chapterIdx=null;_sPick.lectureId=null;renderConfig();};
   if(ch)ch.onchange=function(){_sPick.chapterIdx=ch.value===''?null:+ch.value;_sPick.lectureId=null;renderConfig();};
   if(lec)lec.onchange=function(){_sPick.lectureId=lec.value||null;var l=_sPick.lectureId?APP.lectures.find(function(x){return x.id===_sPick.lectureId;}):null;_sPick._resumeNote=l?(l.lastNote||''):'';if($('go'))$('go').disabled=(kind==='main'&&!_sPick.lectureId);};
-  if(src)src.oninput=function(){_sPick.source=src.value;};
   document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){document.querySelectorAll('[data-mode]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');$('pomocfg').classList.toggle('dn',b.dataset.mode!=='pomodoro');};});
   if($('go'))$('go').onclick=function(){
     var mode=document.querySelector('[data-mode].on').dataset.mode,pomo=null;
     if(mode==='pomodoro')pomo={workMin:Math.max(1,+$('pc-w').value||25),breakMin:Math.max(1,+$('pc-b').value||5),longEvery:Math.max(0,+$('pc-e').value||0),longMin:Math.max(1,+$('pc-l').value||15)};
     var ref=0;if(_sPick.lectureId){var l=APP.lectures.find(function(x){return x.id===_sPick.lectureId;});if(l&&l.plannedMin)ref=Math.max(1,l.plannedMin-(l.contentDoneMin||0));}
     var rn=_sPick._resumeNote||'';
-    startSession(_sPick.activity,{subjectId:_sPick.subjectId,chapterIdx:_sPick.chapterIdx,lectureId:_sPick.lectureId,source:_sPick.source,mode:mode,pomo:pomo,referenceMin:ref});
+    startSession(_sPick.activity,{subjectId:_sPick.subjectId,chapterIdx:_sPick.chapterIdx,lectureId:_sPick.lectureId,mode:mode,pomo:pomo,referenceMin:ref});
     if(APP.active)APP.active._resumeNote=rn;
   };
 }
@@ -752,7 +749,7 @@ function renderRunning(){
   var s=APP.active,a=ACT[s.activityType];
   var h='<div class="pw"><div class="t-wrap"><div class="card" style="padding:30px 24px">'+
     '<div class="row" style="justify-content:center;gap:7px;flex-wrap:wrap;margin-bottom:14px">'+subjChip(s.subjectId)+'<span class="badge bg-gray">'+esc(chapName(s.subjectId,s.chapterIdx))+'</span>'+(s.mode==='pomodoro'?'<span class="badge bg-purple" style="background:color-mix(in srgb,var(--purple) 15%,transparent);color:var(--purple)">Pomodoro</span>':'<span class="badge bg-accent">Live</span>')+'</div>'+
-    '<div class="sub mb10">'+a.label+(s.source?' · '+esc(s.source):'')+'</div>'+
+    '<div class="sub mb10">'+a.label+'</div>'+
     '<div class="t-display" id="s-big">'+fmtHMS(studySec(s))+'</div><div class="pomo-ph" id="s-pomo"></div>'+
     (s.referenceMin>0?'<div class="t-ref">Reference: <b style="color:var(--ink)">'+fmtMin(s.referenceMin)+'</b></div>':'')+
     '<div class="t-phase mt10">started '+s.startTime+(s.paused?' · paused':'')+'</div>'+
@@ -818,7 +815,7 @@ function paintWeek(id){
 function entryRow(e){var a=ACT[e.activityType]||{icon:'lecture',label:e.activityType};
   return '<div class="srow"><div class="srow-ic">'+ICON[a.icon]+'</div><div class="stime">'+(e.startTime||'—')+' – '+(e.endTime||'—')+'</div><div class="sbody"><div class="sname">'+a.label+' · '+esc(chapName(e.subjectId,e.chapterIdx))+'</div><div class="smeta">'+(SYL[e.subjectId]?SYL[e.subjectId].short:'')+(e.coveredNote?' · '+esc(e.coveredNote):'')+'</div></div>'+(e.status==='done'?'<span class="badge bg-green">done</span>':'<span class="badge bg-amber">in prog</span>')+'<span class="sdur">'+fmtMin(e.elapsedMin)+'</span><button class="btn btn-icon btn-ghost" onclick="delEntry(\''+e.id+'\')">'+ICON.trash+'</button></div>';}
 function delEntry(id){confirmDlg('Delete this session entry?',function(){APP.entries=APP.entries.filter(function(e){return e.id!==id;});save(true);showPage(currentPage);},{danger:true,yes:'Delete'});}
-function resumeLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;_sPick={activity:l.kind==='revision'?'revision-lecture':'lecture',lectureId:l.id,subjectId:l.subjectId,chapterIdx:l.chapterIdx,source:'',_resumeNote:l.lastNote||''};_sStep='config';showPage('session');}
+function resumeLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;_sPick={activity:l.kind==='revision'?'revision-lecture':'lecture',lectureId:l.id,subjectId:l.subjectId,chapterIdx:l.chapterIdx,_resumeNote:l.lastNote||''};_sStep='config';showPage('session');}
 /* ═══════════ TIMELINE ═══════════ */
 function renderTimeline(){
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Timeline</div><div class="sub">Every session, by day. Time shown is real study time.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete()">'+ICON.bolt+' Quick-complete</button></div>';
