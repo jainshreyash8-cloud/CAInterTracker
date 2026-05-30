@@ -180,3 +180,19 @@ All tabs now functional. Commits: `fix(timeline)` (edit/delete popover double-cl
 
 ### Possible follow-ups (not requested yet)
 Final-revision planner (the old v2 "phase 3" replacement) is still not built. Flashpoint auto-capture currently only from the Timeline popover (could also add from session end / syllabus rows).
+
+
+## Feedback round 2026-05-30 (commit `fix+feat: dashboard overflow, single-attempt tests, ...`)
+
+- **Bug fixes:** dashboard left-cut (`.dash-grid>div{min-width:0}`); revisions "due today" tag stretched (`.rev-acts{align-items:center}`); removed "phase 1" wording in `editDue`.
+- **Tests are now SINGLE-ATTEMPT** (user: once you've seen a test, re-sitting is pointless). `startTest` blocks if `testHasAttempt`; `testCard` hides Start + "Log result" once an attempt exists; `quickTest` only lists un-attempted tests. Delete the result (trash on the attempt row) to re-sit.
+- **No instant marks prompt** on Complete (user: it's a 3h written test, marks come after checking). `completeTest` just logs time + creates an `awaiting` attempt; user hits **Enter marks** later. (Removed the auto-open setTimeout.)
+- **Lecture pace & projection** (`_curPace` in Lectures): pace = (sum elapsedMin of `lecture` entries for subject) / (content min done: done→plannedMin, else contentDoneMin). Card shows `X× content time`, projected hours to finish remaining content, and /day to hit the due date. Per-lecture "~Xm at your pace" in `lecRow`.
+- **Dashboard line chart** (`buildLineChart`): SVG, daily hours, total line (ink) + per-subject lines (subject color), viewBox 760×240 responsive. Added after heatmap.
+- **Flashpoints importance**: `importance` 1/2/3 (normal/important/critical) → colored left border + tag, "★ key only" filter, importance-sorted. Add-modal rows redesigned to stacked title+importance+textarea (fixed the mismatched-box look). Edit modal has importance too.
+
+### Phase clarification (for the record)
+v2 had 3 "phases"; this build has NO phases at all. The only leftover wording ("phase 1" in the lecture due dialog) is now removed. A dedicated "final-revision planner" is still NOT built (optional future).
+
+### Suggested-but-not-built (awaiting user pick)
+Data insights: projected exam-readiness %, per-subject pace, best study time-of-day, consistency/streak analytics, test score trend, revision-overdue load. Flashpoints: tags/types (formula/trap/concept), pin-to-top, "quiz me" shuffle, export.
