@@ -29,16 +29,16 @@ body.theme-dark{
   --top-bg:rgba(14,14,14,.85);
 }
 body.theme-light{
-  --bg:#F5F4EF; --faint:#FFFFFF; --ink:#1C1A15; --ink2:#4A463E; --dim:#94907F; --border:#E4E0D5;
-  --card-bg:#FFFFFF; --card-border:#E7E3D8;
-  --hover:rgba(0,0,0,.022); --line:rgba(0,0,0,.06); --track:rgba(0,0,0,.07); --shadow:0 6px 22px rgba(60,50,30,.08);
-  --accent:#1C1A15; --accent-ink:#FFFFFF;
+  --bg:#F0EEE8; --faint:#F8F7F3; --ink:#1C1A15; --ink2:#4A463E; --dim:#88836F; --border:#DDD9CE;
+  --card-bg:#FAFAF7; --card-border:#E2DDD2;
+  --hover:rgba(0,0,0,.035); --line:rgba(0,0,0,.07); --track:rgba(0,0,0,.09); --shadow:0 4px 18px rgba(60,50,30,.10),0 1px 4px rgba(0,0,0,.06);
+  --accent:#2563EB; --accent-ink:#FFFFFF;
   --amber:#B5791E; --purple:#7A5FCF; --green:#2E8B57; --blue:#3B7DC4; --rose:#D14860;
   --sky:#DCECFB; --sky-ink:#0E2840;
   --amber-card:#FBF3E4; --amber-cb:#EEDFC2;
   --purple-card:#F4F1FD; --purple-cb:#E4DCF7;
   --green-card:#EDF7F0; --green-cb:#D6ECDD;
-  --top-bg:rgba(245,244,239,.85);
+  --top-bg:rgba(240,238,232,.92);
 }
 </style>
 </head>
@@ -288,7 +288,7 @@ body.theme-light .t-display{color:var(--green)}
 
 <style>
 /* ════ ANIMATIONS & TRANSITIONS ════ */
-/* Page slide-in — direction-aware via JS setting data-dir on body */
+/* Page slide-in — direction-aware via JS setting data-nav on body */
 @keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes pgInRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
 @keyframes pgInLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
@@ -296,69 +296,92 @@ body.theme-light .t-display{color:var(--green)}
 body[data-nav="fwd"] .pg.on{animation:pgInRight .22s cubic-bezier(.25,.46,.45,.94)}
 body[data-nav="bwd"] .pg.on{animation:pgInLeft .22s cubic-bezier(.25,.46,.45,.94)}
 
-/* Nav pill is handled via JS — see movePill() */
+/* Nav pill */
+/* (handled by JS movePill) */
 
-/* Bento card lift on hover */
+/* Bento card lift + stagger */
 .bc{transition:transform .18s cubic-bezier(.25,.46,.45,.94),box-shadow .18s}
 .bc:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-
-/* Bento stagger on page enter */
 @keyframes bcIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .bento .bc{opacity:0;animation:bcIn .32s cubic-bezier(.25,.46,.45,.94) forwards}
-.bento .bc:nth-child(1){animation-delay:.04s}
-.bento .bc:nth-child(2){animation-delay:.09s}
-.bento .bc:nth-child(3){animation-delay:.14s}
-.bento .bc:nth-child(4){animation-delay:.19s}
+.bento .bc:nth-child(1){animation-delay:.04s}.bento .bc:nth-child(2){animation-delay:.09s}
+.bento .bc:nth-child(3){animation-delay:.14s}.bento .bc:nth-child(4){animation-delay:.19s}
 .bento .bc:nth-child(5){animation-delay:.24s}
 
+/* Progress bar fill on appear */
+@keyframes pbarFill{from{width:0}to{}}
+.pbar-f{animation:pbarFill .55s cubic-bezier(.25,.46,.45,.94) both}
+.chap-prog-bar .pbar-f{animation-delay:.18s}
+
 /* Button press + ripple */
-.btn{position:relative;overflow:hidden}
+.btn{position:relative;overflow:hidden;transition:transform .1s,border-color .14s,background .14s,color .14s,box-shadow .14s,filter .14s}
 .btn:active:not(:disabled){transform:scale(.96)}
 @keyframes ripple{from{transform:scale(0);opacity:.35}to{transform:scale(3.5);opacity:0}}
 .btn-ripple{position:absolute;border-radius:50%;background:currentColor;pointer-events:none;animation:ripple .5s ease-out forwards;width:60px;height:60px;margin:-30px}
 
-/* Star / flag toggle pop */
+/* Badge hover lift */
+.badge{transition:transform .12s,opacity .12s}
+.badge:hover{transform:scale(1.06)}
+
+/* Star toggle pop */
 @keyframes starPop{0%{transform:scale(1)}40%{transform:scale(1.45)}70%{transform:scale(.9)}100%{transform:scale(1)}}
 .fp-star.pop{animation:starPop .28s cubic-bezier(.25,.46,.45,.94)}
 .syl-star{transition:color .12s,transform .12s}
 .syl-star:active{transform:scale(1.4)}
 
+/* Confidence star fill animation */
+@keyframes starFill{0%{transform:scale(1)}30%{transform:scale(1.5) rotate(-8deg)}70%{transform:scale(.9)}100%{transform:scale(1)}}
+.syl-star.on{animation:starFill .25s cubic-bezier(.34,1.56,.64,1)}
+
 /* Revision dot pulse when due today */
 @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.45}}
 .syl-dot.d-due{animation:dotPulse 1.8s ease-in-out infinite}
 
-/* Toast — spring from right with scale */
+/* Toast spring in / slide out */
 @keyframes tin{from{opacity:0;transform:translateX(24px) scale(.96)}to{opacity:1;transform:none}}
-/* Toast leave */
-@keyframes tout{from{opacity:1;transform:none;max-height:60px}to{opacity:0;transform:translateX(12px);max-height:0;margin-bottom:0}}
+@keyframes tout{from{opacity:1;transform:none}to{opacity:0;transform:translateX(12px)}}
 
-/* Modal — spring up from below */
+/* Modal spring up */
 @keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(12px)}to{opacity:1;transform:none}}
-@keyframes modalOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.95) translateY(8px)}}
 .modal-box{animation:modalIn .2s cubic-bezier(.34,1.2,.64,1)}
 .modal-ov{animation:fade .15s ease}
 
-/* Fullscreen overlay – circular reveal from the button origin */
+/* Fullscreen circular reveal */
 @keyframes fsReveal{from{clip-path:circle(0% at var(--fs-ox,50%) var(--fs-oy,50%))}to{clip-path:circle(150% at var(--fs-ox,50%) var(--fs-oy,50%))}}
 @keyframes fsCollapse{from{clip-path:circle(150% at var(--fs-ox,50%) var(--fs-oy,50%))}to{clip-path:circle(0% at var(--fs-ox,50%) var(--fs-oy,50%))}}
 #fso{display:flex;opacity:0;pointer-events:none;clip-path:circle(0% at 50% 50%)}
 #fso.show{opacity:1;pointer-events:auto;animation:fsReveal .42s cubic-bezier(.4,0,.2,1) forwards}
 #fso.hiding{animation:fsCollapse .32s cubic-bezier(.4,0,.2,1) forwards}
 
-/* Chapter expand body — smooth */
-.syl-body{animation:pgIn .18s ease}
-.tst-body{animation:pgIn .18s ease}
+/* Syllabus/flashpoint/test expand body */
+.syl-body,.tst-body{animation:pgIn .18s ease}
 
-/* Card rows — stagger on list appear */
+/* Timer digit tick */
+@keyframes tick{0%{transform:translateY(-4px);opacity:.5}100%{transform:none;opacity:1}}
+#s-big.ticked,#fs-big.ticked{animation:tick .12s ease-out}
+
+/* Session row stagger */
 @keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 .srow{animation:rowIn .18s ease both}
 .srow:nth-child(1){animation-delay:.02s}.srow:nth-child(2){animation-delay:.05s}
 .srow:nth-child(3){animation-delay:.08s}.srow:nth-child(4){animation-delay:.11s}
 .srow:nth-child(5){animation-delay:.14s}
 
+/* Syllabus chapter rows stagger */
+@keyframes chapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.syl-ch{animation:chapIn .2s ease both}
+.syl-ch:nth-child(1){animation-delay:.03s}.syl-ch:nth-child(2){animation-delay:.07s}
+.syl-ch:nth-child(3){animation-delay:.11s}.syl-ch:nth-child(4){animation-delay:.15s}
+.syl-ch:nth-child(5){animation-delay:.18s}.syl-ch:nth-child(n+6){animation-delay:.21s}
+
+/* Revision item stagger */
+.rev-item{animation:rowIn .18s ease both}
+.rev-item:nth-child(2){animation-delay:.04s}.rev-item:nth-child(3){animation-delay:.08s}
+.rev-item:nth-child(4){animation-delay:.12s}
+
 /* Lecture row hover */
-.lec{transition:background .14s,border-color .14s,transform .1s}
-.lec:hover{transform:translateX(2px)}
+.lec{transition:background .14s,border-color .14s,transform .1s,box-shadow .14s}
+.lec:hover{transform:translateX(2px);box-shadow:2px 0 12px rgba(0,0,0,.08)}
 
 /* Flashpoint row hover */
 .fp-row{transition:background .12s}
@@ -371,18 +394,53 @@ body[data-nav="bwd"] .pg.on{animation:pgInLeft .22s cubic-bezier(.25,.46,.45,.94
 /* Timeline block */
 .tl-blk{transition:transform .12s,box-shadow .12s,opacity .12s}
 
+/* Heatmap cell hover */
+.hm-c{transition:transform .12s,box-shadow .1s}
+.hm-c:hover{transform:scale(1.5);box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:2;position:relative}
+
 /* Resume card hover */
-.resume{transition:border-color .15s,box-shadow .15s}
-.resume:hover{border-color:var(--amber);box-shadow:0 0 0 1px color-mix(in srgb,var(--amber) 25%,transparent)}
+.resume{transition:border-color .15s,box-shadow .15s,transform .15s}
+.resume:hover{border-color:var(--amber);box-shadow:0 0 0 1px color-mix(in srgb,var(--amber) 25%,transparent);transform:translateX(2px)}
 
 /* Sync dot spin */
 @keyframes spin{to{transform:rotate(360deg)}}
 .s-ing{animation:spin .9s linear infinite!important}
 
-/* Subject stab active — spring scale */
-.stab{transform-origin:center}
+/* Stab spring */
+.stab{transform-origin:center;transition:color .15s,border-color .15s,background .15s}
 .stab.active-bounce{animation:stabPop .22s cubic-bezier(.34,1.56,.64,1)}
 @keyframes stabPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+
+/* ════ LIGHT MODE OVERRIDES ════ */
+/* Topbar needs a bottom shadow to separate from content */
+body.theme-light .top{box-shadow:0 1px 0 var(--border),0 2px 12px rgba(60,50,30,.06)}
+/* Focus ring: blue instead of near-black */
+body.theme-light input:focus,body.theme-light select:focus,body.theme-light textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+/* Accent card (bc-accent) is near-black in light — override to blue */
+body.theme-light .bc-accent{background:var(--accent);color:#fff}
+body.theme-light .bc-accent .blbl{opacity:.7}
+body.theme-light .bc-accent .bn-u{opacity:.65}
+/* Ghost buttons need a bit more contrast in light */
+body.theme-light .btn-ghost{color:var(--ink2)}
+body.theme-light .btn-ghost:hover{color:var(--ink);background:var(--hover)}
+/* Nav pill in light: use accent blue */
+body.theme-light #nav-pill{background:var(--accent)}
+body.theme-light .nb.on{color:#fff}
+/* Fullscreen timer bg: soft dark instead of pure black in light */
+body.theme-light #fso{background:#1C1A15}
+/* Active stab in light: use accent blue tint */
+body.theme-light .stab.on{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+/* Seg buttons in light: more visible active state */
+body.theme-light .seg-btn.on{background:var(--ink);color:var(--bg)}
+/* Card shadow in light: more prominent */
+body.theme-light .card,body.theme-light .card-flat{box-shadow:0 1px 3px rgba(0,0,0,.06)}
+/* Timer display in light */
+body.theme-light .t-display{color:var(--accent)}
+body.theme-light .pomo-work{color:var(--accent)}
+/* Exempt/exch buttons in light */
+body.theme-light .exch.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+/* bg-accent badge in light: use blue */
+body.theme-light .bg-accent{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 
 /* ════ MOBILE ════ */
 /* Topbar: hide "by Shreyash Jain" sub-label on very small screens */
@@ -1052,8 +1110,8 @@ function timerTick(){
 function paintTimer(s){
   var sec=studySec(s),hms=fmtHMS(sec);
   if($('tb-tv'))$('tb-tv').textContent=hms;
-  var big=$('s-big');if(big){big.textContent=hms;var cls='';if(s.referenceMin>0){var r=(sec/60)/s.referenceMin;cls=r<1?'':r<1.5?'amber':'rose';}big.className='t-display'+(cls?' '+cls:'');}
-  var fb=$('fs-big');if(fb){fb.textContent=hms;}
+  var big=$('s-big');if(big){var changed=big.textContent!==hms;var cls='';if(s.referenceMin>0){var r=(sec/60)/s.referenceMin;cls=r<1?'':r<1.5?'amber':'rose';}big.className='t-display'+(cls?' '+cls:'');big.textContent=hms;if(changed){big.classList.add('ticked');setTimeout(function(){if(big)big.classList.remove('ticked');},130);}}
+  var fb=$('fs-big');if(fb){var fbChanged=fb.textContent!==hms;fb.textContent=hms;if(fbChanged){fb.classList.add('ticked');setTimeout(function(){if(fb)fb.classList.remove('ticked');},130);}}
   var ph=$('s-pomo');
   if(ph){if(s.mode==='pomodoro'){var pc=s.pomo,dur=(s.phase==='work'?pc.workMin:s.phase==='long'?pc.longMin:pc.breakMin)*60,el=Math.floor(((s.paused?s.pausedAt:Date.now())-s.phaseStartedAt)/1000),left=Math.max(0,dur-el);ph.innerHTML='<span class="'+(s.phase==='work'?'pomo-work':'pomo-break')+'">'+(s.phase==='work'?'Work':s.phase==='long'?'Long break':'Break')+' · '+fmtHMS(left)+' left</span>';}else ph.innerHTML='';}
   var fp=$('fs-pomo');if(fp&&ph)fp.innerHTML=ph.innerHTML;
