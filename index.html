@@ -23,9 +23,9 @@ body.theme-dark{
   --accent:#D6FF4B; --accent-ink:#0E0E0E;
   --amber:#FFB84D; --purple:#C4B5FD; --green:#4ADE80; --blue:#93C5FD; --rose:#FF6B81;
   --sky:#D0E8FF; --sky-ink:#0E1820;
-  --amber-card:linear-gradient(155deg,#1d1304,#150d02); --amber-cb:#33230a;
-  --purple-card:linear-gradient(155deg,#120d22,#0d0917); --purple-cb:#241a45;
-  --green-card:linear-gradient(155deg,#06140c,#040d08); --green-cb:#0e2e1d;
+  --amber-card:linear-gradient(155deg,#2a1a00,#1a1000); --amber-cb:#4a3010;
+  --purple-card:linear-gradient(155deg,#180e30,#100820); --purple-cb:#2e1e55;
+  --green-card:linear-gradient(155deg,#041a0c,#020e06); --green-cb:#0a2e18;
   --top-bg:rgba(14,14,14,.85);
 }
 body.theme-light{
@@ -36,9 +36,9 @@ body.theme-light{
   --accent:#2A6AE8; --accent-ink:#FFFFFF;
   --amber:#C27A10; --purple:#6B4FC8; --green:#1A8050; --blue:#1E62B8; --rose:#C8304A;
   --sky:#DCF0FA; --sky-ink:#0A2E42;
-  --amber-card:#FEF5E4; --amber-cb:#F5DDA8;
-  --purple-card:#F2EEFA; --purple-cb:#D6C8F0;
-  --green-card:#E6F5ED; --green-cb:#B8DFC8;
+  --amber-card:#FEF0CC; --amber-cb:#F0C060;
+  --purple-card:#EDE6FA; --purple-cb:#C4AAEF;
+  --green-card:#D6F0E2; --green-cb:#84CCA6;
   --top-bg:rgba(244,246,248,.96);
 }
 </style>
@@ -118,6 +118,10 @@ body.layout-padded .pw{padding:24px 44px 56px;max-width:1280px;margin:0 auto}
 .bc-amber{background:var(--amber-card);border:1px solid var(--amber-cb);color:var(--amber)}
 .bc-purple{background:var(--purple-card);border:1px solid var(--purple-cb);color:var(--purple)}
 .bc-green{background:var(--green-card);border:1px solid var(--green-cb);color:var(--green)}
+/* darker text on light-bg coloured cards so numbers are legible */
+body.theme-light .bc-amber{color:#7A4400}
+body.theme-light .bc-purple{color:#3D2490}
+body.theme-light .bc-green{color:#0E4D28}
 .blbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;opacity:.75}
 .bc-accent .blbl,.bc-sky .blbl{opacity:.55}
 .bnum{font-family:'Sora',sans-serif;font-weight:700;letter-spacing:-.03em;display:flex;align-items:baseline;gap:3px;margin-top:auto;line-height:1}
@@ -423,11 +427,9 @@ body.theme-light .card,body.theme-light .card-flat,body.theme-light .bc-neutral{
 body.theme-light .bc-accent{background:var(--accent);color:#fff}
 body.theme-light .bc-accent .blbl{opacity:.75}
 body.theme-light .bc-accent .bn-u{opacity:.6}
-body.theme-light .bc-amber{background:#FEF0CC;border-color:#F0C060;color:#8A5200}
-body.theme-light .bc-amber .blbl,.bc-amber .bnum{color:#8A5200}
-body.theme-light .bc-purple{background:#EDE6FA;border-color:#C4AAEF;color:#4A2FA0}
-body.theme-light .bc-purple .blbl,.bc-purple .bnum{color:#4A2FA0}
-body.theme-light .bc-green{background:#D6F0E2;border-color:#84CCA6;color:#145C34}
+body.theme-light .bc-amber{background:#FEF0CC;border-color:#F0C060}
+body.theme-light .bc-purple{background:#EDE6FA;border-color:#C4AAEF}
+body.theme-light .bc-green{background:#D6F0E2;border-color:#84CCA6}
 body.theme-light .bc-green .blbl,.bc-green .bnum{color:#145C34}
 body.theme-light .bc-sky{background:#D6EEFA;border-color:#88C4EE;color:#0B3A62}
 /* Badges — real colour, not pale */
