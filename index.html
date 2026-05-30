@@ -549,6 +549,7 @@ var ICON={
   star:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 3.2l2.7 5.5 6 .9-4.35 4.24 1.03 5.96L12 17.02 6.62 19.8l1.03-5.96L3.3 9.6l6-.9z"/></svg>',
   pin:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9.5 3h5l-.7 5.2 2.7 2.8H7.5l2.7-2.8z"/><path d="M12 13.8V21"/></svg>',
   download:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4.2-4.2M12 15l4.2-4.2M4 19.5h16"/></svg>',
+  upload:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 21V9m0 0L7.8 13.2M12 9l4.2 4.2M4 4.5h16"/></svg>',
   chevD:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
 };
 /* ═══════════ SYLLABUS DATA ═══════════ */
@@ -1416,7 +1417,7 @@ function renderLectures(){
   else if(remain<=0){if(remLec>0){dtBig='<span class="bn-v">'+remLec+'</span><span class="bn-u">lec</span>';dtSub='set lecture durations for a target';}else{dtBig='<span class="bn-v" style="font-size:26px">done</span>';dtSub='all lectures finished';}}
   else if(dleft<=0){dtBig='<span class="bn-v" style="font-size:22px">past due</span>';dtSub=Math.abs(dleft)+'d overdue · tap to adjust';}
   else{var watchRem=_curPace!=null?remain*_curPace:remain;var perDay=Math.max(1,Math.ceil(watchRem/dleft));dtBig=bnumHTML(fmtMinParts(perDay))+'<span class="bn-u">/day</span>';dtSub='to finish by '+fmtDate(due).replace(/ \d{4}/,'')+' · '+dleft+'d left';}
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add them as you receive them.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'lecture\'})">'+ICON.bolt+' Quick-log lecture</button></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add them as you receive them.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="csvImport(\'lectures\')">'+ICON.upload+' Import CSV</button><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'lecture\'})">'+ICON.bolt+' Quick-log lecture</button></div></div>';
   // subject tabs
   h+='<div class="stabs">'+subs.map(function(s){var on=s===sid,col=subjColor(s);return '<button class="stab" style="'+(on?'background:'+col+';border-color:'+col+';color:#0E0E0E':'')+'" onclick="_lecSub=\''+s+'\';renderLectures()"><span class="sdot" style="background:'+(on?'#0E0E0E':col)+'"></span>'+SYL[s].short+'</button>';}).join('')+'</div>';
   // bento
@@ -1506,7 +1507,7 @@ function renderSettings(){
   // rev offsets
   h+='<div class="card mb10"><div class="slbl mb12">Revision schedule (days after first reading)</div><div class="row wrap" id="se-rev" style="gap:8px"></div></div>';
   // chapters
-  h+='<div class="card mb10"><div class="slbl mb12">Chapters</div><div class="sub mb10">Default = ICAI. Customize per subject if your faculty splits differently.</div><div id="se-ch"></div></div>';
+  h+='<div class="card mb10"><div class="rowb mb12"><div class="slbl">Chapters</div><button class="btn btn-ghost btn-sm" onclick="csvImport(\'chapters\')">'+ICON.upload+' Import CSV</button></div><div class="sub mb10">Default = ICAI. Customize per subject if your faculty splits differently.</div><div id="se-ch"></div></div>';
   // data
   h+='<div class="card mb10"><div class="slbl mb12">Data</div><div class="row wrap" style="gap:8px"><button class="btn btn-sm" onclick="exportJSON()">Export backup</button><label class="btn btn-sm" style="cursor:pointer">Import backup<input type="file" accept="application/json" id="se-imp" style="display:none"></label><button class="btn btn-dan btn-sm" onclick="nukeAll()">Reset all data</button></div></div>';
   h+='<div class="xs muted mono tc mt12">Tracker · CA Inter · v'+VERSION+'</div></div>';
@@ -1576,7 +1577,7 @@ function renderTests(){
   var scored=allAtt.filter(function(x){return attPct(x.a,x.t)!=null;});
   var avg=scored.length?Math.round(scored.reduce(function(s,x){return s+attPct(x.a,x.t);},0)/scored.length):null;
   var awaiting=testsAwaiting().length,due=testsToSit().length;
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Tests</div><div class="sub">Timed mocks &amp; chapter tests — real reading + writing countdown. Enter marks after you review.</div></div><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="quickTest()">'+ICON.bolt+' Log a past test</button><button class="btn btn-p btn-sm" onclick="testForm()">'+ICON.plus+' New test</button></div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Tests</div><div class="sub">Timed mocks &amp; chapter tests — real reading + writing countdown. Enter marks after you review.</div></div><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="csvImport(\'tests\')">'+ICON.upload+' Import CSV</button><button class="btn btn-ghost btn-sm" onclick="quickTest()">'+ICON.bolt+' Log a past test</button><button class="btn btn-p btn-sm" onclick="testForm()">'+ICON.plus+' New test</button></div></div>';
   h+='<div class="bento b4 mb16">'+
     '<div class="bc bc-neutral"><span class="blbl">Tests</span><div class="bnum"><span class="bn-v">'+tests.length+'</span></div><span class="bsub">'+full.length+' full · '+multi.length+' multi · '+single.length+' single</span></div>'+
     '<div class="bc bc-purple"><span class="blbl">Avg score</span><div class="bnum"><span class="bn-v">'+(avg!=null?avg:'—')+'</span>'+(avg!=null?'<span class="bn-u">%</span>':'')+'</div><span class="bsub">'+scored.length+' scored attempt'+(scored.length===1?'':'s')+'</span></div>'+
@@ -1822,7 +1823,7 @@ function renderFlashpoints(){
   var all=APP.flashpoints||[];
   var list=all.filter(fpMatch);
   var searchActive=_fpSearch.trim().length>0;
-  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas &amp; traps — grouped by chapter. Star what matters; pin to keep on top.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="fpExport()"'+(all.length?'':' disabled')+'>'+ICON.download+' Export</button><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add</button></div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas &amp; traps — grouped by chapter. Star what matters; pin to keep on top.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="fpExport()"'+(all.length?'':' disabled')+'>'+ICON.download+' Export</button><button class="btn btn-ghost btn-sm" onclick="csvImport(\'flashpoints\')">'+ICON.upload+' Import</button><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add</button></div></div>';
   h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search all points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpFlagged?' on':'')+'" onclick="_fpFlagged=!_fpFlagged;renderFlashpoints()" title="Show starred only">starred</span></div></div>';
   h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpFlagged?' · starred':'')+(searchActive?' · matching "'+esc(_fpSearch.trim())+'"':'')+'</div>';
   if(!list.length){
@@ -1924,6 +1925,161 @@ function saveFP(id){
   save(true);toast('Updated','ok');renderFlashpoints();return true;
 }
 function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoints=APP.flashpoints.filter(function(x){return x.id!==id;});save(true);renderFlashpoints();},{danger:true,yes:'Delete'});}
+</script>
+
+<script>
+/* ═══════════ CSV IMPORT (lectures / chapters / tests / flashpoints) ═══════════ */
+var _csvKind=null,_csvParsed=null;
+var CSV_SPEC={
+  lectures:{title:'Import lectures',file:'lectures-template.csv',cols:['subject','chapter','type','number','label','plannedMin'],
+    sample:[['AA','AS 19 – Leases','main','1','Operating lease — intro','62'],['AA','AS 19 – Leases','main','2','Finance lease accounting','48'],['LAW','2','revision','','Quick recap','30']],
+    hint:'subject = code or name (AA, LAW…). chapter = name or number — blank goes to Misc/Bonus. type = main or revision. number & plannedMin are optional.'},
+  chapters:{title:'Import chapters',file:'chapters-template.csv',cols:['subject','chapter'],
+    sample:[['AA','My faculty chapter 1'],['AA','My faculty chapter 2'],['LAW','My faculty chapter 1']],
+    hint:'Adds chapters (in file order) to a subject. Chapters that already exist (same name) are skipped — nothing is deleted.'},
+  tests:{title:'Import tests',file:'tests-template.csv',cols:['name','type','source','subject','chapters','dueDate','readingMin','testMin','maxMarks'],
+    sample:[['MTP Series 1','full','MTP','AA','','2026-07-10','15','180','100'],['Leases + EPS','multi','','AA','AS 19 – Leases; AS 20 – Earnings Per Share','','0','120','50'],['Cash Flow test','chapter','','AA','AS 3 – Cash Flow Statement','','0','60','30']],
+    hint:'type = full / multi / chapter. subject = code or name. chapters: blank for full · one for chapter · 2+ separated by ";" for multi (name or number). dueDate optional (YYYY-MM-DD). reading/test/max minutes optional — sensible defaults fill in.'},
+  flashpoints:{title:'Import flashpoints',file:'flashpoints-template.csv',cols:['subject','chapter','title','point','type','flag'],
+    sample:[['AA','AS 19 – Leases','Finance vs operating','Risks & rewards transfer = finance lease','concept','yes'],['IT','Capital Gains','Indexation','Use CII; not for STCG','formula','no']],
+    hint:'subject & chapter optional (blank = general / no chapter). type = formula / trap / concept (optional). flag = yes/no.'}
+};
+function csvImport(kind){
+  _csvKind=kind;_csvParsed=null;var sp=CSV_SPEC[kind];
+  var body='<div class="alert al-blue">'+esc(sp.hint)+'</div>'+
+    '<div class="row wrap" style="gap:8px;margin-bottom:12px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
+    '<label class="btn btn-sm btn-p" style="cursor:pointer">'+ICON.upload+' Choose CSV file<input type="file" accept=".csv,text/csv,text/plain" id="csv-file" style="display:none"></label></div>'+
+    '<div class="xs mono muted mb8">Columns: '+sp.cols.join(', ')+'</div>'+
+    '<div id="csv-prev" class="alert al-dim sm">Download the template, fill it in a spreadsheet, export as CSV, then choose it here.</div>';
+  modal({size:'md',title:sp.title,body:body,
+    actions:[{label:'Close',kind:'ghost'},{label:'Import',kind:'primary',onClick:function(){if(csvDoImport())return false;return true;}}],
+    onOpen:function(){$('csv-file').onchange=function(){if(this.files&&this.files[0])csvReadFile(this.files[0]);};}});
+}
+function csvTemplate(kind){var sp=CSV_SPEC[kind];var rows=[sp.cols].concat(sp.sample);dlFile(sp.file,rows.map(function(r){return r.map(csvField).join(',');}).join('\r\n'),'text/csv');}
+function csvReadFile(file){
+  var r=new FileReader();
+  r.onload=function(){try{_csvParsed=csvPreview(_csvKind,csvParse(''+r.result));}catch(e){_csvParsed=null;}csvRenderPrev();};
+  r.onerror=function(){_csvParsed=null;csvRenderPrev();};
+  r.readAsText(file);
+}
+function csvRenderPrev(){
+  var p=$('csv-prev');if(!p)return;var r=_csvParsed;
+  if(!r){p.innerHTML='<span style="color:var(--rose)">Could not read that file.</span>';return;}
+  var h='<div class="sm fw6" style="color:var(--ink)">Ready to import '+r.ok+' '+(r.ok===1?'row':'rows')+(r.skip?' · '+r.skip+' skipped':'')+'</div>';
+  if(r.errors.length)h+='<ul style="margin:7px 0 0;padding-left:16px;line-height:1.65;color:var(--dim)">'+r.errors.slice(0,6).map(function(e){return '<li>'+esc(e)+'</li>';}).join('')+(r.errors.length>6?'<li>… and '+(r.errors.length-6)+' more</li>':'')+'</ul>';
+  p.innerHTML=h;
+}
+function csvDoImport(){
+  if(!_csvParsed){toast('Choose a CSV file first','err');return false;}
+  if(!_csvParsed.ok){toast('Nothing valid to import','err');return false;}
+  var n=_csvParsed.apply();save(true);
+  toast('Imported '+n+' '+_csvKind,'ok');
+  ({lectures:renderLectures,chapters:renderSettings,tests:renderTests,flashpoints:renderFlashpoints}[_csvKind]||function(){})();
+  return true;
+}
+/* ── parsing + matching helpers ── */
+function csvParse(text){
+  text=(''+text).replace(/^\uFEFF/,'');var rows=[],row=[],cur='',i=0,inQ=false,ch;
+  while(i<text.length){ch=text.charAt(i);
+    if(inQ){if(ch==='"'){if(text.charAt(i+1)==='"'){cur+='"';i+=2;continue;}inQ=false;i++;continue;}cur+=ch;i++;continue;}
+    if(ch==='"'){inQ=true;i++;continue;}
+    if(ch===','){row.push(cur);cur='';i++;continue;}
+    if(ch==='\r'){i++;continue;}
+    if(ch==='\n'){row.push(cur);rows.push(row);row=[];cur='';i++;continue;}
+    cur+=ch;i++;
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+function csvHeaderMap(cols,headerRow){
+  var low=headerRow.map(function(c){return (''+c).trim().toLowerCase();});
+  if(!cols.some(function(c){return low.indexOf(c.toLowerCase())>=0;}))return null;
+  var map={};cols.forEach(function(c){map[c]=low.indexOf(c.toLowerCase());});return map;
+}
+function csvSubject(str){var s=(''+(str||'')).trim().toLowerCase();if(!s)return '';var found=null;Object.keys(SYL).forEach(function(sid){if(found)return;if(sid===s||SYL[sid].short.toLowerCase()===s||SYL[sid].name.toLowerCase()===s)found=sid;});return found;}
+function csvChapter(sid,str){
+  var s=(''+(str||'')).trim();if(!s)return {idx:null};
+  var list=chapList(sid);
+  if(/^\d+$/.test(s)){var n=+s-1;if(n>=0&&n<list.length)return {idx:n};return {err:'chapter number '+s+' out of range'};}
+  var low=s.toLowerCase(),i;
+  for(i=0;i<list.length;i++)if(list[i].toLowerCase()===low)return {idx:i};
+  for(i=0;i<list.length;i++)if(list[i].toLowerCase().indexOf(low)>=0)return {idx:i};
+  return {err:'chapter not found: "'+s+'"'};
+}
+function csvTruthy(s){return /^(y|yes|true|1|x|★|\*)$/i.test((''+(s||'')).trim());}
+/* ── per-kind validation → builds an apply() closure ── */
+function csvPreview(kind,rows){
+  var sp=CSV_SPEC[kind],cols=sp.cols;
+  if(!rows.length)return {ok:0,skip:0,errors:['File is empty'],apply:function(){return 0;}};
+  var map=csvHeaderMap(cols,rows[0]),data=map?rows.slice(1):rows;
+  var errors=[],items=[],skip=0;
+  function valOf(row,c){var ix=map?map[c]:cols.indexOf(c);return (ix>=0&&ix<row.length)?(''+row[ix]).trim():'';}
+  var seenChap={}; // for chapters dedupe within batch
+  data.forEach(function(row,ri){
+    if(row.every(function(c){return (''+c).trim()==='';}))return;
+    var ln=ri+(map?2:1);
+    function v(c){return valOf(row,c);}
+    if(kind==='chapters'){
+      var sid=csvSubject(v('subject'));
+      if(sid===null){errors.push('Row '+ln+': unknown subject "'+v('subject')+'"');skip++;return;}
+      if(!sid){errors.push('Row '+ln+': subject is required');skip++;return;}
+      var cn=v('chapter');if(!cn){errors.push('Row '+ln+': blank chapter');skip++;return;}
+      var existing=chapList(sid).map(function(x){return x.toLowerCase();});
+      var k=sid+'|'+cn.toLowerCase();
+      if(existing.indexOf(cn.toLowerCase())>=0||seenChap[k]){skip++;return;}
+      seenChap[k]=1;items.push({sid:sid,cn:cn});
+    }else if(kind==='lectures'){
+      var s2=csvSubject(v('subject'));
+      if(!s2){errors.push('Row '+ln+': '+(v('subject')?'unknown':'missing')+' subject "'+v('subject')+'"');skip++;return;}
+      var cr=csvChapter(s2,v('chapter'));
+      if(cr.err){errors.push('Row '+ln+': '+cr.err);skip++;return;}
+      var ci=(cr.idx==null)?-1:cr.idx;
+      var ty=/^rev/i.test(v('type'))?'revision':'main';
+      var lbl=v('label')||'Lecture';
+      var pm=parseInt(v('plannedMin'),10);pm=(!isNaN(pm)&&pm>0)?pm:null;
+      var num=parseInt(v('number'),10);num=(!isNaN(num)&&num>0)?num:null;
+      items.push({sid:s2,ci:ci,kind:ty,label:lbl,plannedMin:pm,number:num});
+    }else if(kind==='tests'){
+      var nm=v('name');if(!nm){errors.push('Row '+ln+': missing test name');skip++;return;}
+      var tyR=v('type').toLowerCase();var type=tyR==='multi'||tyR==='multiple'?'multi':(tyR==='chapter'||tyR==='single'||tyR==='chapterwise'?'chapter':(tyR==='full'||tyR===''?'full':null));
+      if(type===null){errors.push('Row '+ln+': type must be full, multi or chapter');skip++;return;}
+      var s3=csvSubject(v('subject'));
+      if(!s3){errors.push('Row '+ln+': '+(v('subject')?'unknown':'missing')+' subject "'+v('subject')+'"');skip++;return;}
+      var ciT=null,cisT=null;
+      if(type==='chapter'){var c1=csvChapter(s3,v('chapters'));if(c1.err||c1.idx==null){errors.push('Row '+ln+': '+(c1.err||'chapter required for a chapter test'));skip++;return;}ciT=c1.idx;}
+      else if(type==='multi'){var parts=v('chapters').split(';'),idxs=[],bad=null;parts.forEach(function(pp){pp=pp.trim();if(!pp)return;var cc=csvChapter(s3,pp);if(cc.err||cc.idx==null)bad=bad||cc.err||('bad chapter "'+pp+'"');else if(idxs.indexOf(cc.idx)<0)idxs.push(cc.idx);});if(bad){errors.push('Row '+ln+': '+bad);skip++;return;}if(idxs.length<2){errors.push('Row '+ln+': multi test needs 2+ chapters');skip++;return;}cisT=idxs;}
+      var dd=v('dueDate');if(dd&&!isDate(dd)){errors.push('Row '+ln+': bad dueDate "'+dd+'" (use YYYY-MM-DD)');skip++;return;}
+      var def=tfDefaults(type);
+      var rd=parseInt(v('readingMin'),10);rd=isNaN(rd)||rd<0?def.rd:rd;
+      var tm=parseInt(v('testMin'),10);tm=isNaN(tm)||tm<1?def.tm:tm;
+      var mx=parseInt(v('maxMarks'),10);mx=isNaN(mx)||mx<1?def.mx:mx;
+      items.push({type:type,source:type==='full'?v('source'):'',name:nm,subjectId:s3,chapterIdx:ciT,chapterIdxs:cisT,dueDate:dd&&isDate(dd)?dd:null,readingMin:rd,testMin:tm,maxMarks:mx});
+    }else if(kind==='flashpoints'){
+      var s4=csvSubject(v('subject'));
+      if(s4===null){errors.push('Row '+ln+': unknown subject "'+v('subject')+'"');skip++;return;}
+      var ci4=null;
+      if(s4){var c4=csvChapter(s4,v('chapter'));if(c4.err){errors.push('Row '+ln+': '+c4.err);skip++;return;}ci4=c4.idx;}
+      var tt=v('title'),pt=v('point');
+      if(!tt&&!pt){skip++;return;}
+      var fty=v('type').toLowerCase();if(['formula','trap','concept'].indexOf(fty)<0)fty='';
+      items.push({subjectId:s4,chapterIdx:ci4,title:tt||'Note',point:pt,type:fty,flag:csvTruthy(v('flag'))});
+    }
+  });
+  return {ok:items.length,skip:skip,errors:errors,apply:function(){return csvApply(kind,items);}};
+}
+function csvApply(kind,items){
+  var n=0;
+  if(kind==='chapters'){
+    items.forEach(function(it){if(!APP.chapters[it.sid])APP.chapters[it.sid]=chapList(it.sid).slice();APP.chapters[it.sid].push(it.cn);n++;});
+  }else if(kind==='lectures'){
+    items.forEach(function(it){var num=it.kind==='main'?(it.number||nextLecNum(it.sid,it.ci)):null;APP.lectures.push({id:uid(),subjectId:it.sid,chapterIdx:it.ci,label:it.label,lectureNumber:num,plannedMin:it.plannedMin,kind:it.kind,status:'pending',contentDoneMin:0,createdAt:Date.now(),updatedAt:Date.now()});n++;});
+  }else if(kind==='tests'){
+    items.forEach(function(it){APP.tests.push({id:uid(),type:it.type,source:it.source,name:it.name,subjectId:it.subjectId,chapterIdx:it.chapterIdx,chapterIdxs:it.chapterIdxs,dueDate:it.dueDate,readingMin:it.readingMin,testMin:it.testMin,maxMarks:it.maxMarks,attempts:[],createdAt:Date.now(),updatedAt:Date.now()});n++;});
+  }else if(kind==='flashpoints'){
+    items.forEach(function(it){APP.flashpoints.push({id:uid(),subjectId:it.subjectId,chapterIdx:it.chapterIdx,title:it.title,point:it.point,type:it.type,flag:it.flag,pinned:false,date:today(),source:'csv'});n++;});
+  }
+  return n;
+}
 </script>
 
 <script>
