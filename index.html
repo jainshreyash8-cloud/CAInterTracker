@@ -29,16 +29,17 @@ body.theme-dark{
   --top-bg:rgba(14,14,14,.85);
 }
 body.theme-light{
-  --bg:#F0EEE8; --faint:#F8F7F3; --ink:#1C1A15; --ink2:#4A463E; --dim:#88836F; --border:#DDD9CE;
-  --card-bg:#FAFAF7; --card-border:#E2DDD2;
-  --hover:rgba(0,0,0,.035); --line:rgba(0,0,0,.07); --track:rgba(0,0,0,.09); --shadow:0 4px 18px rgba(60,50,30,.10),0 1px 4px rgba(0,0,0,.06);
-  --accent:#2563EB; --accent-ink:#FFFFFF;
-  --amber:#B5791E; --purple:#7A5FCF; --green:#2E8B57; --blue:#3B7DC4; --rose:#D14860;
-  --sky:#DCECFB; --sky-ink:#0E2840;
-  --amber-card:#FBF3E4; --amber-cb:#EEDFC2;
-  --purple-card:#F4F1FD; --purple-cb:#E4DCF7;
-  --green-card:#EDF7F0; --green-cb:#D6ECDD;
-  --top-bg:rgba(240,238,232,.92);
+  --bg:#F4F6F8; --faint:#EEF1F5; --ink:#0F1923; --ink2:#2C3A4A; --dim:#7A8A9A; --border:#D5DCE6;
+  --card-bg:#FFFFFF; --card-border:#DDE3EC;
+  --hover:rgba(15,25,35,.04); --line:rgba(15,25,35,.07); --track:rgba(15,25,35,.09);
+  --shadow:0 2px 8px rgba(15,25,35,.08),0 8px 24px rgba(15,25,35,.06);
+  --accent:#2A6AE8; --accent-ink:#FFFFFF;
+  --amber:#C27A10; --purple:#6B4FC8; --green:#1A8050; --blue:#1E62B8; --rose:#C8304A;
+  --sky:#DCF0FA; --sky-ink:#0A2E42;
+  --amber-card:#FEF5E4; --amber-cb:#F5DDA8;
+  --purple-card:#F2EEFA; --purple-cb:#D6C8F0;
+  --green-card:#E6F5ED; --green-cb:#B8DFC8;
+  --top-bg:rgba(244,246,248,.96);
 }
 </style>
 </head>
@@ -245,13 +246,11 @@ body.theme-light .bg-accent{background:color-mix(in srgb,var(--green) 16%,transp
 /* ════ TIMER (running) ════ */
 .t-wrap{max-width:560px;margin:0 auto;text-align:center}
 .t-display{font-family:'Sora',sans-serif;font-size:84px;line-height:1;letter-spacing:-.03em;font-weight:700;color:var(--accent)}
-body.theme-light .t-display{color:var(--green)}
-.t-display.amber{color:var(--amber)}.t-display.rose{color:var(--rose)}
 .t-phase{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:8px}
 .t-ref{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:12px}
 .pomo-ph{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:8px;font-weight:700}
-.pomo-work{color:var(--accent)}body.theme-light .pomo-work{color:var(--green)}
-.pomo-break{color:var(--sky)}body.theme-light .pomo-break{color:var(--blue)}
+.pomo-work{color:var(--accent)}
+.pomo-break{color:var(--sky)}
 .sctrl{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
 /* ════ ACTIVITY PICKER ════ */
 .act-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -412,35 +411,62 @@ body[data-nav="bwd"] .pg.on{animation:pgInLeft .22s cubic-bezier(.25,.46,.45,.94
 @keyframes stabPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 
 /* ════ LIGHT MODE OVERRIDES ════ */
-/* Topbar needs a bottom shadow to separate from content */
-body.theme-light .top{box-shadow:0 1px 0 var(--border),0 2px 12px rgba(60,50,30,.06)}
-/* Focus ring: blue instead of near-black */
-body.theme-light input:focus,body.theme-light select:focus,body.theme-light textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-/* Accent card (bc-accent) is near-black in light — override to blue */
-body.theme-light .bc-accent{background:var(--accent);color:#fff}
-body.theme-light .bc-accent .blbl{opacity:.7}
-body.theme-light .bc-accent .bn-u{opacity:.65}
-/* Ghost buttons need a bit more contrast in light */
-body.theme-light .btn-ghost{color:var(--ink2)}
-body.theme-light .btn-ghost:hover{color:var(--ink);background:var(--hover)}
-/* Nav pill in light: use accent blue */
+/* Topbar — elevated with a shadow so it reads as a surface */
+body.theme-light .top{box-shadow:0 1px 0 var(--border),0 4px 16px rgba(15,25,35,.07);background:rgba(255,255,255,.96)}
+body.theme-light .brand-name{color:var(--ink)}
+/* Nav pill — blue */
 body.theme-light #nav-pill{background:var(--accent)}
 body.theme-light .nb.on{color:#fff}
-/* Fullscreen timer bg: soft dark instead of pure black in light */
-body.theme-light #fso{background:#1C1A15}
-/* Active stab in light: use accent blue tint */
-body.theme-light .stab.on{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
-/* Seg buttons in light: more visible active state */
-body.theme-light .seg-btn.on{background:var(--ink);color:var(--bg)}
-/* Card shadow in light: more prominent */
-body.theme-light .card,body.theme-light .card-flat{box-shadow:0 1px 3px rgba(0,0,0,.06)}
-/* Timer display in light */
+/* Cards — white with a real shadow for depth */
+body.theme-light .card,body.theme-light .card-flat{box-shadow:var(--shadow)}
+body.theme-light .bc-neutral{box-shadow:var(--shadow)}
+/* bc-accent — use the blue accent (not near-black) */
+body.theme-light .bc-accent{background:var(--accent);color:#fff}
+body.theme-light .bc-accent .blbl{opacity:.75}
+body.theme-light .bc-accent .bn-u{opacity:.6}
+/* bc-sky — darker sky ink for contrast */
+body.theme-light .bc-sky{background:var(--sky);color:var(--sky-ink)}
+/* Inputs — clean white with blue focus ring */
+body.theme-light input,body.theme-light select,body.theme-light textarea{background:#fff;border-color:var(--border)}
+body.theme-light input:focus,body.theme-light select:focus,body.theme-light textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(42,106,232,.14)}
+/* Seg buttons — navy active state */
+body.theme-light .seg-btn.on{background:var(--ink);color:#fff}
+/* Ghost buttons — slightly more visible */
+body.theme-light .btn-ghost{color:var(--ink2)}
+body.theme-light .btn-ghost:hover{color:var(--ink);background:var(--hover)}
+/* Subject stabs — blue tint when active */
+body.theme-light .stab.on{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+/* Badges — richer colours */
+body.theme-light .bg-accent{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+body.theme-light .bg-green{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
+body.theme-light .bg-amber{background:color-mix(in srgb,var(--amber) 12%,transparent);color:var(--amber)}
+body.theme-light .bg-rose{background:color-mix(in srgb,var(--rose) 12%,transparent);color:var(--rose)}
+/* Timer — use accent blue */
 body.theme-light .t-display{color:var(--accent)}
 body.theme-light .pomo-work{color:var(--accent)}
-/* Exempt/exch buttons in light */
+body.theme-light .pomo-break{color:var(--blue)}
+/* Fullscreen overlay — deep navy, not pure black */
+body.theme-light #fso{background:#0F1923}
+/* Exemption buttons */
 body.theme-light .exch.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
-/* bg-accent badge in light: use blue */
-body.theme-light .bg-accent{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+/* Chapter expand hover */
+body.theme-light .chap-h:hover{background:var(--faint)}
+/* Lecture rows */
+body.theme-light .lec{background:var(--faint)}
+/* Act cards — white */
+body.theme-light .act-card{background:#fff;border-color:var(--border)}
+/* Alert variants — richer in light */
+body.theme-light .al-blue{background:#EFF5FE;border-color:#BDD4FA;color:#1752B8}
+body.theme-light .al-amber{background:#FEF7E8;border-color:#F0D28A;color:#9A5E0A}
+body.theme-light .al-dim{background:var(--faint);border-color:var(--border);color:var(--ink2)}
+/* Revision dots */
+body.theme-light .syl-dot.d-over{background:var(--rose);border-color:var(--rose)}
+body.theme-light .syl-dot.d-due{background:var(--amber);border-color:var(--amber)}
+body.theme-light .syl-dot.d-up{background:transparent;border-color:var(--dim)}
+/* Subject chip dots readable on light */
+body.theme-light .sdot{filter:brightness(.85) saturate(1.3)}
+/* Scrollbar */
+body.theme-light ::-webkit-scrollbar-thumb{background:var(--border)}
 
 /* ════ MOBILE ════ */
 /* Topbar: hide "by Shreyash Jain" sub-label on very small screens */
