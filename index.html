@@ -378,9 +378,12 @@ body.theme-light .t-display{color:var(--green)}
 .seg-locked{opacity:.85}
 .seg-locked .seg-btn{cursor:default}
 .tf-multi{max-height:190px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;padding:5px;display:flex;flex-direction:column;gap:1px}
-.tf-cbx{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;font-size:12.5px;cursor:pointer;line-height:1.35}
+.tf-cbx{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;font-size:12.5px;cursor:pointer;line-height:1.35;border:1px solid transparent;user-select:none}
 .tf-cbx:hover{background:var(--faint)}
-.tf-cbx input{width:15px;height:15px;flex:0 0 auto;accent-color:var(--accent)}
+.tf-cbx .tf-ck{width:17px;height:17px;flex:0 0 auto;border:2px solid var(--border);border-radius:5px;position:relative}
+.tf-cbx.sel{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--ink);font-weight:600}
+.tf-cbx.sel .tf-ck{background:var(--accent);border-color:var(--accent)}
+.tf-cbx.sel .tf-ck::after{content:'';position:absolute;left:4.5px;top:1px;width:4px;height:9px;border:solid #0E0E0E;border-width:0 2px 2px 0;transform:rotate(45deg)}
 </style>
 <style>
 /* ════ FLASHPOINTS ════ */
@@ -389,18 +392,23 @@ body.theme-light .t-display{color:var(--green)}
 .stab.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:transparent}
 .fp-grid{columns:2;column-gap:11px}
 @media(max-width:640px){.fp-grid{columns:1}}
-.fp-card{break-inside:avoid;background:var(--faint);border:1px solid var(--border);border-radius:11px;padding:13px 14px;margin-bottom:11px;border-left-width:3px}
+.fp-card{break-inside:avoid;background:var(--faint);border:1px solid var(--border);border-radius:11px;padding:13px 14px;margin-bottom:11px}
 .fp-top{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:6px;line-height:1.4}
 .fp-body{font-size:13px;color:var(--ink2,var(--dim));line-height:1.62;white-space:pre-wrap}
 .fp-foot{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
 .fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
+.fp-dots{display:inline-flex;gap:4px;align-items:center;cursor:pointer;padding:2px 2px 2px 0}
+.fp-dots i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--border);display:inline-block;box-sizing:border-box}
+.fp-dots i.a{background:var(--amber);border-color:var(--amber)}
+.fp-dots i.b{background:var(--rose);border-color:var(--rose)}
 /* ════ DASHBOARD ════ */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
 .dash-grid>div{min-width:0}
 @media(max-width:760px){.dash-grid{grid-template-columns:1fr}}
 .lchart{width:100%;height:auto;display:block;overflow:visible}
 .lchart-leg{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-.lchart-leg span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim)}
+.lchart-leg span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
+.lchart-leg span.off{opacity:.4;text-decoration:line-through}
 .lchart-leg i{width:12px;height:3px;border-radius:2px;display:inline-block}
 .dbar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
 .dbar-l{font-size:12px;min-width:78px;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -412,6 +420,9 @@ body.theme-light .t-display{color:var(--green)}
 .gsep{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);margin:14px 0 8px}
 .gsep:first-child{margin-top:0}
 .hm-wrap{overflow-x:auto;padding-bottom:4px}
+.hm-body{display:flex;gap:4px}
+.hm-days{display:flex;flex-direction:column;gap:3px;width:24px;flex:0 0 auto}
+.hm-days span{height:11px;font-size:8px;line-height:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;text-align:right}
 .hm-mons{display:flex;font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px}
 .hm-grid{display:flex;gap:3px}
 .hm-col{display:flex;flex-direction:column;gap:3px}
@@ -1389,7 +1400,7 @@ function renderLectures(){
     '<div class="bc bc-neutral exam-card" onclick="editDue(\''+sid+'\')" style="cursor:pointer"><span class="blbl">Finish all by '+ICON.edit+'</span><div class="bnum"><span class="bn-v" style="font-size:26px">'+(due?fmtDate(due).replace(/ \d{4}/,''):'set')+'</span></div><span class="bsub">'+(dleft!=null?(dleft>=0?dleft+' days left':Math.abs(dleft)+'d overdue'):'tap to set due date')+'</span></div>'+
   '</div>';
   if(mains.length){var projTxt=_curPace!=null?fmtMin(Math.round(remain*_curPace)):'—';
-    h+='<div class="card mb16" style="border-left:3px solid '+c+'"><div class="rowb mb8"><span class="slbl">Your pace &amp; projection</span>'+(_curPace!=null?'<span class="badge bg-accent">'+_curPace.toFixed(2)+'\u00d7 content time</span>':'<span class="badge bg-gray">need data</span>')+'</div>'+
+    h+='<div class="card mb16"><div class="rowb mb8"><span class="slbl">Your pace &amp; projection</span>'+(_curPace!=null?'<span class="badge bg-accent">'+_curPace.toFixed(2)+'\u00d7 content time</span>':'<span class="badge bg-gray">need data</span>')+'</div>'+
       (_curPace!=null
         ?'<div class="sm" style="line-height:1.75">About <b>'+fmtMin(Math.round(60*_curPace))+'</b> of your time for every <b>60m</b> of lecture content. <br>'+remLec+' lecture'+(remLec===1?'':'s')+' left (<b>'+fmtMin(remain)+'</b> of content) \u2192 roughly <b style="color:'+c+'">'+projTxt+'</b> to finish'+((due&&dleft!=null&&dleft>0)?' \u00b7 about <b>'+fmtMin(Math.round(remain*_curPace/dleft))+'/day</b> to hit '+fmtDate(due).replace(/ \d{4}/,''):'')+'.</div>'
         :'<div class="sm muted">Finish a few lectures (with their planned minutes set) and I\'ll project how long the rest will take at your pace.</div>')+
@@ -1592,7 +1603,7 @@ function tfChapArea(ty,sid,t){
   var list=chapList(sid);
   if(ty==='chapter'){var cur=(t&&t.subjectId===sid&&t.chapterIdx!=null)?t.chapterIdx:0;return '<label>Chapter</label><select id="tf-ch">'+list.map(function(cn,i){return '<option value="'+i+'" '+(cur===i?'selected':'')+'>'+esc(cn)+'</option>';}).join('')+'</select>';}
   var sel=(t&&t.subjectId===sid&&t.chapterIdxs)?t.chapterIdxs:[];
-  return '<label>Chapters <span class="muted" style="font-weight:400">(tick 2 or more)</span></label><div class="tf-multi" id="tf-multi">'+list.map(function(cn,i){return '<label class="tf-cbx"><input type="checkbox" value="'+i+'" '+(sel.indexOf(i)>=0?'checked':'')+'><span>'+esc(cn)+'</span></label>';}).join('')+'</div>';
+  return '<label>Chapters <span class="muted" style="font-weight:400">(tap to select 2 or more)</span></label><div class="tf-multi" id="tf-multi">'+list.map(function(cn,i){return '<div class="tf-cbx'+(sel.indexOf(i)>=0?' sel':'')+'" data-i="'+i+'" onclick="this.classList.toggle(\'sel\')"><span class="tf-ck"></span><span>'+esc(cn)+'</span></div>';}).join('')+'</div>';
 }
 function testForm(id){
   var subs=activeSubjects();if(!subs.length){toast('No active subjects','err');return;}
@@ -1623,7 +1634,7 @@ function saveTest(id){
   var sid=$('tf-sub').value;
   var ci=null,cis=null;
   if(type==='chapter'){ci=($('tf-ch')&&$('tf-ch').value!=='')?+$('tf-ch').value:null;if(ci==null){toast('Pick a chapter','err');return false;}}
-  else if(type==='multi'){cis=[];if($('tf-multi'))$('tf-multi').querySelectorAll('input:checked').forEach(function(c){cis.push(+c.value);});if(cis.length<2){toast('Tick at least 2 chapters','err');return false;}}
+  else if(type==='multi'){cis=[];if($('tf-multi'))$('tf-multi').querySelectorAll('.tf-cbx.sel').forEach(function(c){cis.push(+c.dataset.i);});if(cis.length<2){toast('Select at least 2 chapters','err');return false;}}
   var rd=parseInt($('tf-rd').value,10);if(isNaN(rd)||rd<0)rd=0;
   var tm=parseInt($('tf-tm').value,10);if(isNaN(tm)||tm<1)tm=tfDefaults(type).tm;
   var mx=parseInt($('tf-mx').value,10);if(isNaN(mx)||mx<1)mx=tfDefaults(type).mx;
@@ -1772,16 +1783,16 @@ function submitQuickTest(){
 
 <script>
 /* ═══════════ FLASHPOINTS ═══════════ */
-var _fpFilter='all',_fpSearch='',_fpImp=false;
-function fpMatch(f){if(_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;if(_fpImp&&(f.importance||1)<2)return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
+var _fpFilter='all',_fpSearch='',_fpMarked=false;
+function fpMatch(f){if(_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;if(_fpMarked&&!((f.importance||0)>=1))return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
 function renderFlashpoints(){
   var subs=activeSubjects();
   if(_fpFilter!=='all'&&subs.indexOf(_fpFilter)<0)_fpFilter='all';
   var all=APP.flashpoints||[];
-  var list=all.filter(fpMatch).slice().reverse().sort(function(a,b){return (b.importance||1)-(a.importance||1);});
-  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas, traps &amp; takeaways — quick revision fuel.</div></div><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add flashpoints</button></div>';
-  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpImp?' on':'')+'" onclick="_fpImp=!_fpImp;renderFlashpoints()" title="Important &amp; critical only">★ key only</span></div></div>';
-  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpImp?' · key only':'')+'</div>';
+  var list=all.filter(fpMatch).slice().reverse().sort(function(a,b){return (b.importance||0)-(a.importance||0);});
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas, traps &amp; takeaways. Tap the dots on a card to flag it once you know it matters.</div></div><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add flashpoints</button></div>';
+  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpMarked?' on':'')+'" onclick="_fpMarked=!_fpMarked;renderFlashpoints()" title="Show flagged points only">flagged</span></div></div>';
+  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpMarked?' · flagged':'')+'</div>';
   if(list.length)h+='<div class="fp-grid">'+list.map(fpCard).join('')+'</div>';
   else h+='<div class="empty"><div class="empty-t">'+(all.length?'Nothing matches':'No flashpoints yet')+'</div><div>'+(all.length?'Try a different search, subject or filter.':'Capture key points, formulas and exam traps as you study. Add them here, or from a logged session on the Timeline.')+'</div></div>';
   h+='</div>';
@@ -1790,19 +1801,18 @@ function renderFlashpoints(){
 function fpSearchInput(v){_fpSearch=v;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
 function setFp(sid){_fpFilter=sid;renderFlashpoints();}
 function fpTabs(subs){var h='<span class="stab'+(_fpFilter==='all'?' on':'')+'" onclick="setFp(\'all\')">All</span>';subs.forEach(function(s){h+='<span class="stab'+(_fpFilter===s?' on':'')+'" onclick="setFp(\''+s+'\')"'+(_fpFilter===s?' style="color:'+subjColor(s)+';background:'+subjColor(s)+'22"':'')+'>'+subjShort(s)+'</span>';});return h;}
-function fpImpTag(imp){return imp>=3?'<span class="badge bg-rose">\u2605\u2605 critical</span>':imp===2?'<span class="badge bg-amber">\u2605 important</span>':'';}
+function fpImpDots(f){var imp=f.importance||0;var lbl=imp===2?'Critical · tap to clear':imp===1?'Important · tap for critical':'Tap to flag importance';return '<span class="fp-dots" title="'+lbl+'" onclick="fpCycleImp(\''+f.id+'\')"><i class="'+(imp>=1?'a':'')+'"></i><i class="'+(imp>=2?'b':'')+'"></i></span>';}
+function fpCycleImp(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.importance=((f.importance||0)+1)%3;f.updatedAt=Date.now();save(true);renderFlashpoints();}
 function fpCard(f){
-  var hasS=f.subjectId&&SYL[f.subjectId],imp=f.importance||1;
-  var bord=imp>=3?'var(--rose)':imp===2?'var(--amber)':(hasS?subjColor(f.subjectId):'var(--border)');
+  var hasS=f.subjectId&&SYL[f.subjectId];
   var chap=(f.chapterIdx!=null&&f.chapterIdx>=0)?'<span class="xs mono muted">'+esc(chapName(f.subjectId,f.chapterIdx))+'</span>':'';
-  return '<div class="fp-card" style="border-left-color:'+bord+'"><div class="fp-top">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-body">'+esc(f.point)+'</div>':'')+
-    '<div class="fp-foot">'+fpImpTag(imp)+(hasS?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>')+chap+
+  return '<div class="fp-card"><div class="fp-top">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-body">'+esc(f.point)+'</div>':'')+
+    '<div class="fp-foot">'+fpImpDots(f)+(hasS?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>')+chap+
     '<span class="xs mono muted" style="margin-left:auto">'+fmtDate(f.date)+'</span>'+
     '<button class="btn btn-icon btn-ghost" onclick="editFP(\''+f.id+'\')" title="Edit">'+ICON.edit+'</button>'+
     '<button class="btn btn-icon btn-ghost" onclick="delFP(\''+f.id+'\')" title="Delete">'+ICON.trash+'</button></div></div>';
 }
-function fpImpSelect(cls,val){return '<select class="'+cls+'" title="Importance" style="width:120px;flex:0 0 auto"><option value="1"'+(val===1?' selected':'')+'>Normal</option><option value="2"'+(val===2?' selected':'')+'>Important</option><option value="3"'+(val===3?' selected':'')+'>Critical</option></select>';}
-function fpRowHTML(){return '<div class="fp-rowx"><div class="row" style="gap:8px;align-items:center"><input class="fp-t" placeholder="Title / key term" style="flex:1">'+fpImpSelect('fp-imp',1)+'<button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px;margin-top:7px"></textarea></div>';}
+function fpRowHTML(){return '<div class="fp-rowx"><div class="row" style="gap:8px;align-items:center"><input class="fp-t" placeholder="Title / key term" style="flex:1"><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px;margin-top:7px"></textarea></div>';}
 function fpAddRow(){var r=$('fp-rows');if(r)r.insertAdjacentHTML('beforeend',fpRowHTML());}
 function addFlashpoint(pre){
   pre=pre||{};
@@ -1825,8 +1835,7 @@ function saveFlashpoints(){
   document.querySelectorAll('#fp-rows .fp-rowx').forEach(function(row){
     var t=row.querySelector('.fp-t').value.trim(),p=row.querySelector('.fp-p').value.trim();
     if(!t&&!p)return;
-    var imp=parseInt(row.querySelector('.fp-imp').value,10)||1;
-    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,importance:imp,date:today(),source:'manual'});n++;
+    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,importance:0,date:today(),source:'manual'});n++;
   });
   if(!n){toast('Add at least one point','err');return false;}
   save(true);toast('Saved '+n+' flashpoint'+(n===1?'':'s'),'ok');renderFlashpoints();return true;
@@ -1836,8 +1845,7 @@ function editFP(id){
   var subs=activeSubjects();
   var body='<div class="fld"><label>Title</label><input id="fpe-t" value="'+esc(f.title||'')+'"></div>'+
     '<div class="fld"><label>Point</label><textarea id="fpe-p">'+esc(f.point||'')+'</textarea></div>'+
-    '<div class="fld2"><div class="fld"><label>Importance</label>'+fpImpSelect('fpe-i',f.importance||1).replace('width:120px;flex:0 0 auto','width:100%')+'</div><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div></div>'+
-    '<div class="fld"><label>Chapter</label><select id="fpe-c"></select></div>';
+    '<div class="fld2"><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="fpe-c"></select></div></div>';
   modal({size:'md',title:'Edit flashpoint',body:body,
     actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){if(saveFP(id))return false;return true;}}],
     onOpen:function(){function fillCh(){var s=$('fpe-s').value;$('fpe-c').innerHTML='<option value="">— Any —</option>'+(s?chapList(s).map(function(cn,i){return '<option value="'+i+'" '+(f.subjectId===s&&f.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join(''):'');}$('fpe-s').onchange=fillCh;fillCh();}});
@@ -1845,7 +1853,7 @@ function editFP(id){
 function saveFP(id){
   var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return false;
   var t=$('fpe-t').value.trim();if(!t){toast('Title required','err');return false;}
-  f.title=t;f.point=$('fpe-p').value.trim();f.importance=parseInt($('fpe-i').value,10)||1;f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;
+  f.title=t;f.point=$('fpe-p').value.trim();f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;f.updatedAt=Date.now();
   save(true);toast('Updated','ok');renderFlashpoints();return true;
 }
 function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoints=APP.flashpoints.filter(function(x){return x.id!==id;});save(true);renderFlashpoints();},{danger:true,yes:'Delete'});}
@@ -1880,32 +1888,41 @@ function buildHeatmap(){
     grid+='<div class="'+cls+'" title="'+ds+(hh?' · '+hh.toFixed(1)+'h':'')+'"></div>';
   });grid+='</div>';});
   grid+='</div>';
-  return '<div class="hm-wrap">'+monRow+grid+'</div>';
+  var dayLbls='<div class="hm-days">'+['','Mon','','Wed','','Fri',''].map(function(d){return '<span>'+d+'</span>';}).join('')+'</div>';
+  return '<div class="hm-wrap"><div style="padding-left:28px">'+monRow+'</div><div class="hm-body">'+dayLbls+grid+'</div></div>';
 }
+var _lcRange='month',_lcHidden={};
+function lcSetRange(r){_lcRange=r;renderDash();}
+function lcToggle(k){_lcHidden[k]=!_lcHidden[k];renderDash();}
 function buildLineChart(){
   var de=dashEntries();
   if(!de.length)return '<div class="xs muted">No study sessions yet.</div>';
-  var start=dataStart(),td=today();
-  var days=[],cur=new Date(start+'T12:00:00'),end=new Date(td+'T12:00:00'),g=0;
+  var td=today(),ds=dataStart();
+  var startStr=_lcRange==='week'?addD(td,-6):_lcRange==='month'?addD(td,-29):ds;
+  if(startStr<ds)startStr=ds;
+  var days=[],cur=new Date(startStr+'T12:00:00'),end=new Date(td+'T12:00:00'),g=0;
   while(cur<=end&&g<400){days.push(cur.getFullYear()+'-'+pad(cur.getMonth()+1)+'-'+pad(cur.getDate()));cur.setDate(cur.getDate()+1);g++;}
   var subs=activeSubjects(),by={};
   days.forEach(function(d){by[d]={_t:0};});
   de.forEach(function(e){if(!by[e.date])return;var hh=(e.elapsedMin||0)/60;by[e.date][e.subjectId]=(by[e.date][e.subjectId]||0)+hh;by[e.date]._t+=hh;});
-  var maxY=0;days.forEach(function(d){if(by[d]._t>maxY)maxY=by[d]._t;});maxY=Math.max(1,Math.ceil(maxY));
-  var W=760,H=240,mL=30,mR=10,mT=10,mB=20,pW=W-mL-mR,pH=H-mT-mB,n=days.length;
+  var usedSubs=subs.filter(function(sid){return days.some(function(d){return (by[d][sid]||0)>0;});});
+  var totVis=!_lcHidden._t;
+  var maxY=0;days.forEach(function(d){if(totVis&&by[d]._t>maxY)maxY=by[d]._t;usedSubs.forEach(function(sid){if(!_lcHidden[sid]&&(by[d][sid]||0)>maxY)maxY=by[d][sid];});});
+  maxY=Math.max(1,Math.ceil(maxY));
+  var W=480,H=250,mL=28,mR=10,mT=10,mB=22,pW=W-mL-mR,pH=H-mT-mB,n=days.length;
   function X(i){return mL+(n<=1?pW/2:i/(n-1)*pW);}
   function Y(v){return mT+pH-(v/maxY)*pH;}
   var grid='';
   [0,0.5,1].forEach(function(f){var yv=maxY*f,yy=Y(yv);grid+='<line x1="'+mL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+yy.toFixed(1)+'" stroke="var(--border)" stroke-width="1"/><text x="'+(mL-4)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--dim)" font-family="JetBrains Mono,monospace">'+(yv%1?yv.toFixed(1):yv)+'h</text>';});
   var ticks=Math.min(6,n),xl='';
   for(var ti=0;ti<ticks;ti++){var idx=ticks<=1?0:Math.round(ti/(ticks-1)*(n-1));var dt=new Date(days[idx]+'T12:00:00');xl+='<text x="'+X(idx).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="var(--dim)" font-family="JetBrains Mono,monospace">'+dt.getDate()+'/'+(dt.getMonth()+1)+'</text>';}
-  var lines='',usedSubs=[];
-  subs.forEach(function(sid){var any=false,pts=days.map(function(d,i){var v=by[d][sid]||0;if(v>0)any=true;return X(i).toFixed(1)+','+Y(v).toFixed(1);}).join(' ');if(any){usedSubs.push(sid);lines+='<polyline points="'+pts+'" fill="none" stroke="'+subjColor(sid)+'" stroke-width="1.5" opacity="0.55" stroke-linejoin="round"/>';}});
-  var tpts=days.map(function(d,i){return X(i).toFixed(1)+','+Y(by[d]._t).toFixed(1);}).join(' ');
-  lines+='<polyline points="'+tpts+'" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
-  if(n===1)lines+='<circle cx="'+X(0).toFixed(1)+'" cy="'+Y(by[days[0]]._t).toFixed(1)+'" r="3.5" fill="var(--ink)"/>';
-  var leg='<div class="lchart-leg"><span><i style="background:var(--ink);height:3px"></i>Total</span>'+usedSubs.map(function(sid){return '<span><i style="background:'+subjColor(sid)+'"></i>'+subjShort(sid)+'</span>';}).join('')+'</div>';
-  return '<svg class="lchart" viewBox="0 0 '+W+' '+H+'">'+grid+xl+lines+'</svg>'+leg;
+  var lines='';
+  usedSubs.forEach(function(sid){if(_lcHidden[sid])return;var pts=days.map(function(d,i){return X(i).toFixed(1)+','+Y(by[d][sid]||0).toFixed(1);}).join(' ');lines+='<polyline points="'+pts+'" fill="none" stroke="'+subjColor(sid)+'" stroke-width="1.6" opacity="0.6" stroke-linejoin="round"/>';if(n===1)lines+='<circle cx="'+X(0).toFixed(1)+'" cy="'+Y(by[days[0]][sid]||0).toFixed(1)+'" r="3" fill="'+subjColor(sid)+'"/>';});
+  if(totVis){var tpts=days.map(function(d,i){return X(i).toFixed(1)+','+Y(by[d]._t).toFixed(1);}).join(' ');lines+='<polyline points="'+tpts+'" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';if(n===1)lines+='<circle cx="'+X(0).toFixed(1)+'" cy="'+Y(by[days[0]]._t).toFixed(1)+'" r="3.5" fill="var(--ink)"/>';}
+  var ranges=[['week','Week'],['month','Month'],['all','All']];
+  var rangeChips='<div class="stabs mb10">'+ranges.map(function(r){return '<span class="stab'+(_lcRange===r[0]?' on':'')+'" onclick="lcSetRange(\''+r[0]+'\')">'+r[1]+'</span>';}).join('')+'</div>';
+  var leg='<div class="lchart-leg"><span class="'+(totVis?'':'off')+'" onclick="lcToggle(\'_t\')"><i style="background:var(--ink);height:3px"></i>Total</span>'+usedSubs.map(function(sid){return '<span class="'+(_lcHidden[sid]?'off':'')+'" onclick="lcToggle(\''+sid+'\')"><i style="background:'+subjColor(sid)+'"></i>'+subjShort(sid)+'</span>';}).join('')+'</div>';
+  return rangeChips+'<svg class="lchart" viewBox="0 0 '+W+' '+H+'">'+grid+xl+lines+'</svg>'+leg;
 }
 function renderDash(){
   var subs=activeSubjects();
@@ -1935,14 +1952,13 @@ function renderDash(){
   '</div>';
   // heatmap
   h+='<div class="card mb12"><div class="rowb mb12"><span class="slbl">Study heatmap</span><span class="dlegend"><span class="xxs muted">less</span><span class="hm-c"></span><span class="hm-c h2"></span><span class="hm-c h3"></span><span class="hm-c h4"></span><span class="hm-c h5"></span><span class="xxs muted">more</span></span></div>'+buildHeatmap()+'</div>';
-  // daily hours line chart
-  h+='<div class="card mb12"><div class="slbl mb12">Daily study hours <span class="muted" style="font-weight:400;text-transform:none">· total + per subject</span></div>'+buildLineChart()+'</div>';
   // two-column grid
   h+='<div class="dash-grid">';
   // col A
   h+='<div class="col" style="display:flex;flex-direction:column;gap:12px">';
   h+='<div class="card"><div class="slbl mb12">Activity breakdown</div>'+(actKeys.length?actKeys.map(function(k){return dbar((ACT[k]?ACT[k].label:k),actM[k],maxA,'var(--accent)',fmtMin(actM[k]));}).join(''):'<div class="xs muted">No sessions yet.</div>')+'</div>';
   h+='<div class="card"><div class="slbl mb12">Hours by subject</div>'+subM.map(function(x){return dbar(subjShort(x.s),x.m,maxS,subjColor(x.s),fmtMin(x.m));}).join('')+'</div>';
+  h+='<div class="card"><div class="slbl mb12">Daily study hours <span class="muted" style="font-weight:400;text-transform:none">· total + per subject</span></div>'+buildLineChart()+'</div>';
   h+='</div>';
   // col B
   h+='<div class="col" style="display:flex;flex-direction:column;gap:12px">';
