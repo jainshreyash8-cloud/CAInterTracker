@@ -411,62 +411,82 @@ body[data-nav="bwd"] .pg.on{animation:pgInLeft .22s cubic-bezier(.25,.46,.45,.94
 @keyframes stabPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 
 /* ════ LIGHT MODE OVERRIDES ════ */
-/* Topbar — elevated with a shadow so it reads as a surface */
+/* Topbar */
 body.theme-light .top{box-shadow:0 1px 0 var(--border),0 4px 16px rgba(15,25,35,.07);background:rgba(255,255,255,.96)}
 body.theme-light .brand-name{color:var(--ink)}
-/* Nav pill — blue */
+/* Nav pill */
 body.theme-light #nav-pill{background:var(--accent)}
 body.theme-light .nb.on{color:#fff}
-/* Cards — white with a real shadow for depth */
-body.theme-light .card,body.theme-light .card-flat{box-shadow:var(--shadow)}
-body.theme-light .bc-neutral{box-shadow:var(--shadow)}
-/* bc-accent — use the blue accent (not near-black) */
+/* Cards with real shadows */
+body.theme-light .card,body.theme-light .card-flat,body.theme-light .bc-neutral{box-shadow:var(--shadow)}
+/* Bento coloured cards — fully saturated */
 body.theme-light .bc-accent{background:var(--accent);color:#fff}
 body.theme-light .bc-accent .blbl{opacity:.75}
 body.theme-light .bc-accent .bn-u{opacity:.6}
-/* bc-sky — darker sky ink for contrast */
-body.theme-light .bc-sky{background:var(--sky);color:var(--sky-ink)}
-/* Inputs — clean white with blue focus ring */
+body.theme-light .bc-amber{background:#FEF0CC;border-color:#F0C060;color:#8A5200}
+body.theme-light .bc-amber .blbl,.bc-amber .bnum{color:#8A5200}
+body.theme-light .bc-purple{background:#EDE6FA;border-color:#C4AAEF;color:#4A2FA0}
+body.theme-light .bc-purple .blbl,.bc-purple .bnum{color:#4A2FA0}
+body.theme-light .bc-green{background:#D6F0E2;border-color:#84CCA6;color:#145C34}
+body.theme-light .bc-green .blbl,.bc-green .bnum{color:#145C34}
+body.theme-light .bc-sky{background:#D6EEFA;border-color:#88C4EE;color:#0B3A62}
+/* Badges — real colour, not pale */
+body.theme-light .badge{border:1px solid transparent}
+body.theme-light .bg-accent{background:#D6E6FD;color:#1244A8;border-color:#9BBCF8}
+body.theme-light .bg-amber{background:#FEF0CC;color:#8A5200;border-color:#F0C060}
+body.theme-light .bg-green{background:#D6F0E2;color:#145C34;border-color:#84CCA6}
+body.theme-light .bg-rose{background:#FCE0E4;color:#8C1225;border-color:#EE9AAA}
+body.theme-light .bg-gray{background:#E8ECF2;color:#3A4A5C;border-color:#C8D0DC}
+/* Subject chips — more saturated */
+body.theme-light .schip{filter:saturate(1.4) brightness(.88)}
+/* Inputs */
 body.theme-light input,body.theme-light select,body.theme-light textarea{background:#fff;border-color:var(--border)}
 body.theme-light input:focus,body.theme-light select:focus,body.theme-light textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(42,106,232,.14)}
-/* Seg buttons — navy active state */
+/* Seg + ghost buttons */
 body.theme-light .seg-btn.on{background:var(--ink);color:#fff}
-/* Ghost buttons — slightly more visible */
+body.theme-light .seg{background:var(--faint)}
 body.theme-light .btn-ghost{color:var(--ink2)}
-body.theme-light .btn-ghost:hover{color:var(--ink);background:var(--hover)}
-/* Subject stabs — blue tint when active */
-body.theme-light .stab.on{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
-/* Badges — richer colours */
-body.theme-light .bg-accent{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
-body.theme-light .bg-green{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
-body.theme-light .bg-amber{background:color-mix(in srgb,var(--amber) 12%,transparent);color:var(--amber)}
-body.theme-light .bg-rose{background:color-mix(in srgb,var(--rose) 12%,transparent);color:var(--rose)}
-/* Timer — use accent blue */
+body.theme-light .btn-ghost:hover{color:var(--ink);background:rgba(15,25,35,.06)}
+/* Action buttons — coloured fills */
+body.theme-light .btn-dan{background:#FCE0E4;border-color:#EE9AAA;color:#8C1225}
+body.theme-light .btn-suc{background:#D6F0E2;border-color:#84CCA6;color:#145C34}
+body.theme-light .btn-warn{background:#FEF0CC;border-color:#F0C060;color:#8A5200}
+/* Stabs */
+body.theme-light .stab.on{background:#D6E6FD;color:#1244A8;border-color:#9BBCF8}
+body.theme-light .stab:hover{background:var(--faint);border-color:var(--dim);color:var(--ink)}
+/* Lecture rows — blue tint for main, purple tint for revision */
+body.theme-light .lec{background:#F0F4FA;border-color:#D5DCE6}
+body.theme-light .lec.rev{background:#EDE6FA;border-color:#C4AAEF}
+body.theme-light .lec-ic{background:#fff;border-color:var(--border)}
+/* Chapter blocks */
+body.theme-light .chap{background:#fff;border-color:var(--card-border)}
+body.theme-light .chap-h:hover{background:var(--faint)}
+/* Activity cards */
+body.theme-light .act-card{background:#fff;border-color:var(--border)}
+body.theme-light .act-card:hover:not(.dis){background:#F4F8FF;border-color:#9BBCF8}
+/* Alerts */
+body.theme-light .al-blue{background:#EBF2FE;border-color:#9BBCF8;color:#1244A8}
+body.theme-light .al-amber{background:#FEF4DE;border-color:#F0C060;color:#7A4500}
+body.theme-light .al-dim{background:var(--faint);border-color:var(--border);color:var(--ink2)}
+/* Timer */
 body.theme-light .t-display{color:var(--accent)}
 body.theme-light .pomo-work{color:var(--accent)}
 body.theme-light .pomo-break{color:var(--blue)}
-/* Fullscreen overlay — deep navy, not pure black */
+/* Fullscreen */
 body.theme-light #fso{background:#0F1923}
-/* Exemption buttons */
-body.theme-light .exch.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
-/* Chapter expand hover */
-body.theme-light .chap-h:hover{background:var(--faint)}
-/* Lecture rows */
-body.theme-light .lec{background:var(--faint)}
-/* Act cards — white */
-body.theme-light .act-card{background:#fff;border-color:var(--border)}
-/* Alert variants — richer in light */
-body.theme-light .al-blue{background:#EFF5FE;border-color:#BDD4FA;color:#1752B8}
-body.theme-light .al-amber{background:#FEF7E8;border-color:#F0D28A;color:#9A5E0A}
-body.theme-light .al-dim{background:var(--faint);border-color:var(--border);color:var(--ink2)}
+/* Exemption + exch buttons */
+body.theme-light .exch.on{border-color:var(--accent);color:var(--accent);background:#D6E6FD}
 /* Revision dots */
 body.theme-light .syl-dot.d-over{background:var(--rose);border-color:var(--rose)}
 body.theme-light .syl-dot.d-due{background:var(--amber);border-color:var(--amber)}
 body.theme-light .syl-dot.d-up{background:transparent;border-color:var(--dim)}
-/* Subject chip dots readable on light */
-body.theme-light .sdot{filter:brightness(.85) saturate(1.3)}
+/* Revision tags */
+body.theme-light .rev-tag.over{background:#FCE0E4;color:#8C1225}
+body.theme-light .rev-tag.due{background:#FEF0CC;color:#8A5200}
+/* Resume card */
+body.theme-light .resume{background:#fff;border-color:var(--card-border)}
 /* Scrollbar */
-body.theme-light ::-webkit-scrollbar-thumb{background:var(--border)}
+body.theme-light ::-webkit-scrollbar-thumb{background:#C8D0DC}
 
 /* ════ MOBILE ════ */
 /* Topbar: hide "by Shreyash Jain" sub-label on very small screens */
