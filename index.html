@@ -314,9 +314,12 @@ body.theme-light .t-display{color:var(--green)}
 .modal-box{animation:modalIn .2s cubic-bezier(.25,.46,.45,.94)}
 .modal-ov{animation:fade .15s ease}
 
-/* Fullscreen overlay – animated enter/exit via opacity + scale */
-#fso{opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s cubic-bezier(.25,.46,.45,.94);transform:scale(1.03)}
-#fso.show{opacity:1;pointer-events:auto;transform:scale(1)}
+/* Fullscreen overlay – circular reveal from the button origin */
+@keyframes fsReveal{from{clip-path:circle(0% at var(--fs-ox,50%) var(--fs-oy,50%))}to{clip-path:circle(150% at var(--fs-ox,50%) var(--fs-oy,50%))}}
+@keyframes fsCollapse{from{clip-path:circle(150% at var(--fs-ox,50%) var(--fs-oy,50%))}to{clip-path:circle(0% at var(--fs-ox,50%) var(--fs-oy,50%))}}
+#fso{display:flex;opacity:0;pointer-events:none;clip-path:circle(0% at 50% 50%)}
+#fso.show{opacity:1;pointer-events:auto;animation:fsReveal .42s cubic-bezier(.4,0,.2,1) forwards}
+#fso.hiding{animation:fsCollapse .32s cubic-bezier(.4,0,.2,1) forwards}
 
 /* Details/summary carets (already have transform transition; add body fade) */
 .syl-body{animation:pgIn .18s ease}
@@ -902,7 +905,7 @@ async function init(){
   if(APP.active){$('tb-timer').classList.remove('dn');startTimerLoop();}
   if(APP.activeTest){$('tb-timer').classList.remove('dn');startTestLoop();}
 }
-function wireShell(){document.querySelectorAll('#nav .nb').forEach(function(b){b.onclick=function(){if(b.dataset.p==='session'&&!APP.active){_sStep='pick';_sPick=null;}showPage(b.dataset.p);};});$('tb-timer').onclick=function(){if(APP.activeTest)showPage('tests');else openFS();};$('sync-i').onclick=function(){showPage('settings');};}
+function wireShell(){document.querySelectorAll('#nav .nb').forEach(function(b){b.onclick=function(){if(b.dataset.p==='session'&&!APP.active){_sStep='pick';_sPick=null;}showPage(b.dataset.p);};});$('tb-timer').onclick=function(){if(APP.activeTest)showPage('tests');else openFS($('tb-timer'));};$('sync-i').onclick=function(){showPage('settings');};}
 function applyTheme(){document.body.classList.toggle('theme-dark',APP.cfg.theme!=='light');document.body.classList.toggle('theme-light',APP.cfg.theme==='light');}
 function applyLayout(){document.body.classList.toggle('layout-padded',APP.cfg.layout!=='full');}
 function showPage(p){currentPage=p;document.querySelectorAll('#nav .nb').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id==='pg-'+p);});
@@ -1008,9 +1011,19 @@ function finalizeSession(status){
   APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
 }
 /* ═══════════ FULLSCREEN ═══════════ */
-function ensureFS(){if($('fso'))return;var d=document.createElement('div');d.id='fso';d.style.cssText='position:fixed;inset:0;background:#000;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px';d.innerHTML='<div class="t-phase" id="fs-sub"></div><div class="t-display" id="fs-big" style="font-size:min(22vw,170px)">00:00:00</div><div class="pomo-ph" id="fs-pomo"></div><div class="t-ref" id="fs-ref"></div><div class="sctrl" id="fs-ctrl"></div>';document.body.appendChild(d);}
-function openFS(){if(!APP.active)return;ensureFS();var s=APP.active;$('fso').classList.add('show');$('fs-sub').textContent=ACT[s.activityType].label+' · '+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+chapName(s.subjectId,s.chapterIdx);$('fs-ref').textContent=s.referenceMin>0?'Reference: '+fmtMin(s.referenceMin):'';fsControls();paintTimer(s);}
-function closeFS(){if($('fso')){$('fso').classList.remove('show');}}
+function ensureFS(){if($('fso'))return;var d=document.createElement('div');d.id='fso';d.style.cssText='position:fixed;inset:0;background:#000;z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px';d.innerHTML='<div class="t-phase" id="fs-sub"></div><div class="t-display" id="fs-big" style="font-size:min(22vw,170px)">00:00:00</div><div class="pomo-ph" id="fs-pomo"></div><div class="t-ref" id="fs-ref"></div><div class="sctrl" id="fs-ctrl"></div>';document.body.appendChild(d);}
+function openFS(triggerEl){
+  if(!APP.active)return;ensureFS();
+  var el=triggerEl||$('fs-btn');
+  if(el){var r=el.getBoundingClientRect();var ox=Math.round((r.left+r.width/2)/window.innerWidth*100);var oy=Math.round((r.top+r.height/2)/window.innerHeight*100);$('fso').style.setProperty('--fs-ox',ox+'%');$('fso').style.setProperty('--fs-oy',oy+'%');}else{$('fso').style.setProperty('--fs-ox','50%');$('fso').style.setProperty('--fs-oy','50%');}
+  var fso=$('fso');fso.classList.remove('hiding');fso.classList.add('show');
+  var s=APP.active;$('fs-sub').textContent=ACT[s.activityType].label+' · '+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+chapName(s.subjectId,s.chapterIdx);$('fs-ref').textContent=s.referenceMin>0?'Reference: '+fmtMin(s.referenceMin):'';fsControls();paintTimer(s);
+}
+function closeFS(){
+  var fso=$('fso');if(!fso)return;
+  fso.classList.add('hiding');fso.classList.remove('show');
+  fso.addEventListener('animationend',function done(){fso.classList.remove('hiding');fso.removeEventListener('animationend',done);},{once:true});
+}
 function fsControls(){var s=APP.active;if(!s||!$('fs-ctrl'))return;$('fs-ctrl').innerHTML=(s.paused?'<button class="btn btn-suc" onclick="resumeSession()">'+ICON.play+' Resume</button>':'<button class="btn btn-warn" onclick="pauseSession()">'+ICON.pause+' Pause</button>')+'<button class="btn btn-suc" onclick="endSession(\'done\')">Complete</button><button class="btn btn-warn" onclick="endSession(\'inprogress\')">End · in progress</button><button class="btn btn-ghost" onclick="closeFS()">Exit fullscreen</button><button class="btn btn-dan" onclick="endSession(\'cancel\')">Cancel</button>';}
 </script>
 
@@ -1102,7 +1115,7 @@ function renderRunning(){
     (s.referenceMin>0?'<div class="t-ref">Reference: <b style="color:var(--ink)">'+fmtMin(s.referenceMin)+'</b></div>':'')+
     '<div class="t-phase mt10">started '+s.startTime+(s.paused?' · paused':'')+'</div>'+
     '<div class="sctrl">'+(s.paused?'<button class="btn btn-suc" onclick="resumeSession()">'+ICON.play+' Resume</button>':'<button class="btn btn-warn" onclick="pauseSession()">'+ICON.pause+' Pause</button>')+
-    '<button class="btn btn-suc" onclick="endSession(\'done\')">Complete</button><button class="btn btn-warn" onclick="endSession(\'inprogress\')">End · in progress</button><button class="btn btn-ghost" onclick="openFS()">⛶ Fullscreen</button><button class="btn btn-dan" onclick="endSession(\'cancel\')">Cancel</button></div>'+
+    '<button class="btn btn-suc" onclick="endSession(\'done\')">Complete</button><button class="btn btn-warn" onclick="endSession(\'inprogress\')">End · in progress</button><button class="btn btn-ghost" id="fs-btn" onclick="openFS(this)">⛶ Fullscreen</button><button class="btn btn-dan" onclick="endSession(\'cancel\')">Cancel</button></div>'+
     '</div></div></div>';
   $('pg-session').innerHTML=h;paintTimer(s);
 }
