@@ -392,17 +392,27 @@ body.theme-light .t-display{color:var(--green)}
 .stabs{display:flex;flex-wrap:wrap;gap:6px}
 .stab{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--faint);color:var(--dim);font-size:12px;font-weight:600;cursor:pointer}
 .stab.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:transparent}
-.fp-grid{columns:2;column-gap:11px}
-@media(max-width:640px){.fp-grid{columns:1}}
-.fp-card{break-inside:avoid;background:var(--faint);border:1px solid var(--border);border-radius:11px;padding:13px 14px;margin-bottom:11px}
-.fp-top{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:6px;line-height:1.4}
-.fp-body{font-size:13px;color:var(--ink2,var(--dim));line-height:1.62;white-space:pre-wrap}
-.fp-foot{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
+.fp-subhdr{margin:18px 0 8px;display:flex;align-items:center;gap:8px}
+.fp-subhdr:first-of-type{margin-top:4px}
+.fp-row{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.fp-row:last-child{border-bottom:none}
+.fp-star{flex:0 0 auto;cursor:pointer;color:var(--dim);line-height:0;padding:2px;margin-top:1px}
+.fp-star .ico{width:15px;height:15px}
+.fp-star.on{color:var(--amber)}
+.fp-star.on .ico{fill:var(--amber)}
+.fp-main{flex:1;min-width:0}
+.fp-ttl{font-size:13px;font-weight:600;color:var(--ink);line-height:1.45;white-space:pre-wrap}
+.fp-pt{font-size:12.5px;color:var(--dim);line-height:1.6;white-space:pre-wrap;margin-top:3px}
+.fp-tags{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.fp-tag{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+.fp-tag.formula{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.fp-tag.trap{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.fp-tag.concept{background:color-mix(in srgb,var(--purple) 18%,transparent);color:var(--purple)}
+.fp-acts{flex:0 0 auto;display:flex;gap:2px;align-items:center}
+.fp-acts .on-pin{color:var(--accent)}
+.fp-acts .on-pin .ico{fill:color-mix(in srgb,var(--accent) 30%,transparent)}
 .fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
-.fp-dots{display:inline-flex;gap:4px;align-items:center;cursor:pointer;padding:2px 2px 2px 0}
-.fp-dots i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--border);display:inline-block;box-sizing:border-box}
-.fp-dots i.a{background:var(--amber);border-color:var(--amber)}
-.fp-dots i.b{background:var(--rose);border-color:var(--rose)}
+.fp-ty{max-width:128px;padding:6px 8px}
 /* ════ DASHBOARD ════ */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
 .dash-grid>div{min-width:0}
@@ -536,6 +546,9 @@ var ICON={
   plus:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   caret:'<svg class="ico chap-caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
   bolt:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7z" fill="currentColor" stroke="none"/></svg>',
+  star:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 3.2l2.7 5.5 6 .9-4.35 4.24 1.03 5.96L12 17.02 6.62 19.8l1.03-5.96L3.3 9.6l6-.9z"/></svg>',
+  pin:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9.5 3h5l-.7 5.2 2.7 2.8H7.5l2.7-2.8z"/><path d="M12 13.8V21"/></svg>',
+  download:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4.2-4.2M12 15l4.2-4.2M4 19.5h16"/></svg>',
   chevD:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
 };
 /* ═══════════ SYLLABUS DATA ═══════════ */
@@ -1797,36 +1810,74 @@ function submitQuickTest(){
 
 <script>
 /* ═══════════ FLASHPOINTS ═══════════ */
-var _fpFilter='all',_fpSearch='',_fpMarked=false;
-function fpMatch(f){if(_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;if(_fpMarked&&!((f.importance||0)>=1))return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
+var _fpFilter=null,_fpSearch='',_fpFlagged=false,_fpOpenChap=null;
+function fpMigrate(){var ch=false;(APP.flashpoints||[]).forEach(function(f){if(f.flag==null){f.flag=(f.importance||0)>=1;ch=true;}if(f.type==null){f.type='';ch=true;}if(f.pinned==null){f.pinned=false;ch=true;}if('importance' in f){delete f.importance;ch=true;}});if(ch)save();}
+function fpMatch(f){if(_fpFilter&&_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;if(_fpFlagged&&!f.flag)return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
+function fpCount(sid,ci){return (APP.flashpoints||[]).filter(function(f){return f.subjectId===sid&&(f.chapterIdx===ci||(ci===-1&&(f.chapterIdx==null)));}).length;}
 function renderFlashpoints(){
+  fpMigrate();
   var subs=activeSubjects();
-  if(_fpFilter!=='all'&&subs.indexOf(_fpFilter)<0)_fpFilter='all';
+  if(_fpFilter==null)_fpFilter=subs.length?subs[0]:'all';
+  if(_fpFilter!=='all'&&subs.indexOf(_fpFilter)<0)_fpFilter=subs.length?subs[0]:'all';
   var all=APP.flashpoints||[];
-  var list=all.filter(fpMatch).slice().reverse().sort(function(a,b){return (b.importance||0)-(a.importance||0);});
-  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas, traps &amp; takeaways. Tap the dots on a card to flag it once you know it matters.</div></div><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add flashpoints</button></div>';
-  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpMarked?' on':'')+'" onclick="_fpMarked=!_fpMarked;renderFlashpoints()" title="Show flagged points only">flagged</span></div></div>';
-  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpMarked?' · flagged':'')+'</div>';
-  if(list.length)h+='<div class="fp-grid">'+list.map(fpCard).join('')+'</div>';
-  else h+='<div class="empty"><div class="empty-t">'+(all.length?'Nothing matches':'No flashpoints yet')+'</div><div>'+(all.length?'Try a different search, subject or filter.':'Capture key points, formulas and exam traps as you study. Add them here, or from a logged session on the Timeline.')+'</div></div>';
+  var list=all.filter(fpMatch);
+  var searchActive=_fpSearch.trim().length>0;
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas &amp; traps — grouped by chapter. Star what matters; pin to keep on top.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="fpExport()"'+(all.length?'':' disabled')+'>'+ICON.download+' Export</button><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add</button></div></div>';
+  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search all points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpFlagged?' on':'')+'" onclick="_fpFlagged=!_fpFlagged;renderFlashpoints()" title="Show starred only">starred</span></div></div>';
+  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpFlagged?' · starred':'')+(searchActive?' · matching "'+esc(_fpSearch.trim())+'"':'')+'</div>';
+  if(!list.length){
+    h+='<div class="empty"><div class="empty-t">'+(all.length?'Nothing matches':'No flashpoints yet')+'</div><div>'+(all.length?'Try a different search, subject or filter.':'Capture key points, formulas and exam traps as you study. Add them here, from a session, or import a CSV.')+'</div></div></div>';
+    $('pg-flashpoints').innerHTML=h;return;
+  }
+  var openAll=searchActive||list.length<=40;
+  var pinned=list.filter(function(f){return f.pinned;}),rest=list.filter(function(f){return !f.pinned;});
+  if(pinned.length)h+=fpGroup('__pinned','Pinned',pinned,true,true);
+  if(_fpFilter==='all'){
+    var bySub={};rest.forEach(function(f){var s=(f.subjectId&&SYL[f.subjectId])?f.subjectId:'__none';(bySub[s]=bySub[s]||[]).push(f);});
+    var order=subs.slice();if(bySub['__none'])order.push('__none');
+    order.forEach(function(s){if(!bySub[s])return;h+='<div class="fp-subhdr">'+(s==='__none'?'<span class="badge bg-gray">General</span>':subjChip(s))+'</div>'+fpChapGroups(s,bySub[s],openAll);});
+  }else h+=fpChapGroups(_fpFilter,rest,openAll);
   h+='</div>';
   $('pg-flashpoints').innerHTML=h;
+  if(_fpOpenChap){var t=document.getElementById('fpg-'+_fpOpenChap);if(t)t.scrollIntoView({behavior:'smooth',block:'center'});}
 }
-function fpSearchInput(v){_fpSearch=v;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
-function setFp(sid){_fpFilter=sid;renderFlashpoints();}
-function fpTabs(subs){var h='<span class="stab'+(_fpFilter==='all'?' on':'')+'" onclick="setFp(\'all\')">All</span>';subs.forEach(function(s){h+='<span class="stab'+(_fpFilter===s?' on':'')+'" onclick="setFp(\''+s+'\')"'+(_fpFilter===s?' style="color:'+subjColor(s)+';background:'+subjColor(s)+'22"':'')+'>'+subjShort(s)+'</span>';});return h;}
-function fpImpDots(f){var imp=f.importance||0;var lbl=imp===2?'Critical · tap to clear':imp===1?'Important · tap for critical':'Tap to flag importance';return '<span class="fp-dots" title="'+lbl+'" onclick="fpCycleImp(\''+f.id+'\')"><i class="'+(imp>=1?'a':'')+'"></i><i class="'+(imp>=2?'b':'')+'"></i></span>';}
-function fpCycleImp(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.importance=((f.importance||0)+1)%3;f.updatedAt=Date.now();save(true);renderFlashpoints();}
-function fpCard(f){
-  var hasS=f.subjectId&&SYL[f.subjectId];
-  var chap=(f.chapterIdx!=null&&f.chapterIdx>=0)?'<span class="xs mono muted">'+esc(chapName(f.subjectId,f.chapterIdx))+'</span>':'';
-  return '<div class="fp-card"><div class="fp-top">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-body">'+esc(f.point)+'</div>':'')+
-    '<div class="fp-foot">'+fpImpDots(f)+(hasS?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>')+chap+
-    '<span class="xs mono muted" style="margin-left:auto">'+fmtDate(f.date)+'</span>'+
+function fpChapGroups(sid,items,openAll){
+  var byCh={};items.forEach(function(f){var c=(f.chapterIdx!=null&&f.chapterIdx>=0)?f.chapterIdx:'none';(byCh[c]=byCh[c]||[]).push(f);});
+  var keys=Object.keys(byCh).sort(function(a,b){if(a==='none')return 1;if(b==='none')return -1;return (+a)-(+b);});
+  return keys.map(function(k){var nm=k==='none'?'No chapter':chapName(sid,+k);var ckk=sid+'_'+k;return fpGroup(ckk,nm,byCh[k],openAll||_fpOpenChap===ckk,false);}).join('');
+}
+function fpGroup(id,name,items,open,pinnedGrp){
+  var flagged=items.filter(function(f){return f.flag;}).length;
+  var meta=items.length+' point'+(items.length===1?'':'s')+(flagged?' · '+flagged+' starred':'');
+  return '<details class="syl-ch" id="fpg-'+esc(id)+'"'+(open?' open':'')+'><summary class="syl-sum"><span class="syl-cv">'+ICON.caret+'</span><div class="syl-ci"><div class="syl-cn">'+esc(name)+'</div><div class="syl-cm">'+meta+'</div></div><span class="badge bg-gray">'+items.length+'</span></summary><div class="syl-body">'+items.map(function(f){return fpRow(f,pinnedGrp);}).join('')+'</div></details>';
+}
+function fpRow(f,showLoc){
+  var typeTag=f.type?'<span class="fp-tag '+f.type+'">'+esc(f.type)+'</span>':'';
+  var loc='';
+  if(showLoc){var s=(f.subjectId&&SYL[f.subjectId])?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>';var cc=(f.chapterIdx!=null&&f.chapterIdx>=0)?' <span class="xs mono muted">'+esc(chapName(f.subjectId,f.chapterIdx))+'</span>':'';loc=s+cc;}
+  var tags=(typeTag||loc)?'<div class="fp-tags">'+typeTag+loc+'</div>':'';
+  return '<div class="fp-row"><span class="fp-star'+(f.flag?' on':'')+'" onclick="fpToggleFlag(\''+f.id+'\')" title="'+(f.flag?'Starred — tap to clear':'Tap to star')+'">'+ICON.star+'</span>'+
+    '<div class="fp-main"><div class="fp-ttl">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-pt">'+esc(f.point)+'</div>':'')+tags+'</div>'+
+    '<div class="fp-acts"><button class="btn btn-icon btn-ghost'+(f.pinned?' on-pin':'')+'" onclick="fpTogglePin(\''+f.id+'\')" title="'+(f.pinned?'Unpin':'Pin to top')+'">'+ICON.pin+'</button>'+
     '<button class="btn btn-icon btn-ghost" onclick="editFP(\''+f.id+'\')" title="Edit">'+ICON.edit+'</button>'+
     '<button class="btn btn-icon btn-ghost" onclick="delFP(\''+f.id+'\')" title="Delete">'+ICON.trash+'</button></div></div>';
 }
-function fpRowHTML(){return '<div class="fp-rowx"><div class="row" style="gap:8px;align-items:center"><input class="fp-t" placeholder="Title / key term" style="flex:1"><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px;margin-top:7px"></textarea></div>';}
+function fpToggleFlag(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.flag=!f.flag;f.updatedAt=Date.now();save(true);renderFlashpoints();}
+function fpTogglePin(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.pinned=!f.pinned;f.updatedAt=Date.now();save(true);renderFlashpoints();}
+function fpTypeOpts(sel){return ['','formula','trap','concept'].map(function(t){return '<option value="'+t+'"'+(sel===t?' selected':'')+'>'+(t===''?'— type —':t.charAt(0).toUpperCase()+t.slice(1))+'</option>';}).join('');}
+function fpExport(){
+  var rows=[['subject','chapter','title','point','type','flag']];
+  (APP.flashpoints||[]).forEach(function(f){rows.push([(f.subjectId&&SYL[f.subjectId])?SYL[f.subjectId].short:'',(f.chapterIdx!=null&&f.chapterIdx>=0)?chapName(f.subjectId,f.chapterIdx):'',f.title||'',f.point||'',f.type||'',f.flag?'yes':'no']);});
+  dlFile('flashpoints.csv',rows.map(function(r){return r.map(csvField).join(',');}).join('\r\n'),'text/csv');
+  toast('Exported '+(rows.length-1)+' flashpoint'+(rows.length-1===1?'':'s'),'ok');
+}
+function csvField(v){v=(v==null?'':''+v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function dlFile(name,text,mime){try{var blob=new Blob([text],{type:(mime||'text/plain')+';charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);}catch(e){toast('Download failed','err');}}
+function openFlashpoints(sid,ci){_fpFilter=(sid&&SYL[sid])?sid:'all';_fpFlagged=false;_fpSearch='';_fpOpenChap=sid+'_'+((ci!=null&&ci>=0)?ci:'none');showPage('flashpoints');}
+function fpSearchInput(v){_fpSearch=v;_fpOpenChap=null;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
+function setFp(sid){_fpFilter=sid;_fpOpenChap=null;renderFlashpoints();}
+function fpTabs(subs){var h='<span class="stab'+(_fpFilter==='all'?' on':'')+'" onclick="setFp(\'all\')">All</span>';subs.forEach(function(s){h+='<span class="stab'+(_fpFilter===s?' on':'')+'" onclick="setFp(\''+s+'\')"'+(_fpFilter===s?' style="color:'+subjColor(s)+';background:'+subjColor(s)+'22"':'')+'>'+subjShort(s)+'</span>';});return h;}
+function fpRowHTML(){return '<div class="fp-rowx"><div class="row" style="gap:8px;align-items:center"><input class="fp-t" placeholder="Title / key term" style="flex:1"><select class="fp-ty">'+fpTypeOpts('')+'</select><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px;margin-top:7px"></textarea></div>';}
 function fpAddRow(){var r=$('fp-rows');if(r)r.insertAdjacentHTML('beforeend',fpRowHTML());}
 function addFlashpoint(pre){
   pre=pre||{};
@@ -1849,7 +1900,8 @@ function saveFlashpoints(){
   document.querySelectorAll('#fp-rows .fp-rowx').forEach(function(row){
     var t=row.querySelector('.fp-t').value.trim(),p=row.querySelector('.fp-p').value.trim();
     if(!t&&!p)return;
-    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,importance:0,date:today(),source:'manual'});n++;
+    var ty=row.querySelector('.fp-ty')?row.querySelector('.fp-ty').value:'';
+    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,type:ty,flag:false,pinned:false,date:today(),source:'manual'});n++;
   });
   if(!n){toast('Add at least one point','err');return false;}
   save(true);toast('Saved '+n+' flashpoint'+(n===1?'':'s'),'ok');renderFlashpoints();return true;
@@ -1859,7 +1911,8 @@ function editFP(id){
   var subs=activeSubjects();
   var body='<div class="fld"><label>Title</label><input id="fpe-t" value="'+esc(f.title||'')+'"></div>'+
     '<div class="fld"><label>Point</label><textarea id="fpe-p">'+esc(f.point||'')+'</textarea></div>'+
-    '<div class="fld2"><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="fpe-c"></select></div></div>';
+    '<div class="fld2"><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="fpe-c"></select></div></div>'+
+    '<div class="fld"><label>Type</label><select id="fpe-ty">'+fpTypeOpts(f.type||'')+'</select></div>';
   modal({size:'md',title:'Edit flashpoint',body:body,
     actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){if(saveFP(id))return false;return true;}}],
     onOpen:function(){function fillCh(){var s=$('fpe-s').value;$('fpe-c').innerHTML='<option value="">— Any —</option>'+(s?chapList(s).map(function(cn,i){return '<option value="'+i+'" '+(f.subjectId===s&&f.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join(''):'');}$('fpe-s').onchange=fillCh;fillCh();}});
@@ -1867,7 +1920,7 @@ function editFP(id){
 function saveFP(id){
   var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return false;
   var t=$('fpe-t').value.trim();if(!t){toast('Title required','err');return false;}
-  f.title=t;f.point=$('fpe-p').value.trim();f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;f.updatedAt=Date.now();
+  f.title=t;f.point=$('fpe-p').value.trim();f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;if($('fpe-ty'))f.type=$('fpe-ty').value;f.updatedAt=Date.now();
   save(true);toast('Updated','ok');renderFlashpoints();return true;
 }
 function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoints=APP.flashpoints.filter(function(x){return x.id!==id;});save(true);renderFlashpoints();},{danger:true,yes:'Delete'});}
