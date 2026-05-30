@@ -389,14 +389,19 @@ body.theme-light .t-display{color:var(--green)}
 .stab.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:transparent}
 .fp-grid{columns:2;column-gap:11px}
 @media(max-width:640px){.fp-grid{columns:1}}
-.fp-card{break-inside:avoid;background:var(--faint);border:1px solid var(--border);border-radius:11px;padding:12px 13px;margin-bottom:11px}
-.fp-top{font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:5px;line-height:1.35}
-.fp-body{font-size:12.5px;color:var(--dim);line-height:1.55;white-space:pre-wrap}
-.fp-foot{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
-.fp-rowx{display:grid;grid-template-columns:1fr 1.5fr auto;gap:8px;align-items:start;margin-bottom:8px}
+.fp-card{break-inside:avoid;background:var(--faint);border:1px solid var(--border);border-radius:11px;padding:13px 14px;margin-bottom:11px;border-left-width:3px}
+.fp-top{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:6px;line-height:1.4}
+.fp-body{font-size:13px;color:var(--ink2,var(--dim));line-height:1.62;white-space:pre-wrap}
+.fp-foot{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
+.fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
 /* ════ DASHBOARD ════ */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
+.dash-grid>div{min-width:0}
 @media(max-width:760px){.dash-grid{grid-template-columns:1fr}}
+.lchart{width:100%;height:auto;display:block;overflow:visible}
+.lchart-leg{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.lchart-leg span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim)}
+.lchart-leg i{width:12px;height:3px;border-radius:2px;display:inline-block}
 .dbar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
 .dbar-l{font-size:12px;min-width:78px;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dbar-t{flex:1;height:9px;background:var(--faint);border-radius:6px;overflow:hidden}
@@ -491,7 +496,7 @@ body.theme-light .t-display{color:var(--green)}
 .rev-bd{flex:1;min-width:0}
 .rev-nm{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rev-mt{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:2px}
-.rev-acts{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.rev-acts{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;align-items:center}
 .rev-tag{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
 .rev-tag.over{background:color-mix(in srgb,var(--rose) 15%,transparent);color:var(--rose)}
 .rev-tag.due{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber)}
@@ -1356,7 +1361,7 @@ function submitQC(){
 
 <script>
 /* ═══════════ LECTURES ═══════════ */
-var _lecSub=null;
+var _lecSub=null,_curPace=null;
 function renderLectures(){
   var subs=activeSubjects();
   if(!subs.length){$('pg-lectures').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
@@ -1368,6 +1373,10 @@ function renderLectures(){
   var watched=APP.entries.filter(function(e){return e.subjectId===sid&&(e.activityType==='lecture'||e.activityType==='revision-lecture');}).reduce(function(a,e){return a+(e.elapsedMin||0);},0);
   var remain=mains.filter(function(l){return l.status!=='done';}).reduce(function(a,l){return a+Math.max(0,(l.plannedMin||0)-(l.contentDoneMin||0));},0);
   var totPlan=mains.reduce(function(a,l){return a+(l.plannedMin||0);},0);
+  var watchedMain=APP.entries.filter(function(e){return e.subjectId===sid&&e.activityType==='lecture';}).reduce(function(a,e){return a+(e.elapsedMin||0);},0);
+  var contentMain=mains.reduce(function(a,l){return a+(l.status==='done'?(l.plannedMin||0):(l.contentDoneMin||0));},0);
+  _curPace=(contentMain>0&&watchedMain>0)?watchedMain/contentMain:null;
+  var remLec=mains.filter(function(l){return l.status!=='done';}).length;
   var due=APP.subjectDue[sid];var dleft=due?diffD(today(),due):null;
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add them as you receive them.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'lecture\'})">'+ICON.bolt+' Quick-log lecture</button></div>';
   // subject tabs
@@ -1379,8 +1388,13 @@ function renderLectures(){
     '<div class="bc bc-amber"><span class="blbl">Actually remaining</span><div class="bnum">'+bnumHTML(fmtMinParts(remain))+'</div><span class="bsub">'+mains.filter(function(l){return l.status!=='done';}).length+' lectures left</span></div>'+
     '<div class="bc bc-neutral exam-card" onclick="editDue(\''+sid+'\')" style="cursor:pointer"><span class="blbl">Finish all by '+ICON.edit+'</span><div class="bnum"><span class="bn-v" style="font-size:26px">'+(due?fmtDate(due).replace(/ \d{4}/,''):'set')+'</span></div><span class="bsub">'+(dleft!=null?(dleft>=0?dleft+' days left':Math.abs(dleft)+'d overdue'):'tap to set due date')+'</span></div>'+
   '</div>';
+  if(mains.length){var projTxt=_curPace!=null?fmtMin(Math.round(remain*_curPace)):'—';
+    h+='<div class="card mb16" style="border-left:3px solid '+c+'"><div class="rowb mb8"><span class="slbl">Your pace &amp; projection</span>'+(_curPace!=null?'<span class="badge bg-accent">'+_curPace.toFixed(2)+'\u00d7 content time</span>':'<span class="badge bg-gray">need data</span>')+'</div>'+
+      (_curPace!=null
+        ?'<div class="sm" style="line-height:1.75">About <b>'+fmtMin(Math.round(60*_curPace))+'</b> of your time for every <b>60m</b> of lecture content. <br>'+remLec+' lecture'+(remLec===1?'':'s')+' left (<b>'+fmtMin(remain)+'</b> of content) \u2192 roughly <b style="color:'+c+'">'+projTxt+'</b> to finish'+((due&&dleft!=null&&dleft>0)?' \u00b7 about <b>'+fmtMin(Math.round(remain*_curPace/dleft))+'/day</b> to hit '+fmtDate(due).replace(/ \d{4}/,''):'')+'.</div>'
+        :'<div class="sm muted">Finish a few lectures (with their planned minutes set) and I\'ll project how long the rest will take at your pace.</div>')+
+    '</div>';}
   h+='<div class="rowb mb10"><span class="slbl">'+esc(SYL[sid].name)+' · chapters</span><span class="xs mono muted">click to expand</span></div>';
-  // chapters
   chapList(sid).forEach(function(cn,ci){h+=chapBlock(sid,ci,cn,c);});
   // misc
   h+=chapBlock(sid,-1,'Misc / Bonus (not tied to a chapter)',c,true);
@@ -1403,9 +1417,9 @@ function chapBlock(sid,ci,cn,col,misc){
 }
 function lecRow(l){
   var b=l.status==='done'?'<span class="badge bg-green">done</span>':l.status==='in-progress'?'<span class="badge bg-amber">'+(l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0)+'%</span>':'<span class="badge bg-gray">pending</span>';
-  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="quickComplete({activity:\''+(l.kind==='revision'?'revision-lecture':'lecture')+'\',subjectId:\''+l.subjectId+'\',chapterIdx:'+l.chapterIdx+'})" title="Quick-log">'+ICON.bolt+'</button><button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
+  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.kind==='main'&&l.status!=='done'&&l.plannedMin&&_curPace?' · ~'+fmtMin(Math.round(Math.max(0,l.plannedMin-(l.contentDoneMin||0))*_curPace))+' at your pace':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="quickComplete({activity:\''+(l.kind==='revision'?'revision-lecture':'lecture')+'\',subjectId:\''+l.subjectId+'\',chapterIdx:'+l.chapterIdx+'})" title="Quick-log">'+ICON.bolt+'</button><button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
 }
-function editDue(sid){modal({title:'Lecture completion target — '+SYL[sid].name,body:'<div class="fld"><label>Finish all lectures by</label><input type="date" id="du-d" value="'+(APP.subjectDue[sid]||'')+'"><div class="hint">This is your "phase 1" deadline for this subject.</div></div>',actions:[{label:'Clear',kind:'ghost',onClick:function(){delete APP.subjectDue[sid];save(true);renderLectures();}},{label:'Save',kind:'primary',onClick:function(){var d=$('du-d').value;if(d&&!isDate(d)){toast('Invalid date','err');return true;}if(d)APP.subjectDue[sid]=d;else delete APP.subjectDue[sid];save(true);renderLectures();}}]});}
+function editDue(sid){modal({title:'Lecture completion target — '+SYL[sid].name,body:'<div class="fld"><label>Finish all lectures by</label><input type="date" id="du-d" value="'+(APP.subjectDue[sid]||'')+'"><div class="hint">Your target to finish all lectures for this subject. Shows a countdown on the Lectures tab.</div></div>',actions:[{label:'Clear',kind:'ghost',onClick:function(){delete APP.subjectDue[sid];save(true);renderLectures();}},{label:'Save',kind:'primary',onClick:function(){var d=$('du-d').value;if(d&&!isDate(d)){toast('Invalid date','err');return true;}if(d)APP.subjectDue[sid]=d;else delete APP.subjectDue[sid];save(true);renderLectures();}}]});}
 </script>
 
 
@@ -1563,14 +1577,14 @@ function testCard(t){
   }).join('')+'</div>';
   return '<details class="tst-card"'+(pend.length?' open':'')+'><summary class="tst-sum"><span class="tst-cv">'+ICON.caret+'</span>'+
     '<div class="tst-ic" style="background:'+c+'22;color:'+c+'">'+ICON.test+'</div>'+
-    '<div class="tst-bd"><div class="tst-nm">'+esc(t.name)+'</div><div class="tst-mt">'+esc(testLoc(t))+' · '+as.length+' attempt'+(as.length===1?'':'s')+'</div></div>'+rightBadge+
+    '<div class="tst-bd"><div class="tst-nm">'+esc(t.name)+'</div><div class="tst-mt">'+esc(testLoc(t))+(as.length?' · sat '+fmtDate(as[0].date):'')+'</div></div>'+rightBadge+
     '</summary><div class="tst-body"><div class="row wrap" style="gap:6px;margin-bottom:10px">'+chips+'</div>'+chapsHTML+attHTML+
-    '<div class="tst-acts"><button class="btn btn-p btn-sm" onclick="startTest(\''+t.id+'\')">'+ICON.play+' Start test</button>'+
-    '<button class="btn btn-ghost btn-sm" onclick="quickTest(\''+t.id+'\')">Log past attempt</button>'+
+    '<div class="tst-acts">'+
+    (as.length?'':'<button class="btn btn-p btn-sm" onclick="startTest(\''+t.id+'\')">'+ICON.play+' Start test</button><button class="btn btn-ghost btn-sm" onclick="quickTest(\''+t.id+'\')">Log result (already sat)</button>')+
     '<button class="btn btn-ghost btn-sm" onclick="testForm(\''+t.id+'\')">Edit</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="delTest(\''+t.id+'\')">Delete</button></div></div></details>';
 }
-function delAttempt(tid,aid){confirmDlg('Delete this attempt? (The timeline entry stays.)',function(){var t=APP.tests.find(function(x){return x.id===tid;});if(t){t.attempts=(t.attempts||[]).filter(function(a){return a.id!==aid;});t.updatedAt=Date.now();save(true);renderTests();}},{danger:true,yes:'Delete'});}
+function delAttempt(tid,aid){confirmDlg('Delete this result? You can then sit the test again. (The timeline entry stays.)',function(){var t=APP.tests.find(function(x){return x.id===tid;});if(t){t.attempts=(t.attempts||[]).filter(function(a){return a.id!==aid;});t.updatedAt=Date.now();save(true);renderTests();}},{danger:true,yes:'Delete result'});}
 function delTest(id){confirmDlg('Delete this test and all its attempts? (Timeline entries stay.)',function(){APP.tests=APP.tests.filter(function(x){return x.id!==id;});save(true);renderTests();},{danger:true,yes:'Delete'});}
 function tfDefaults(ty){return ty==='full'?{rd:15,tm:180,mx:100}:ty==='multi'?{rd:0,tm:120,mx:100}:{rd:0,tm:60,mx:30};}
 function tfChapArea(ty,sid,t){
@@ -1629,6 +1643,7 @@ function startTest(id){
   if(APP.active){toast('Finish your current session first','err');showPage('session');return;}
   if(APP.activeTest){showPage('tests');return;}
   var t=APP.tests.find(function(x){return x.id===id;});if(!t)return;
+  if(testHasAttempt(t)){toast('You\'ve already sat this test. Delete its result first if you really want to re-sit.','err');return;}
   var now=Date.now(),read=(t.readingMin!=null?t.readingMin:0);
   var cis=testChapIdxs(t),repCi=t.type==='chapter'?t.chapterIdx:(t.type==='multi'&&cis.length?cis[0]:-1);
   APP.activeTest={id:uid(),testId:t.id,type:t.type,source:t.source||'',name:t.name,subjectId:t.subjectId,chapterIdx:repCi,chapterIdxs:cis,
@@ -1684,9 +1699,8 @@ function completeTest(){
     activityType:'test',subjectId:t.subjectId,chapterIdx:t.chapterIdx,lectureId:null,status:'done',mode:'test',contentMin:dur,coveredNote:'',
     payload:{testId:t.testId,testName:t.name,type:t.type,source:t.source,marks:null,maxMarks:t.maxMarks,readingMin:t.readingMin,awaiting:true}});
   clearActiveTest();save(true);
-  toast('Test done · '+fmtMin(dur)+' logged — add marks after you review','ok');
+  toast('Test done · '+fmtMin(dur)+' logged. Add marks once you\'ve checked it.','ok');
   showPage('tests');
-  if(def)setTimeout(function(){enterResult(def.id,aid);},250);
 }
 function enterResult(testId,attemptId){
   var t=APP.tests.find(function(x){return x.id===testId;});if(!t)return;
@@ -1722,14 +1736,15 @@ function abortTest(){
   },{danger:true,yes:'Abort test'});
 }
 function quickTest(id){
-  var tests=APP.tests||[];
-  if(!tests.length){toast('Add a test first','err');testForm();return;}
-  var selId=id||tests[0].id;
-  var body='<div class="alert al-blue">Log a test you already sat. Times can\'t overlap an existing session.</div>'+
+  var tests=(APP.tests||[]).filter(function(t){return !testHasAttempt(t);});
+  if(!(APP.tests||[]).length){toast('Add a test first','err');testForm();return;}
+  if(!tests.length){toast('Every test already has a result. Delete one to re-log.','err');return;}
+  var selId=(id&&tests.some(function(t){return t.id===id;}))?id:tests[0].id;
+  var body='<div class="alert al-blue">Log a test you already sat (each test holds one result). Times can\'t overlap an existing session.</div>'+
     '<div class="fld"><label>Test</label><select id="qt-t">'+tests.map(function(t){return '<option value="'+t.id+'" '+(t.id===selId?'selected':'')+'>'+esc(t.name)+' ('+testTypeLabel(t)+')</option>';}).join('')+'</select></div>'+
     '<div class="fld3"><div class="fld"><label>Date</label><input type="date" id="qt-d" value="'+today()+'"></div><div class="fld"><label>Start</label><input type="time" id="qt-s" value="09:00"></div><div class="fld"><label>End</label><input type="time" id="qt-e" value="12:00"></div></div>'+
-    '<div class="fld2"><div class="fld"><label>Marks scored</label><input type="number" id="qt-m" min="0" placeholder="(optional)"></div><div class="fld"><label>Out of</label><input type="number" id="qt-mx" min="1"></div></div>'+
-    '<div class="fld"><label>Notes</label><textarea id="qt-n" placeholder="weak areas, takeaways"></textarea></div>';
+    '<div class="fld2"><div class="fld"><label>Marks scored</label><input type="number" id="qt-m" min="0" placeholder="(optional — add later)"></div><div class="fld"><label>Out of</label><input type="number" id="qt-mx" min="1"></div></div>'+
+    '<div class="fld"><label>Notes / takeaways</label><textarea id="qt-n" placeholder="weak areas, takeaways"></textarea></div>';
   modal({size:'md',title:'Log a past test',body:body,
     actions:[{label:'Cancel',kind:'ghost'},{label:'Log test',kind:'primary',onClick:function(){if(submitQuickTest())return false;return true;}}],
     onOpen:function(){function setMx(){var t=APP.tests.find(function(x){return x.id===$('qt-t').value;});if(t)$('qt-mx').value=t.maxMarks;}$('qt-t').onchange=setMx;setMx();}});
@@ -1757,34 +1772,37 @@ function submitQuickTest(){
 
 <script>
 /* ═══════════ FLASHPOINTS ═══════════ */
-var _fpFilter='all',_fpSearch='';
-function fpMatch(f){if(_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
+var _fpFilter='all',_fpSearch='',_fpImp=false;
+function fpMatch(f){if(_fpFilter!=='all'&&f.subjectId!==_fpFilter)return false;if(_fpImp&&(f.importance||1)<2)return false;var q=_fpSearch.trim().toLowerCase();if(q)return ((f.title||'')+' '+(f.point||'')).toLowerCase().indexOf(q)>=0;return true;}
 function renderFlashpoints(){
   var subs=activeSubjects();
   if(_fpFilter!=='all'&&subs.indexOf(_fpFilter)<0)_fpFilter='all';
   var all=APP.flashpoints||[];
-  var list=all.filter(fpMatch).slice().reverse();
+  var list=all.filter(fpMatch).slice().reverse().sort(function(a,b){return (b.importance||1)-(a.importance||1);});
   var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas, traps &amp; takeaways — quick revision fuel.</div></div><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add flashpoints</button></div>';
-  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'</div></div>';
-  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+'</div>';
+  h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpImp?' on':'')+'" onclick="_fpImp=!_fpImp;renderFlashpoints()" title="Important &amp; critical only">★ key only</span></div></div>';
+  h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpImp?' · key only':'')+'</div>';
   if(list.length)h+='<div class="fp-grid">'+list.map(fpCard).join('')+'</div>';
-  else h+='<div class="empty"><div class="empty-t">'+(all.length?'Nothing matches':'No flashpoints yet')+'</div><div>'+(all.length?'Try a different search or subject.':'Capture key points, formulas and exam traps as you study. Add them here, or from a logged session on the Timeline.')+'</div></div>';
+  else h+='<div class="empty"><div class="empty-t">'+(all.length?'Nothing matches':'No flashpoints yet')+'</div><div>'+(all.length?'Try a different search, subject or filter.':'Capture key points, formulas and exam traps as you study. Add them here, or from a logged session on the Timeline.')+'</div></div>';
   h+='</div>';
   $('pg-flashpoints').innerHTML=h;
 }
 function fpSearchInput(v){_fpSearch=v;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
 function setFp(sid){_fpFilter=sid;renderFlashpoints();}
 function fpTabs(subs){var h='<span class="stab'+(_fpFilter==='all'?' on':'')+'" onclick="setFp(\'all\')">All</span>';subs.forEach(function(s){h+='<span class="stab'+(_fpFilter===s?' on':'')+'" onclick="setFp(\''+s+'\')"'+(_fpFilter===s?' style="color:'+subjColor(s)+';background:'+subjColor(s)+'22"':'')+'>'+subjShort(s)+'</span>';});return h;}
+function fpImpTag(imp){return imp>=3?'<span class="badge bg-rose">\u2605\u2605 critical</span>':imp===2?'<span class="badge bg-amber">\u2605 important</span>':'';}
 function fpCard(f){
-  var hasS=f.subjectId&&SYL[f.subjectId];
+  var hasS=f.subjectId&&SYL[f.subjectId],imp=f.importance||1;
+  var bord=imp>=3?'var(--rose)':imp===2?'var(--amber)':(hasS?subjColor(f.subjectId):'var(--border)');
   var chap=(f.chapterIdx!=null&&f.chapterIdx>=0)?'<span class="xs mono muted">'+esc(chapName(f.subjectId,f.chapterIdx))+'</span>':'';
-  return '<div class="fp-card"><div class="fp-top">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-body">'+esc(f.point)+'</div>':'')+
-    '<div class="fp-foot">'+(hasS?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>')+chap+
+  return '<div class="fp-card" style="border-left-color:'+bord+'"><div class="fp-top">'+esc(f.title||'Note')+'</div>'+(f.point?'<div class="fp-body">'+esc(f.point)+'</div>':'')+
+    '<div class="fp-foot">'+fpImpTag(imp)+(hasS?subjChip(f.subjectId):'<span class="badge bg-gray">General</span>')+chap+
     '<span class="xs mono muted" style="margin-left:auto">'+fmtDate(f.date)+'</span>'+
     '<button class="btn btn-icon btn-ghost" onclick="editFP(\''+f.id+'\')" title="Edit">'+ICON.edit+'</button>'+
     '<button class="btn btn-icon btn-ghost" onclick="delFP(\''+f.id+'\')" title="Delete">'+ICON.trash+'</button></div></div>';
 }
-function fpRowHTML(){return '<div class="fp-rowx"><div class="fld" style="margin:0"><input class="fp-t" placeholder="Title / key term"></div><div class="fld" style="margin:0"><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px"></textarea></div><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div>';}
+function fpImpSelect(cls,val){return '<select class="'+cls+'" title="Importance" style="width:120px;flex:0 0 auto"><option value="1"'+(val===1?' selected':'')+'>Normal</option><option value="2"'+(val===2?' selected':'')+'>Important</option><option value="3"'+(val===3?' selected':'')+'>Critical</option></select>';}
+function fpRowHTML(){return '<div class="fp-rowx"><div class="row" style="gap:8px;align-items:center"><input class="fp-t" placeholder="Title / key term" style="flex:1">'+fpImpSelect('fp-imp',1)+'<button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.fp-rowx\').remove()" title="Remove row">'+ICON.trash+'</button></div><textarea class="fp-p" placeholder="The point, formula or trap…" style="min-height:46px;margin-top:7px"></textarea></div>';}
 function fpAddRow(){var r=$('fp-rows');if(r)r.insertAdjacentHTML('beforeend',fpRowHTML());}
 function addFlashpoint(pre){
   pre=pre||{};
@@ -1807,7 +1825,8 @@ function saveFlashpoints(){
   document.querySelectorAll('#fp-rows .fp-rowx').forEach(function(row){
     var t=row.querySelector('.fp-t').value.trim(),p=row.querySelector('.fp-p').value.trim();
     if(!t&&!p)return;
-    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,date:today(),source:'manual'});n++;
+    var imp=parseInt(row.querySelector('.fp-imp').value,10)||1;
+    APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,importance:imp,date:today(),source:'manual'});n++;
   });
   if(!n){toast('Add at least one point','err');return false;}
   save(true);toast('Saved '+n+' flashpoint'+(n===1?'':'s'),'ok');renderFlashpoints();return true;
@@ -1817,7 +1836,8 @@ function editFP(id){
   var subs=activeSubjects();
   var body='<div class="fld"><label>Title</label><input id="fpe-t" value="'+esc(f.title||'')+'"></div>'+
     '<div class="fld"><label>Point</label><textarea id="fpe-p">'+esc(f.point||'')+'</textarea></div>'+
-    '<div class="fld2"><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="fpe-c"></select></div></div>';
+    '<div class="fld2"><div class="fld"><label>Importance</label>'+fpImpSelect('fpe-i',f.importance||1).replace('width:120px;flex:0 0 auto','width:100%')+'</div><div class="fld"><label>Subject</label><select id="fpe-s"><option value="">General</option>'+subs.map(function(s){return '<option value="'+s+'" '+(f.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div></div>'+
+    '<div class="fld"><label>Chapter</label><select id="fpe-c"></select></div>';
   modal({size:'md',title:'Edit flashpoint',body:body,
     actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){if(saveFP(id))return false;return true;}}],
     onOpen:function(){function fillCh(){var s=$('fpe-s').value;$('fpe-c').innerHTML='<option value="">— Any —</option>'+(s?chapList(s).map(function(cn,i){return '<option value="'+i+'" '+(f.subjectId===s&&f.chapterIdx===i?'selected':'')+'>'+esc(cn)+'</option>';}).join(''):'');}$('fpe-s').onchange=fillCh;fillCh();}});
@@ -1825,7 +1845,7 @@ function editFP(id){
 function saveFP(id){
   var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return false;
   var t=$('fpe-t').value.trim();if(!t){toast('Title required','err');return false;}
-  f.title=t;f.point=$('fpe-p').value.trim();f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;
+  f.title=t;f.point=$('fpe-p').value.trim();f.importance=parseInt($('fpe-i').value,10)||1;f.subjectId=$('fpe-s').value||'';var cv=$('fpe-c').value;f.chapterIdx=cv!==''?+cv:null;
   save(true);toast('Updated','ok');renderFlashpoints();return true;
 }
 function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoints=APP.flashpoints.filter(function(x){return x.id!==id;});save(true);renderFlashpoints();},{danger:true,yes:'Delete'});}
@@ -1862,6 +1882,31 @@ function buildHeatmap(){
   grid+='</div>';
   return '<div class="hm-wrap">'+monRow+grid+'</div>';
 }
+function buildLineChart(){
+  var de=dashEntries();
+  if(!de.length)return '<div class="xs muted">No study sessions yet.</div>';
+  var start=dataStart(),td=today();
+  var days=[],cur=new Date(start+'T12:00:00'),end=new Date(td+'T12:00:00'),g=0;
+  while(cur<=end&&g<400){days.push(cur.getFullYear()+'-'+pad(cur.getMonth()+1)+'-'+pad(cur.getDate()));cur.setDate(cur.getDate()+1);g++;}
+  var subs=activeSubjects(),by={};
+  days.forEach(function(d){by[d]={_t:0};});
+  de.forEach(function(e){if(!by[e.date])return;var hh=(e.elapsedMin||0)/60;by[e.date][e.subjectId]=(by[e.date][e.subjectId]||0)+hh;by[e.date]._t+=hh;});
+  var maxY=0;days.forEach(function(d){if(by[d]._t>maxY)maxY=by[d]._t;});maxY=Math.max(1,Math.ceil(maxY));
+  var W=760,H=240,mL=30,mR=10,mT=10,mB=20,pW=W-mL-mR,pH=H-mT-mB,n=days.length;
+  function X(i){return mL+(n<=1?pW/2:i/(n-1)*pW);}
+  function Y(v){return mT+pH-(v/maxY)*pH;}
+  var grid='';
+  [0,0.5,1].forEach(function(f){var yv=maxY*f,yy=Y(yv);grid+='<line x1="'+mL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+yy.toFixed(1)+'" stroke="var(--border)" stroke-width="1"/><text x="'+(mL-4)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--dim)" font-family="JetBrains Mono,monospace">'+(yv%1?yv.toFixed(1):yv)+'h</text>';});
+  var ticks=Math.min(6,n),xl='';
+  for(var ti=0;ti<ticks;ti++){var idx=ticks<=1?0:Math.round(ti/(ticks-1)*(n-1));var dt=new Date(days[idx]+'T12:00:00');xl+='<text x="'+X(idx).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="var(--dim)" font-family="JetBrains Mono,monospace">'+dt.getDate()+'/'+(dt.getMonth()+1)+'</text>';}
+  var lines='',usedSubs=[];
+  subs.forEach(function(sid){var any=false,pts=days.map(function(d,i){var v=by[d][sid]||0;if(v>0)any=true;return X(i).toFixed(1)+','+Y(v).toFixed(1);}).join(' ');if(any){usedSubs.push(sid);lines+='<polyline points="'+pts+'" fill="none" stroke="'+subjColor(sid)+'" stroke-width="1.5" opacity="0.55" stroke-linejoin="round"/>';}});
+  var tpts=days.map(function(d,i){return X(i).toFixed(1)+','+Y(by[d]._t).toFixed(1);}).join(' ');
+  lines+='<polyline points="'+tpts+'" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
+  if(n===1)lines+='<circle cx="'+X(0).toFixed(1)+'" cy="'+Y(by[days[0]]._t).toFixed(1)+'" r="3.5" fill="var(--ink)"/>';
+  var leg='<div class="lchart-leg"><span><i style="background:var(--ink);height:3px"></i>Total</span>'+usedSubs.map(function(sid){return '<span><i style="background:'+subjColor(sid)+'"></i>'+subjShort(sid)+'</span>';}).join('')+'</div>';
+  return '<svg class="lchart" viewBox="0 0 '+W+' '+H+'">'+grid+xl+lines+'</svg>'+leg;
+}
 function renderDash(){
   var subs=activeSubjects();
   if(!subs.length){$('pg-dashboard').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
@@ -1890,6 +1935,8 @@ function renderDash(){
   '</div>';
   // heatmap
   h+='<div class="card mb12"><div class="rowb mb12"><span class="slbl">Study heatmap</span><span class="dlegend"><span class="xxs muted">less</span><span class="hm-c"></span><span class="hm-c h2"></span><span class="hm-c h3"></span><span class="hm-c h4"></span><span class="hm-c h5"></span><span class="xxs muted">more</span></span></div>'+buildHeatmap()+'</div>';
+  // daily hours line chart
+  h+='<div class="card mb12"><div class="slbl mb12">Daily study hours <span class="muted" style="font-weight:400;text-transform:none">· total + per subject</span></div>'+buildLineChart()+'</div>';
   // two-column grid
   h+='<div class="dash-grid">';
   // col A
