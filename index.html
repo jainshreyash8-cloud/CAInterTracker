@@ -502,6 +502,12 @@ body.theme-light .t-display{color:var(--green)}
 .syl-rev.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent)}
 .syl-nodot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
 .syl-stars{display:inline-flex;gap:1px;flex-shrink:0}
+.syl-fp{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;cursor:pointer;color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 7px;border-radius:7px;background:var(--faint);border:1px solid var(--border)}
+.syl-fp .ico{width:12px;height:12px}
+.syl-fp:hover{color:var(--ink);border-color:var(--dim)}
+.syl-fp.has{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+.syl-fp.empty{opacity:.5}
+.syl-fp.empty:hover{opacity:1}
 .syl-star{font-size:15px;line-height:1;color:var(--track);cursor:pointer;transition:color .1s}
 .syl-star:hover{color:var(--amber)}
 .syl-star.on{color:var(--amber)}
@@ -550,6 +556,7 @@ var ICON={
   pin:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9.5 3h5l-.7 5.2 2.7 2.8H7.5l2.7-2.8z"/><path d="M12 13.8V21"/></svg>',
   download:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4.2-4.2M12 15l4.2-4.2M4 19.5h16"/></svg>',
   upload:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 21V9m0 0L7.8 13.2M12 9l4.2 4.2M4 4.5h16"/></svg>',
+  flash:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg>',
   chevD:'<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
 };
 /* ═══════════ SYLLABUS DATA ═══════════ */
@@ -1195,6 +1202,7 @@ function revInfo(sid,ci){var cd=getCh(sid,ci);if(!cd.firstReadDone)return null;v
 function revDots(sid,ci){var rs=revInfo(sid,ci);if(!rs)return '<span class="syl-nodot">—</span>';return rs.map(function(r){return '<span class="syl-dot d-'+r.state+'" title="R'+(r.i+1)+' · '+(r.done?'done '+fmtDate(r.doneAt):'+'+r.off+'d · '+fmtDate(r.due)+(r.dd<0?' · overdue':r.dd===0?' · due today':''))+'"></span>';}).join('');}
 function sylStars(sid,ci){var conf=getCh(sid,ci).conf||0,o='<span class="syl-stars" data-k="'+ck(sid,ci)+'">';for(var i=1;i<=5;i++)o+='<span class="syl-star'+(i<=conf?' on':'')+'" onclick="event.preventDefault();event.stopPropagation();setConf(\''+sid+'\','+ci+','+i+')" title="'+i+'/5">★</span>';return o+'</span>';}
 function setConf(sid,ci,n){var cd=getChW(sid,ci);cd.conf=(cd.conf===n?0:n);save();renderSyllabus();}
+function sylFp(sid,ci,n){if(n>0)openFlashpoints(sid,ci);else addFlashpoint({subjectId:sid,chapterIdx:ci});}
 function sylNotes(sid,ci){var cd=getCh(sid,ci);modal({size:'md',title:'Notes · '+chapName(sid,ci),body:'<div class="xs muted mb8">Your summary notes, formulas, mnemonics for this chapter.</div><textarea id="syl-nt" style="min-height:200px;width:100%" placeholder="Key points, formulas, things to remember…">'+esc(cd.notes||'')+'</textarea>',actions:[{label:'Cancel',kind:'ghost'},{label:'Save notes',kind:'primary',onClick:function(c){getChW(sid,ci).notes=$('syl-nt').value;save(true);toast('Notes saved','ok');renderSyllabus();}}]});}
 function toggleFirstRead(sid,ci){var cd=getCh(sid,ci);if(cd.firstReadDone){confirmDlg('Reopen first reading? This clears this chapter\'s revision schedule.',function(){getChW(sid,ci).firstReadDone=null;save(true);renderSyllabus();},{danger:true,yes:'Reopen'});}else{markFirstRead(sid,ci,today());save(true);toast('First read done · revisions scheduled','ok');renderSyllabus();}}
 function sylChapRow(sid,ci,cn){
@@ -1220,10 +1228,13 @@ function sylChapRow(sid,ci,cn){
   if(cd.firstReadDone)acts+='<button class="btn btn-ghost btn-sm" onclick="toggleFirstRead(\''+sid+'\','+ci+')">Reopen first read</button>';
   else if(st==='inprogress')acts+='<button class="btn btn-suc btn-sm" onclick="toggleFirstRead(\''+sid+'\','+ci+')">Mark first-read done</button>';
   acts+='<button class="btn btn-ghost btn-sm" onclick="sylNotes(\''+sid+'\','+ci+')">'+(cd.notes?'Notes •':'Notes')+'</button>';
+  acts+='<button class="btn btn-ghost btn-sm" onclick="addFlashpoint({subjectId:\''+sid+'\',chapterIdx:'+ci+'})">'+ICON.plus+' Flashpoint</button>';
   acts+='<button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'first-reading\',subjectId:\''+sid+'\',chapterIdx:'+ci+'})">Quick-log</button></div>';
+  var fpn=fpCount(sid,ci);
+  var fpChip='<span class="syl-fp'+(fpn?' has':' empty')+'" title="'+(fpn?fpn+' flashpoint'+(fpn===1?'':'s')+' — tap to view':'No flashpoints — tap to add one')+'" onclick="event.preventDefault();event.stopPropagation();sylFp(\''+sid+'\','+ci+','+fpn+')">'+ICON.flash+'<span>'+(fpn||'+')+'</span></span>';
   return '<details class="syl-ch"><summary class="syl-sum"><span class="syl-cv">'+ICON.caret+'</span>'+
     '<div class="syl-ci"><div class="syl-cn">'+(ci+1)+'. '+esc(cn)+'</div><div class="syl-cm">'+sylBadge(st)+' · '+metaStr+'</div></div>'+
-    '<span class="syl-dotwrap" title="revision schedule (1/7/30/60/90)">'+revDots(sid,ci)+'</span>'+sylStars(sid,ci)+
+    fpChip+'<span class="syl-dotwrap" title="revision schedule (1/7/30/60/90)">'+revDots(sid,ci)+'</span>'+sylStars(sid,ci)+
     '</summary><div class="syl-body">'+detail+acts+'</div></details>';
 }
 function renderSyllabus(){
@@ -1905,7 +1916,7 @@ function saveFlashpoints(){
     APP.flashpoints.push({id:uid(),subjectId:sid,chapterIdx:ci,title:t||'Note',point:p,type:ty,flag:false,pinned:false,date:today(),source:'manual'});n++;
   });
   if(!n){toast('Add at least one point','err');return false;}
-  save(true);toast('Saved '+n+' flashpoint'+(n===1?'':'s'),'ok');renderFlashpoints();return true;
+  save(true);toast('Saved '+n+' flashpoint'+(n===1?'':'s'),'ok');showPage(currentPage);return true;
 }
 function editFP(id){
   var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;
