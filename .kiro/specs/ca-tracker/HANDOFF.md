@@ -232,3 +232,25 @@ User feedback: scheduling per-subject broke combined papers (FM+SM, IT+GST are O
 - Anchor is still the single `cfg.examDate` (first exam). Per-paper exam dates NOT modeled; per-pass reorder lets user sequence the final sprint by exam order. Possible future: per-paper exam dates.
 
 ### Still open (agreed, NOT built): CSV import (lectures/flashpoints/tests/chapters) · syllabus↔flashpoint link · Flashpoints chapter-grouped list redesign (★ flag, type tag, pin, export) · Lectures "Daily target" card. Dashboard insights = scrapped.
+
+
+
+## Parked-backlog round — DONE 2026-05-30 (4 slices, all on `main`)
+
+The four agreed-but-unbuilt items are now built, committed and pushed to `main` (one commit per slice).
+
+1. **Lectures "Daily target" card** (commit `feat(lectures): turn card 4 into a daily-target…`). Lectures bento card 4 changed from "Finish all by [date]" to a daily watch target. In `renderLectures`, `dtBig`/`dtSub` computed from `remain` (remaining content min), `_curPace`, `dleft`: required watch = `(_curPace!=null?remain*_curPace:remain)/dleft`, shown as `Xh Ym /day`. Fallbacks: no due → "set"; all done → "done"; remaining lectures but no planned mins → "N lec"; past due → "past due". Tapping still opens `editDue`.
+
+2. **Flashpoints redesign** (commit `feat(flashpoints): chapter-grouped collapsible list…`). Card grid → chapter-grouped collapsible list reusing `.syl-ch/.syl-sum/.syl-cv/.syl-body`. Model now `{id,subjectId,chapterIdx,title,point,type:''|'formula'|'trap'|'concept',flag:bool,pinned:bool,date,source}`. `fpMigrate()` (idempotent, runs at top of `renderFlashpoints`) converts old `importance`→`flag` (≥1), adds `type`/`pinned`, deletes `importance`. Default subject tab = first active subject (not "All"). Search + subject tabs + "starred" toggle. Pinned items float to a "Pinned" group on top. Groups collapse when >40 points unless searching or deep-linked. Single ★ flag (`fpToggleFlag`), type tag chips (`.fp-tag.formula/.trap/.concept`), pin (`fpTogglePin`), CSV **Export** (`fpExport`). New helpers also used elsewhere: `fpCount(sid,ci)`, `openFlashpoints(sid,ci)` (deep-link: sets `_fpFilter`+`_fpOpenChap=sid_ci|sid_none`, scrolls), `fpTypeOpts`. Add/edit modals gained a Type select; add-rows have a per-row type. Added `ICON.star/pin/download/upload/flash`. **Shared globals now defined here:** `csvField(v)`, `dlFile(name,text,mime)`. NOTE: never put an `ICON` svg inside a `.stab` pill (`svg{display:block}` breaks it); fine inside `.btn`.
+
+3. **CSV import** (commit `feat(csv): import lectures/chapters/tests/flashpoints…`). New `<script>` block "CSV IMPORT" (file now has **22** script blocks). Per-tab `⤓ Import CSV` buttons (`ICON.upload`) on: Lectures header, Tests header, Flashpoints header (next to Export), and the Settings → Chapters card. `csvImport(kind)` modal = Download template + Choose CSV + live validation preview (ready N / skipped M + first errors). `csvParse` is robust (quoted fields, escaped `""`, CR/LF, BOM). `csvHeaderMap` matches by header name or falls back to positional. `csvSubject` (code or name → sid; ''=blank; null=unknown), `csvChapter(sid,str)` → `{idx}` / `{idx:null}` blank / `{err}` (accepts chapter name OR 1-based number). `csvPreview(kind,rows)`→`{ok,skip,errors,apply}`, `csvApply(kind,items)`. `CSV_SPEC[kind]` holds cols+sample+hint. Templates: lectures `subject,chapter,type,number,label,plannedMin`; chapters `subject,chapter` (append-only, dedupe by name); tests `name,type,source,subject,chapters,dueDate,readingMin,testMin,maxMarks` (multi chapters split by `;`); flashpoints `subject,chapter,title,point,type,flag`. Test objects built identically to `saveTest` (defaults via `tfDefaults`). After import, the current page re-renders.
+
+4. **Syllabus ↔ Flashpoint link** (commit `feat(syllabus): per-chapter flashpoint count chip…`). Each `sylChapRow` summary now shows a compact `.syl-fp` chip (flash icon + count): tap when count>0 → `openFlashpoints(sid,ci)`; tap when 0 → `addFlashpoint({subjectId,chapterIdx})`. Expanded actions gained a `+ Flashpoint` button (prefilled subject+chapter). Quick-note ("Notes") is unchanged/separate. `saveFlashpoints` now calls `showPage(currentPage)` (instead of hard-coding `renderFlashpoints`) so adding from Syllabus/Timeline refreshes that page (and updates the count chip).
+
+### Verify workflow used
+Each `<script>` block syntax-checked independently wrapped in an IIFE (strict mode is per-script in the browser). CSV logic additionally smoke-tested in Node with stubbed globals across all four kinds (parser edge cases, subject/chapter matching, dedupe, defaults, error reporting). Temp helper scripts were removed after use.
+
+### Still open / not built
+- Per-paper exam dates in Final Revision (single `cfg.examDate` anchor only).
+- Flashpoint auto-capture from the session-end form (currently add from: Flashpoints tab, Timeline popover, Syllabus chapter).
+- Dashboard insights (readiness / test-score trend / revision debt / best-time / pace-on-dashboard) — **scrapped by user, do NOT build.**
