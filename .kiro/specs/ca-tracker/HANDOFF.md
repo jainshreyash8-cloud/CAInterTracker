@@ -217,3 +217,18 @@ New nav tab **"Final Rev"** (`pg-finalrev`, route `finalrev:renderFinalRev`). Re
 - **Flashpoints redesign to chapter-grouped collapsible list** (+ ★ binary flag, type tag, pin, export) — agreed earlier, NOT built yet (current flashpoints = card grid + post-hoc 2-dot importance).
 - **Lectures card 4 → "Daily target"** (watch X/day to hit due date; tap still sets date) — agreed, NOT built yet.
 - Dashboard insights (readiness/trend/debt/best-time/pace-on-dashboard) — **scrapped by user.**
+
+
+
+## Final Revision REWORKED to per-paper 2026-05-30 (commit `refactor(final-revision): per-paper scheduling...`, on `main`)
+
+User feedback: scheduling per-subject broke combined papers (FM+SM, IT+GST are ONE paper/one exam) — the final 1-day pass gave each half its own day, and per-subject splitting implied half-days (uncountable). Fix:
+
+- **Schedule unit = PAPER.** `APP.finalRev = {passes:[{id,days:{paperId:n},order:[paperId]}], buffer}`. `frEnsure()` migrates the old `{rounds,order}` shape → `passes` (default 3 passes 7/3/1 days for every active paper). A combined paper is ONE block whose chapter list = all its subjects' chapters (IT+GST / FM+SM). No half-days.
+- **Editable per pass × per paper days + per-pass paper order** (arrows) + add/remove pass + buffer, via `frEdit`/`frEditRender` using a `_frDraft` working copy (`frMove`/`frSetDays`/`frAddPass`/`frRemovePass`/`frEditSave`).
+- **Focused view:** `renderFinalRev` shows ONE block at a time — today's block by default (`_frViewIdx`), via `frFocusCard` (paper, dates, progress, "Revise next", chapters grouped by subject with `frChapRow`). Below, `frOverview` is a compact tap-to-jump list of all blocks (today highlighted). No more full matrix dump.
+- **Schedule computed** (`frPlan`) backward: total = Σ days; lastStudyDay = exam−(buffer+1); start = lastStudyDay−(total−1); blocks laid pass→paper in order. `startsInPast`/`overDays` → amber "needs N more days" warning. Verified: Pass-3 single-day blocks land right before exam, last block == lastStudyDay.
+- **Tracking key = `passId_sid_idx`** (`frTrack`). `frRevise`→`launchRevision`; `beginRev` tags `APP.active._fr={pass,sid,idx}`; `finalizeSession` adds elapsedMin to `frTrack.min` + sets `done` on status done. Manual ✓/skip/note too. `frPrevPass` carries previous pass's time+note onto each chapter.
+- Anchor is still the single `cfg.examDate` (first exam). Per-paper exam dates NOT modeled; per-pass reorder lets user sequence the final sprint by exam order. Possible future: per-paper exam dates.
+
+### Still open (agreed, NOT built): CSV import (lectures/flashpoints/tests/chapters) · syllabus↔flashpoint link · Flashpoints chapter-grouped list redesign (★ flag, type tag, pin, export) · Lectures "Daily target" card. Dashboard insights = scrapped.
