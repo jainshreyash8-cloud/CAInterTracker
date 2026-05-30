@@ -1780,18 +1780,17 @@ function renderLectures(){
   // subject tabs
   h+='<div class="stabs">'+subs.map(function(s){var on=s===sid,col=subjColor(s);return '<button class="stab" style="'+(on?'background:'+col+';border-color:'+col+';color:#0E0E0E':'')+'" onclick="_lecSub=\''+s+'\';renderLectures()"><span class="sdot" style="background:'+(on?'#0E0E0E':col)+'"></span>'+SYL[s].short+'</button>';}).join('')+'</div>';
   // bento
-  h+='<div class="bento b4 mb20">'+
+  var paceBig,paceSub;
+  if(_curPace!=null&&remain>0){var projWatch=Math.round(remain*_curPace);paceBig=bnumHTML(fmtMinParts(projWatch));paceSub=_curPace.toFixed(1)+'\u00d7 pace \u00b7 '+remLec+' left';}
+  else if(_curPace!=null&&remain<=0){paceBig='<span class="bn-v" style="font-size:26px">done</span>';paceSub='all caught up';}
+  else{paceBig='<span class="bn-v">—</span>';paceSub='log a few lectures to unlock';}
+  h+='<div class="bento b5 mb20">'+
     '<div class="bc bc-neutral"><span class="blbl">Lectures done</span><div class="bnum"><span class="bn-v">'+doneN+'</span><span class="bn-u">/ '+mains.length+'</span></div><span class="bsub">'+mains.filter(function(l){return l.status==='in-progress';}).length+' in progress</span></div>'+
     '<div class="bc bc-accent"><span class="blbl">Watched</span><div class="bnum">'+bnumHTML(fmtMinParts(watched))+'</div><span class="bsub">'+(totPlan?'of ~'+fmtMin(totPlan)+' added':'add planned mins')+'</span></div>'+
-    '<div class="bc bc-amber"><span class="blbl">Actually remaining</span><div class="bnum">'+bnumHTML(fmtMinParts(remain))+'</div><span class="bsub">'+mains.filter(function(l){return l.status!=='done';}).length+' lectures left</span></div>'+
+    '<div class="bc bc-amber"><span class="blbl">Remaining</span><div class="bnum">'+bnumHTML(fmtMinParts(remain))+'</div><span class="bsub">'+remLec+' lectures · content time</span></div>'+
     '<div class="bc bc-neutral exam-card" onclick="editDue(\''+sid+'\')" style="cursor:pointer"><span class="blbl">Daily target '+ICON.edit+'</span><div class="bnum">'+dtBig+'</div><span class="bsub">'+dtSub+'</span></div>'+
+    '<div class="bc bc-purple"><span class="blbl">At your pace</span><div class="bnum">'+paceBig+'</div><span class="bsub">'+paceSub+'</span></div>'+
   '</div>';
-  if(mains.length){var projTxt=_curPace!=null?fmtMin(Math.round(remain*_curPace)):'—';
-    h+='<div class="card mb16"><div class="rowb mb8"><span class="slbl">Your pace &amp; projection</span>'+(_curPace!=null?'<span class="badge bg-accent">'+_curPace.toFixed(2)+'\u00d7 content time</span>':'<span class="badge bg-gray">need data</span>')+'</div>'+
-      (_curPace!=null
-        ?'<div class="sm" style="line-height:1.75">About <b>'+fmtMin(Math.round(60*_curPace))+'</b> of your time for every <b>60m</b> of lecture content. <br>'+remLec+' lecture'+(remLec===1?'':'s')+' left (<b>'+fmtMin(remain)+'</b> of content) \u2192 roughly <b style="color:'+c+'">'+projTxt+'</b> to finish'+((due&&dleft!=null&&dleft>0)?' \u00b7 about <b>'+fmtMin(Math.round(remain*_curPace/dleft))+'/day</b> to hit '+fmtDate(due).replace(/ \d{4}/,''):'')+'.</div>'
-        :'<div class="sm muted">Finish a few lectures (with their planned minutes set) and I\'ll project how long the rest will take at your pace.</div>')+
-    '</div>';}
   h+='<div class="rowb mb10"><span class="slbl">'+esc(SYL[sid].name)+' · chapters</span><span class="xs mono muted">click to expand</span></div>';
   chapList(sid).forEach(function(cn,ci){h+=chapBlock(sid,ci,cn,c);});
   // misc
