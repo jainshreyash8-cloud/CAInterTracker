@@ -759,13 +759,13 @@ function suRenderEx(){var h='';PAPERS.forEach(function(p){if(_suGroup==='1'&&p.g
   $('su-exempt').innerHTML=h||'<div class="xs muted">No papers in group.</div>';
   $('su-exempt').querySelectorAll('button').forEach(function(b){b.onclick=function(){var p=b.dataset.p,t=b.dataset.t;if(t==='clear')delete _suEx[p];else _suEx[p]=t;suRenderEx();};});}
 function suRenderRev(){var h=_suRev.map(function(d,i){return '<div class="revfld"><input type="number" min="1" max="365" value="'+d+'" data-i="'+i+'"><div class="xxs muted mono">R'+(i+1)+'</div></div>';}).join('');
-  h+='<div class="row" style="gap:4px;align-self:center"><button class="btn btn-xs btn-ghost" id="surev+" type="button">+</button>'+(_suRev.length>1?'<button class="btn btn-xs btn-ghost" id="surev-" type="button">−</button>':'')+'</div>';
+  h+='<div class="row" style="gap:6px;align-self:center"><button class="btn btn-sm" id="surev+" type="button">'+ICON.plus+' Add</button>'+(_suRev.length>1?'<button class="btn btn-sm btn-ghost" id="surev-" type="button">Remove last</button>':'')+'</div>';
   $('su-rev').innerHTML=h;
   $('su-rev').querySelectorAll('input').forEach(function(x){x.oninput=function(){var v=+x.value;if(v>0)_suRev[+x.dataset.i]=v;};});
   if($('surev+'))$('surev+').onclick=function(){_suRev.push((_suRev[_suRev.length-1]||30)+30);suRenderRev();};
   if($('surev-'))$('surev-').onclick=function(){if(_suRev.length>1){_suRev.pop();suRenderRev();}};}
 function doSetup(){var n=$('su-name').value.trim(),ex=$('su-exam').value;
-  if(!n){toast('Enter your name','err');return;}if(!isDate(ex)){toast('Pick a valid exam date','err');return;}
+  if(!n){toast('Enter your name','err');return;}if(!isDate(ex)){toast('Select a valid exam date','err');return;}
   APP.cfg.name=n;APP.cfg.examDate=ex;APP.cfg.group=_suGroup;APP.cfg.exemptions=JSON.parse(JSON.stringify(_suEx));APP.cfg.revOffsets=_suRev.slice();APP.cfg.setupDone=true;
   activeSubjects().forEach(function(s){if(!APP.chapters[s])APP.chapters[s]=SYL[s].chapters.slice();});
   save(true);$('setup').style.display='none';$('app').classList.remove('dn');wireShell();refreshTop();showPage('today');toast('Welcome, '+n.split(' ')[0]+'!','ok');}
@@ -908,6 +908,7 @@ function renderSession(){
 }
 function pickAct(k){_sPick={activity:k,subjectId:null,chapterIdx:null,lectureId:null};_sStep='config';renderSession();}
 function sessReset(){_sStep='pick';_sPick=null;renderSession();}
+function configAddLec(){if(_sPick&&_sPick.subjectId!=null&&_sPick.chapterIdx!=null)addLec(_sPick.subjectId,_sPick.chapterIdx,_sPick.activity==='lecture'?'main':'revision');}
 function sKind(a){return a==='lecture'?'main':a==='first-reading'?'reading':'revision';}
 var QSOURCES=['Textbook','RTP','MTP','PYP','Faculty','AI','Mixed'];
 function renderConfig(){
@@ -924,8 +925,13 @@ function renderConfig(){
     h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="mixed" '+(_sPick.qMixed?'selected':'')+'>— Mixed / multiple —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(!_sPick.qMixed&&_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
     h+='<div class="fld"><label>Source</label><select id="cf-src">'+QSOURCES.map(function(s){return '<option value="'+s+'" '+(_sPick.qSource===s?'selected':'')+'>'+s+'</option>';}).join('')+'</select><div class="hint">Where the questions are from (textbook, RTP, MTP, etc.). No scoring — this just tracks practice time and source. You can note a rough count when you finish.</div></div>';
   }else{
-    h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— pick —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
-    if(usesLec)h+='<div class="fld"><label>'+(_sPick.activity==='lecture'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(_sPick.activity==='lecture'?'main':'revision')+'</select><div class="hint">'+(_sPick.activity==='lecture'?'Choose from lectures you added to this chapter (add them in the Lectures tab).':'Pick an added revision lecture, or leave it as ad-hoc.')+'</div></div>';
+    h+='<div class="fld"><label>Chapter</label><select id="cf-ch"><option value="">— select —</option>'+(_sPick.subjectId?chapList(_sPick.subjectId).map(function(c,i){return '<option value="'+i+'" '+(_sPick.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join(''):'')+'</select></div></div>';
+    if(usesLec){
+      var lk=_sPick.activity==='lecture'?'main':'revision';
+      var hasLec=_sPick.chapterIdx!=null&&APP.lectures.some(function(l){return l.subjectId===_sPick.subjectId&&l.chapterIdx===_sPick.chapterIdx&&l.kind===lk&&l.status!=='done';});
+      var addBtn=(_sPick.chapterIdx!=null&&!hasLec)?'<button type="button" class="btn btn-sm btn-suc" style="margin-top:9px" onclick="configAddLec()">'+ICON.plus+' Add a '+(lk==='revision'?'revision ':'')+'lecture to this chapter</button>':'';
+      h+='<div class="fld"><label>'+(lk==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(lk)+'</select><div class="hint">'+(lk==='main'?'Choose a lecture you added to this chapter — or add one right here.':'Pick an added revision lecture, leave it ad-hoc, or add one here.')+'</div>'+addBtn+'</div>';
+    }
     else if(_sPick.activity==='first-reading')h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
     else h+='<div class="hint">Revising this chapter. Finishing this session as Complete ticks off its next scheduled revision (if first reading is done).</div>';
   }
@@ -933,10 +939,10 @@ function renderConfig(){
   $('pg-session').innerHTML=h;wireConfig(kind);
 }
 function lecOptions(kind){
-  if(_sPick.subjectId==null||_sPick.chapterIdx==null)return '<option value="">pick a chapter first</option>';
+  if(_sPick.subjectId==null||_sPick.chapterIdx==null)return '<option value="">select a chapter first</option>';
   var ls=APP.lectures.filter(function(l){return l.subjectId===_sPick.subjectId&&l.chapterIdx===_sPick.chapterIdx&&l.kind===kind&&l.status!=='done';});
-  if(kind==='main'&&!ls.length)return '<option value="">no lectures here — add them in the Lectures tab</option>';
-  var o='<option value="">'+(kind==='revision'?'— ad-hoc (no specific lecture) —':'— pick a lecture —')+'</option>';
+  if(kind==='main'&&!ls.length)return '<option value="">— no lectures added yet —</option>';
+  var o='<option value="">'+(kind==='revision'?'— ad-hoc (no specific lecture) —':'— select a lecture —')+'</option>';
   o+=ls.map(function(l){var pct=l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0;return '<option value="'+l.id+'" '+(_sPick.lectureId===l.id?'selected':'')+'>'+esc((l.lectureNumber&&kind==='main'?'L'+l.lectureNumber+' · ':'')+(l.label||'Lecture'))+(l.status==='in-progress'?' ('+pct+'% done)':'')+'</option>';}).join('');
   return o;
 }
@@ -1319,7 +1325,7 @@ function offScheduleRev(){
   modal({size:'md',title:'Revise off-schedule',body:'<div class="sm muted mb12">Revise any chapter, even if it isn\'t due yet.</div>'+
     '<div class="fld2"><div class="fld"><label>Subject</label><select id="osr-sub">'+subs.map(function(s){return '<option value="'+s+'">'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="osr-ch"></select></div></div>'+
     '<div class="fld"><label>Timer</label><div class="seg"><button class="seg-btn on" id="osr-live" type="button">Live</button><button class="seg-btn" id="osr-pomo" type="button">Pomodoro</button></div></div>',
-    actions:[{label:'Cancel',kind:'ghost'},{label:'Start',kind:'primary',onClick:function(){var sid=$('osr-sub').value,ci=$('osr-ch').value;if(ci===''){toast('Pick a chapter','err');return true;}beginRev(sid,+ci,$('osr-pomo').classList.contains('on')?'pomodoro':'live');}}],
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Start',kind:'primary',onClick:function(){var sid=$('osr-sub').value,ci=$('osr-ch').value;if(ci===''){toast('Select a chapter','err');return true;}beginRev(sid,+ci,$('osr-pomo').classList.contains('on')?'pomodoro':'live');}}],
     onOpen:function(){function fill(){var sid=$('osr-sub').value;$('osr-ch').innerHTML=chapList(sid).map(function(c,i){return '<option value="'+i+'">'+esc(c)+'</option>';}).join('');}$('osr-sub').onchange=fill;fill();$('osr-live').onclick=function(){$('osr-live').classList.add('on');$('osr-pomo').classList.remove('on');};$('osr-pomo').onclick=function(){$('osr-pomo').classList.add('on');$('osr-live').classList.remove('on');};}});
 }
 function quickRevDone(sid,ci){var r=markNextRevDone(sid,ci);save(true);toast(r?'Revision R'+r+' marked done':'Nothing to mark','ok');renderRevisions();}
@@ -1372,12 +1378,12 @@ function quickComplete(pre){
     body:'<div class="alert al-blue">For sessions done before/without the live timer. Times can\'t overlap an existing session.</div>'+
       '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(pre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(pre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(pre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option><option value="first-reading" '+(pre.activity==='first-reading'?'selected':'')+'>First Reading</option><option value="revision" '+(pre.activity==='revision'?'selected':'')+'>Revision</option></select></div></div>'+
       '<div class="fld3"><div class="fld"><label>Start</label><input type="time" id="qc-s" value="09:00"></div><div class="fld"><label>End</label><input type="time" id="qc-e" value="10:00"></div><div class="fld"><label>Status</label><select id="qc-st"><option value="done">Done</option><option value="inprogress">In progress</option></select></div></div>'+
-      '<div class="fld2"><div class="fld"><label>Subject</label><select id="qc-sub"><option value="">— pick —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(pre.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="qc-ch" disabled><option>pick subject</option></select></div></div>'+
+      '<div class="fld2"><div class="fld"><label>Subject</label><select id="qc-sub"><option value="">— select —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(pre.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="qc-ch" disabled><option>select subject</option></select></div></div>'+
       '<div class="fld dn" id="qc-lw"><label>Lecture (optional)</label><select id="qc-lec"><option value="">— none —</option></select></div>'+
       '<div class="fld"><label>What did you cover?</label><textarea id="qc-n" placeholder="e.g. reached till operating lease"></textarea></div>',
     actions:[{label:'Cancel',kind:'ghost'},{label:'Log session',kind:'primary',onClick:function(c){if(submitQC())c();return true;}}],
     onOpen:function(){
-      function fillCh(){var sid=$('qc-sub').value,ch=$('qc-ch');if(!sid){ch.disabled=true;ch.innerHTML='<option>pick subject</option>';return;}ch.disabled=false;ch.innerHTML='<option value="">— pick —</option>'+chapList(sid).map(function(c,i){return '<option value="'+i+'" '+(pre.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join('');fillLec();}
+      function fillCh(){var sid=$('qc-sub').value,ch=$('qc-ch');if(!sid){ch.disabled=true;ch.innerHTML='<option>select subject</option>';return;}ch.disabled=false;ch.innerHTML='<option value="">— select —</option>'+chapList(sid).map(function(c,i){return '<option value="'+i+'" '+(pre.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join('');fillLec();}
       function fillLec(){var a=$('qc-a').value,sid=$('qc-sub').value,ci=$('qc-ch').value;if(a!=='lecture'||!sid||ci===''){$('qc-lw').classList.add('dn');return;}var ls=APP.lectures.filter(function(l){return l.kind==='main'&&l.subjectId===sid&&l.chapterIdx===+ci;});$('qc-lw').classList.remove('dn');$('qc-lec').innerHTML='<option value="">— none —</option>'+ls.map(function(l){return '<option value="'+l.id+'">'+esc(l.label||'Lecture')+'</option>';}).join('');}
       $('qc-sub').onchange=fillCh;$('qc-ch').onchange=fillLec;$('qc-a').onchange=fillLec;
       if(pre.subjectId)fillCh();
@@ -1387,8 +1393,8 @@ function submitQC(){
   var d=$('qc-d').value,a=$('qc-a').value,st=$('qc-s').value,en=$('qc-e').value,status=$('qc-st').value,sid=$('qc-sub').value,ci=$('qc-ch').value,lid=$('qc-lec')?$('qc-lec').value:'',n=$('qc-n').value.trim();
   if(!isDate(d)){toast('Invalid date','err');return false;}
   if(!st||!en){toast('Enter start and end time','err');return false;}
-  if(!sid){toast('Pick a subject','err');return false;}
-  if(ci===''){toast('Pick a chapter','err');return false;}
+  if(!sid){toast('Select a subject','err');return false;}
+  if(ci===''){toast('Select a chapter','err');return false;}
   var sMin=hm2min(st),eMin=hm2min(en);if(eMin<sMin)eMin+=1440;var dur=eMin-sMin;
   if(dur<=0){toast('End must be after start','err');return false;}
   var ov=findOverlap(d,sMin,eMin,null);
@@ -1485,7 +1491,7 @@ function addLec(sid,ci,kind){
       var num=parseInt($('al-n').value,10);if(kind==='main'&&(!num||isNaN(num)))num=nextLecNum(sid,ci);
       var m=parseInt($('al-m').value,10);
       APP.lectures.push({id:uid(),subjectId:sid,chapterIdx:ci,label:lbl,lectureNumber:kind==='main'?num:null,plannedMin:!isNaN(m)&&m>0?m:null,kind:kind,status:'pending',contentDoneMin:0,createdAt:Date.now(),updatedAt:Date.now()});
-      save(true);toast('Lecture added','ok');renderLectures();}}]});
+      save(true);toast('Lecture added','ok');showPage(currentPage);}}]});
 }
 function editLec(id){var l=APP.lectures.find(function(x){return x.id===id;});if(!l)return;
   modal({size:'md',title:'Edit lecture',
@@ -1518,7 +1524,7 @@ function renderSettings(){
   // rev offsets
   h+='<div class="card mb10"><div class="slbl mb12">Revision schedule (days after first reading)</div><div class="row wrap" id="se-rev" style="gap:8px"></div></div>';
   // chapters
-  h+='<div class="card mb10"><div class="rowb mb12"><div class="slbl">Chapters</div><button class="btn btn-ghost btn-sm" onclick="csvImport(\'chapters\')">'+ICON.upload+' Import CSV</button></div><div class="sub mb10">Default = ICAI. Customize per subject if your faculty splits differently.</div><div id="se-ch"></div></div>';
+  h+='<div class="card mb10"><div class="slbl mb12">Chapters</div><div class="sub mb10">Default = ICAI. Customize per subject if your faculty splits differently.</div><div id="se-ch"></div></div>';
   // data
   h+='<div class="card mb10"><div class="slbl mb12">Data</div><div class="row wrap" style="gap:8px"><button class="btn btn-sm" onclick="exportJSON()">Export backup</button><label class="btn btn-sm" style="cursor:pointer">Import backup<input type="file" accept="application/json" id="se-imp" style="display:none"></label><button class="btn btn-dan btn-sm" onclick="nukeAll()">Reset all data</button></div></div>';
   h+='<div class="xs muted mono tc mt12">Tracker · CA Inter · v'+VERSION+'</div></div>';
@@ -1541,7 +1547,7 @@ function wireSettings(){
   $('se-imp').onchange=function(){if(this.files[0])importJSON(this.files[0]);};
 }
 function seEx(){var h='';PAPERS.forEach(function(p){if(APP.cfg.group==='1'&&p.group!==1)return;if(APP.cfg.group==='2'&&p.group!==2)return;var cur=APP.cfg.exemptions[p.id];h+='<div class="rowb" style="background:var(--faint);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:6px"><div><div class="sm fw6">'+esc(p.name)+'</div><div class="xxs muted mono">'+p.id.toUpperCase()+'</div></div><div class="row" style="gap:5px"><button class="exch '+(cur==='standard'?'on':'')+'" data-p="'+p.id+'" data-t="standard">Standard</button><button class="exch '+(cur==='permanent'?'on':'')+'" data-p="'+p.id+'" data-t="permanent">Permanent</button>'+(cur?'<button class="btn btn-xs btn-ghost" data-p="'+p.id+'" data-t="clear">×</button>':'')+'</div></div>';});$('se-ex').innerHTML=h;$('se-ex').querySelectorAll('button').forEach(function(b){b.onclick=function(){var p=b.dataset.p,t=b.dataset.t;if(t==='clear')delete APP.cfg.exemptions[p];else APP.cfg.exemptions[p]=t;save();seEx();};});}
-function seRev(){var h=APP.cfg.revOffsets.map(function(d,i){return '<div class="revfld"><input type="number" min="1" value="'+d+'" data-i="'+i+'"><div class="xxs muted mono">R'+(i+1)+'</div></div>';}).join('')+'<div class="row" style="gap:4px;align-self:center"><button class="btn btn-xs btn-ghost" id="sr+">+</button>'+(APP.cfg.revOffsets.length>1?'<button class="btn btn-xs btn-ghost" id="sr-">−</button>':'')+'</div>';$('se-rev').innerHTML=h;$('se-rev').querySelectorAll('input').forEach(function(x){x.oninput=function(){var v=+x.value;if(v>0){APP.cfg.revOffsets[+x.dataset.i]=v;save();}};});if($('sr+'))$('sr+').onclick=function(){APP.cfg.revOffsets.push((APP.cfg.revOffsets[APP.cfg.revOffsets.length-1]||30)+30);save();seRev();};if($('sr-'))$('sr-').onclick=function(){if(APP.cfg.revOffsets.length>1){APP.cfg.revOffsets.pop();save();seRev();}};}
+function seRev(){var h=APP.cfg.revOffsets.map(function(d,i){return '<div class="revfld"><input type="number" min="1" value="'+d+'" data-i="'+i+'"><div class="xxs muted mono">R'+(i+1)+'</div></div>';}).join('')+'<div class="row" style="gap:6px;align-self:center"><button class="btn btn-sm" id="sr+">'+ICON.plus+' Add</button>'+(APP.cfg.revOffsets.length>1?'<button class="btn btn-sm btn-ghost" id="sr-">Remove last</button>':'')+'</div>';$('se-rev').innerHTML=h;$('se-rev').querySelectorAll('input').forEach(function(x){x.oninput=function(){var v=+x.value;if(v>0){APP.cfg.revOffsets[+x.dataset.i]=v;save();}};});if($('sr+'))$('sr+').onclick=function(){APP.cfg.revOffsets.push((APP.cfg.revOffsets[APP.cfg.revOffsets.length-1]||30)+30);save();seRev();};if($('sr-'))$('sr-').onclick=function(){if(APP.cfg.revOffsets.length>1){APP.cfg.revOffsets.pop();save();seRev();}};}
 function seCh(){var subs=activeSubjects(),h='';subs.forEach(function(sid){var custom=!!APP.chapters[sid];h+='<details style="background:var(--faint);border:1px solid var(--border);border-radius:9px;margin-bottom:6px"><summary style="padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"><span class="row">'+subjChip(sid)+' '+esc(SYL[sid].name)+'</span><span class="xs muted mono">'+chapList(sid).length+' ch'+(custom?' · custom':'')+'</span></summary><div style="padding:8px 12px 12px"><div id="cl-'+sid+'"></div><div class="row mt8" style="gap:5px"><input type="text" id="cn-'+sid+'" placeholder="New chapter"><button class="btn btn-suc btn-sm" onclick="addChap(\''+sid+'\')">Add</button>'+(custom?'<button class="btn btn-ghost btn-sm" onclick="resetChap(\''+sid+'\')">Reset</button>':'')+'</div></div></details>';});$('se-ch').innerHTML=h;subs.forEach(clRender);}
 function clRender(sid){var l=chapList(sid),h=l.map(function(cn,i){return '<div class="row" style="gap:6px;padding:6px 0;border-bottom:1px solid var(--line)"><span class="mono xs muted" style="width:22px">'+(i+1)+'</span><input value="'+esc(cn)+'" data-i="'+i+'" style="flex:1;padding:5px 8px" class="clname"><button class="btn btn-xs btn-ghost" onclick="mvChap(\''+sid+'\','+i+',-1)" '+(i===0?'disabled':'')+'>↑</button><button class="btn btn-xs btn-ghost" onclick="mvChap(\''+sid+'\','+i+',1)" '+(i===l.length-1?'disabled':'')+'>↓</button><button class="btn btn-xs btn-dan" onclick="delChap(\''+sid+'\','+i+')">×</button></div>';}).join('');if($('cl-'+sid)){$('cl-'+sid).innerHTML=h;$('cl-'+sid).querySelectorAll('.clname').forEach(function(inp){inp.onchange=function(){if(!APP.chapters[sid])APP.chapters[sid]=chapList(sid);APP.chapters[sid][+inp.dataset.i]=inp.value.trim();save();};});}}
 function addChap(sid){var inp=$('cn-'+sid),n=inp.value.trim();if(!n){toast('Enter name','err');return;}if(!APP.chapters[sid])APP.chapters[sid]=chapList(sid);APP.chapters[sid].push(n);inp.value='';save();seCh();}
@@ -1672,7 +1678,7 @@ function saveTest(id){
   var name=$('tf-name').value.trim();if(!name){toast('Enter a test name','err');return false;}
   var sid=$('tf-sub').value;
   var ci=null,cis=null;
-  if(type==='chapter'){ci=($('tf-ch')&&$('tf-ch').value!=='')?+$('tf-ch').value:null;if(ci==null){toast('Pick a chapter','err');return false;}}
+  if(type==='chapter'){ci=($('tf-ch')&&$('tf-ch').value!=='')?+$('tf-ch').value:null;if(ci==null){toast('Select a chapter','err');return false;}}
   else if(type==='multi'){cis=[];if($('tf-multi'))$('tf-multi').querySelectorAll('.tf-cbx.sel').forEach(function(c){cis.push(+c.dataset.i);});if(cis.length<2){toast('Select at least 2 chapters','err');return false;}}
   var rd=parseInt($('tf-rd').value,10);if(isNaN(rd)||rd<0)rd=0;
   var tm=parseInt($('tf-tm').value,10);if(isNaN(tm)||tm<1)tm=tfDefaults(type).tm;
@@ -1951,11 +1957,6 @@ var CSV_SPEC={
       {key:'label',label:'Topic / label',note:'Short name for the lecture',eg:'Operating lease — intro',aliases:['topic','title','name']},
       {key:'plannedMin',label:'Length (mins)',note:'Optional — lecture length',eg:'62',aliases:['length','mins','minutes','duration','time']}
     ]},
-  chapters:{title:'Import chapters',file:'chapters-template.csv',unit:'chapter',intro:'One row per chapter. Adds to a subject in the order listed. Existing names are skipped — nothing is deleted.',
-    fields:[
-      {key:'subject',label:'Subject',note:'Subject code or full name',eg:'AA',aliases:['sub']},
-      {key:'chapter',label:'Chapter name',note:'The chapter title',eg:'My faculty chapter 1',aliases:['chap','ch','name']}
-    ]},
   tests:{title:'Import tests',file:'tests-template.csv',unit:'test',intro:'One row per test. Minutes & marks are optional — sensible defaults fill in.',
     fields:[
       {key:'name',label:'Test name',note:'What you call it',eg:'MTP Series 1',aliases:['testname','title']},
@@ -1982,7 +1983,7 @@ function csvImport(kind){
   _csvKind=kind;_csvParsed=null;var sp=CSV_SPEC[kind];var subs=activeSubjects();
   var opts=subs.map(function(s){return '<option value="'+s+'">'+esc(SYL[s].name)+'</option>';}).join('');
   if(kind==='flashpoints')opts+='<option value="">General / no subject</option>';
-  if(kind!=='chapters')opts+='<option value="__all">All subjects (I\'ll type names myself)</option>';
+  opts+='<option value="__all">All subjects (I\'ll type names myself)</option>';
   var body='<div class="alert al-blue">'+esc(sp.intro)+'</div>'+
     '<div class="fld"><label>Subject for this template</label><select id="csv-subj">'+opts+'</select><div class="hint">The downloaded file lists this subject\'s chapters with numbers, so you never type a chapter name — just the number. All the how-to notes live inside the file too.</div></div>'+
     '<div class="row wrap" style="gap:8px;margin:2px 0 4px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
@@ -1995,7 +1996,6 @@ function csvImport(kind){
 function cmt(t){return '"# '+(''+t).replace(/"/g,'""')+'"';}
 function csvSampleRow(kind,code){
   if(kind==='lectures')return [code,'1','main','1','EXAMPLE — edit or delete this row','62'];
-  if(kind==='chapters')return [code,'EXAMPLE — type your new chapter name'];
   if(kind==='tests')return ['EXAMPLE — edit or delete','full','MTP',code,'','','15','180','100'];
   if(kind==='flashpoints')return [code,'1','EXAMPLE — key term','the point, formula or trap goes here','concept','yes'];
   return [];
@@ -2008,7 +2008,7 @@ function csvTemplate(kind){
   lines.push(cmt('CA Tracker  —  '+sp.unit+' import  —  '+(sid?SYL[sid].name+' ('+SYL[sid].short+')':'all subjects')));
   lines.push(cmt('Type one '+sp.unit+' per row UNDER the header row below. Lines that start with # are just notes — they are ignored when you upload.'));
   if(!sid||kind==='flashpoints')lines.push(cmt('Subject = a code from: '+activeSubjects().map(function(s){return SYL[s].short;}).join('  ·  ')));
-  if(sid&&kind!=='chapters'){
+  if(sid){
     lines.push(cmt('Chapter = type the NUMBER (or the exact name) from this list:'));
     var parts=chapList(sid).map(function(cn,i){return (i+1)+' = '+cn;});
     for(var i=0;i<parts.length;i+=3)lines.push(cmt('     '+parts.slice(i,i+3).join('     ·     ')));
@@ -2016,7 +2016,6 @@ function csvTemplate(kind){
   if(kind==='lectures')lines.push(cmt('Type = main  or  revision      Length = minutes (optional)      Lecture no. = optional'));
   if(kind==='tests')lines.push(cmt('Type = full (whole subject) / chapter (one) / multi (2+ chapters separated by ;)      Due date = YYYY-MM-DD (optional)      mins & marks optional'));
   if(kind==='flashpoints')lines.push(cmt('Type = formula / trap / concept (optional)      Star = yes to flag it (optional)'));
-  if(kind==='chapters')lines.push(cmt('List the chapter names you want to add (existing ones are skipped — nothing is deleted).'));
   lines.push(sp.fields.map(function(f){return f.label;}).map(csvField).join(','));
   lines.push(csvSampleRow(kind,code).map(csvField).join(','));
   var fn=sp.unit+'s'+(sid?'-'+SYL[sid].short.toLowerCase():'')+'.csv';
@@ -2040,7 +2039,7 @@ function csvDoImport(){
   if(!_csvParsed.ok){toast('Nothing valid to import','err');return false;}
   var n=_csvParsed.apply();save(true);
   toast('Imported '+n+' '+_csvKind,'ok');
-  ({lectures:renderLectures,chapters:renderSettings,tests:renderTests,flashpoints:renderFlashpoints}[_csvKind]||function(){})();
+  ({lectures:renderLectures,tests:renderTests,flashpoints:renderFlashpoints}[_csvKind]||function(){})();
   return true;
 }
 /* ── parsing + matching helpers ── */
@@ -2087,22 +2086,12 @@ function csvPreview(kind,rows){
   var map=csvHeaderMap(sp.fields,rows[0]),data=map?rows.slice(1):rows;
   var errors=[],items=[],skip=0;
   function valOf(row,c){var ix=map?map[c]:cols.indexOf(c);return (ix>=0&&ix<row.length)?(''+row[ix]).trim():'';}
-  var seenChap={}; // for chapters dedupe within batch
   data.forEach(function(row,ri){
     if(row.every(function(c){return (''+c).trim()==='';}))return;
     if(row.join(' ').indexOf('EXAMPLE — ')>=0)return;
     var ln=ri+(map?2:1);
     function v(c){return valOf(row,c);}
-    if(kind==='chapters'){
-      var sid=csvSubject(v('subject'));
-      if(sid===null){errors.push('Row '+ln+': unknown subject "'+v('subject')+'"');skip++;return;}
-      if(!sid){errors.push('Row '+ln+': subject is required');skip++;return;}
-      var cn=v('chapter');if(!cn){errors.push('Row '+ln+': blank chapter');skip++;return;}
-      var existing=chapList(sid).map(function(x){return x.toLowerCase();});
-      var k=sid+'|'+cn.toLowerCase();
-      if(existing.indexOf(cn.toLowerCase())>=0||seenChap[k]){skip++;return;}
-      seenChap[k]=1;items.push({sid:sid,cn:cn});
-    }else if(kind==='lectures'){
+    if(kind==='lectures'){
       var s2=csvSubject(v('subject'));
       if(!s2){errors.push('Row '+ln+': '+(v('subject')?'unknown':'missing')+' subject "'+v('subject')+'"');skip++;return;}
       var cr=csvChapter(s2,v('chapter'));
@@ -2143,9 +2132,7 @@ function csvPreview(kind,rows){
 }
 function csvApply(kind,items){
   var n=0;
-  if(kind==='chapters'){
-    items.forEach(function(it){if(!APP.chapters[it.sid])APP.chapters[it.sid]=chapList(it.sid).slice();APP.chapters[it.sid].push(it.cn);n++;});
-  }else if(kind==='lectures'){
+  if(kind==='lectures'){
     items.forEach(function(it){var num=it.kind==='main'?(it.number||nextLecNum(it.sid,it.ci)):null;APP.lectures.push({id:uid(),subjectId:it.sid,chapterIdx:it.ci,label:it.label,lectureNumber:num,plannedMin:it.plannedMin,kind:it.kind,status:'pending',contentDoneMin:0,createdAt:Date.now(),updatedAt:Date.now()});n++;});
   }else if(kind==='tests'){
     items.forEach(function(it){APP.tests.push({id:uid(),type:it.type,source:it.source,name:it.name,subjectId:it.subjectId,chapterIdx:it.chapterIdx,chapterIdxs:it.chapterIdxs,dueDate:it.dueDate,readingMin:it.readingMin,testMin:it.testMin,maxMarks:it.maxMarks,attempts:[],createdAt:Date.now(),updatedAt:Date.now()});n++;});
