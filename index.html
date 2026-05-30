@@ -533,6 +533,16 @@ body.theme-light .t-display{color:var(--green)}
 .fp-acts .on-pin .ico{fill:color-mix(in srgb,var(--accent) 30%,transparent)}
 .fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
 .fp-ty{max-width:128px;padding:6px 8px}
+/* ════ HOMEWORK TOGGLE ════ */
+.hw-toggle{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;cursor:pointer;user-select:none;transition:border-color .15s,background .15s;margin-bottom:8px}
+.hw-toggle:hover{border-color:var(--dim);background:var(--hover)}
+.hw-toggle.on{border-color:color-mix(in srgb,var(--green) 40%,transparent);background:color-mix(in srgb,var(--green) 6%,transparent)}
+.hw-box{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s}
+.hw-toggle.on .hw-box{background:var(--green);border-color:var(--green)}
+.hw-box::after{content:'';width:5px;height:9px;border:solid transparent;border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-1px);transition:border-color .15s}
+.hw-toggle.on .hw-box::after{border-color:#fff}
+.hw-lbl{font-size:13px;font-weight:500;color:var(--dim);transition:color .15s}
+.hw-toggle.on .hw-lbl{color:var(--ink)}
 .bulk-rows{margin-top:2px}
 .bulk-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .bulk-row .grow{flex:1;min-width:130px}
@@ -983,7 +993,7 @@ function showEndForm(status){
   var rows='';
   if(watch){
     rows+='<div class="fld"><label>Minutes of lecture actually completed</label><div class="row" style="gap:8px"><input type="number" id="ef-c" min="0" value="'+sm+'" style="flex:1"><span class="xs muted mono">'+(l&&l.plannedMin?'of '+l.plannedMin+'m':'')+'</span></div><div class="hint">You spent '+sm+'m of study time. If pauses / note-taking ate some, enter the actual lecture content covered (e.g. 40 of 60).</div></div>';
-    if(s.activityType==='lecture')rows+='<div class="fld"><label class="row" style="gap:6px;text-transform:none"><input type="checkbox" id="ef-hw" style="width:auto"> Homework was given</label></div><div class="fld dn" id="ef-hww"><label>What homework?</label><textarea id="ef-hwt" placeholder="e.g. Practice Q12.4 to Q12.10"></textarea></div>';
+    if(s.activityType==='lecture')rows+='<div class="hw-toggle" onclick="var c=$(\'ef-hw\');c.checked=!c.checked;$(\'ef-hww\').classList.toggle(\'dn\',!c.checked);this.classList.toggle(\'on\',c.checked)"><input type="checkbox" id="ef-hw" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none"><span class="hw-box"></span><span class="hw-lbl">Homework was given</span></div><div class="fld dn" id="ef-hww" style="margin-top:8px"><label>What homework?</label><textarea id="ef-hwt" placeholder="e.g. Practice Q12.4 to Q12.10"></textarea></div>';
   }
   if(s.activityType==='questions')rows+='<div class="fld"><label>Roughly how many questions? <span class="muted" style="font-weight:400">(optional)</span></label><input type="number" id="ef-qn" min="0" placeholder="e.g. 15"></div>';
   var locTxt=(s.activityType==='questions'&&s.qMixed)?'mixed chapters':chapName(s.subjectId,s.chapterIdx);
@@ -993,7 +1003,7 @@ function showEndForm(status){
       '<div class="fld"><label>What did you cover / where did you stop?</label><textarea id="ef-n" placeholder="e.g. reached till operating lease classification">'+esc(s._resumeNote||'')+'</textarea><div class="hint">Shows when you resume, so you know where to continue.</div></div>',
     actions:[{label:'Discard session',kind:'ghost',onClick:function(){confirmDlg('Discard the '+fmtMin(sm)+' entirely? Not logged.',function(){APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);renderSession();},{danger:true,yes:'Discard'});return true;}},
       {label:status==='done'?'Mark complete':'Save in-progress',kind:'primary',onClick:function(){finalizeSession(status);return false;}}],
-    onOpen:function(){if($('ef-hw'))$('ef-hw').onchange=function(){$('ef-hww').classList.toggle('dn',!$('ef-hw').checked);};}});
+    onOpen:function(){}})
 }
 function finalizeSession(status){
   var s=APP.active;if(!s)return;var sm=Math.max(1,Math.round(studySec(s)/60)),cm=sm;
