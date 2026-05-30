@@ -413,6 +413,11 @@ body.theme-light .t-display{color:var(--green)}
 .fp-acts .on-pin .ico{fill:color-mix(in srgb,var(--accent) 30%,transparent)}
 .fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
 .fp-ty{max-width:128px;padding:6px 8px}
+.bulk-rows{margin-top:2px}
+.bulk-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.bulk-row .grow{flex:1;min-width:130px}
+.bulk-row .narrow{width:84px;flex:0 0 auto}
+.bulk-row .narrow2{width:106px;flex:0 0 auto}
 /* ════ DASHBOARD ════ */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
 .dash-grid>div{min-width:0}
@@ -1434,7 +1439,7 @@ function renderLectures(){
   else if(remain<=0){if(remLec>0){dtBig='<span class="bn-v">'+remLec+'</span><span class="bn-u">lec</span>';dtSub='set lecture durations for a target';}else{dtBig='<span class="bn-v" style="font-size:26px">done</span>';dtSub='all lectures finished';}}
   else if(dleft<=0){dtBig='<span class="bn-v" style="font-size:22px">past due</span>';dtSub=Math.abs(dleft)+'d overdue · tap to adjust';}
   else{var watchRem=_curPace!=null?remain*_curPace:remain;var perDay=Math.max(1,Math.ceil(watchRem/dleft));dtBig=bnumHTML(fmtMinParts(perDay))+'<span class="bn-u">/day</span>';dtSub='to finish by '+fmtDate(due).replace(/ \d{4}/,'')+' · '+dleft+'d left';}
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add them as you receive them.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="csvImport(\'lectures\')">'+ICON.upload+' Import CSV</button><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'lecture\'})">'+ICON.bolt+' Quick-log lecture</button></div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add them as you receive them.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="bulkLectures()">'+ICON.plus+' Add lectures</button><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'lecture\'})">'+ICON.bolt+' Quick-log lecture</button></div></div>';
   // subject tabs
   h+='<div class="stabs">'+subs.map(function(s){var on=s===sid,col=subjColor(s);return '<button class="stab" style="'+(on?'background:'+col+';border-color:'+col+';color:#0E0E0E':'')+'" onclick="_lecSub=\''+s+'\';renderLectures()"><span class="sdot" style="background:'+(on?'#0E0E0E':col)+'"></span>'+SYL[s].short+'</button>';}).join('')+'</div>';
   // bento
@@ -1594,7 +1599,7 @@ function renderTests(){
   var scored=allAtt.filter(function(x){return attPct(x.a,x.t)!=null;});
   var avg=scored.length?Math.round(scored.reduce(function(s,x){return s+attPct(x.a,x.t);},0)/scored.length):null;
   var awaiting=testsAwaiting().length,due=testsToSit().length;
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Tests</div><div class="sub">Timed mocks &amp; chapter tests — real reading + writing countdown. Enter marks after you review.</div></div><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="csvImport(\'tests\')">'+ICON.upload+' Import CSV</button><button class="btn btn-ghost btn-sm" onclick="quickTest()">'+ICON.bolt+' Log a past test</button><button class="btn btn-p btn-sm" onclick="testForm()">'+ICON.plus+' New test</button></div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Tests</div><div class="sub">Timed mocks &amp; chapter tests — real reading + writing countdown. Enter marks after you review.</div></div><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="bulkTests()">'+ICON.plus+' Bulk add</button><button class="btn btn-ghost btn-sm" onclick="quickTest()">'+ICON.bolt+' Log a past test</button><button class="btn btn-p btn-sm" onclick="testForm()">'+ICON.plus+' New test</button></div></div>';
   h+='<div class="bento b4 mb16">'+
     '<div class="bc bc-neutral"><span class="blbl">Tests</span><div class="bnum"><span class="bn-v">'+tests.length+'</span></div><span class="bsub">'+full.length+' full · '+multi.length+' multi · '+single.length+' single</span></div>'+
     '<div class="bc bc-purple"><span class="blbl">Avg score</span><div class="bnum"><span class="bn-v">'+(avg!=null?avg:'—')+'</span>'+(avg!=null?'<span class="bn-u">%</span>':'')+'</div><span class="bsub">'+scored.length+' scored attempt'+(scored.length===1?'':'s')+'</span></div>'+
@@ -1840,7 +1845,7 @@ function renderFlashpoints(){
   var all=APP.flashpoints||[];
   var list=all.filter(fpMatch);
   var searchActive=_fpSearch.trim().length>0;
-  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas &amp; traps — grouped by chapter. Star what matters; pin to keep on top.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="fpExport()"'+(all.length?'':' disabled')+'>'+ICON.download+' Export</button><button class="btn btn-ghost btn-sm" onclick="csvImport(\'flashpoints\')">'+ICON.upload+' Import</button><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add</button></div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Flashpoints</div><div class="sub">Key points, formulas &amp; traps — grouped by chapter. Star what matters; pin to keep on top.</div></div><div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm" onclick="fpExport()"'+(all.length?'':' disabled')+'>'+ICON.download+' Export</button><button class="btn btn-p btn-sm" onclick="addFlashpoint()">'+ICON.plus+' Add</button></div></div>';
   h+='<div class="row wrap mb12" style="gap:10px"><input id="fp-search" placeholder="Search all points…" value="'+esc(_fpSearch)+'" oninput="fpSearchInput(this.value)" style="max-width:240px"><div class="stabs">'+fpTabs(subs)+'<span class="stab'+(_fpFlagged?' on':'')+'" onclick="_fpFlagged=!_fpFlagged;renderFlashpoints()" title="Show starred only">starred</span></div></div>';
   h+='<div class="xs mono muted mb10">'+list.length+' point'+(list.length===1?'':'s')+(_fpFilter!=='all'?' · '+subjShort(_fpFilter):'')+(_fpFlagged?' · starred':'')+(searchActive?' · matching "'+esc(_fpSearch.trim())+'"':'')+'</div>';
   if(!list.length){
@@ -1903,7 +1908,8 @@ function addFlashpoint(pre){
   var sid=pre.subjectId!=null?pre.subjectId:(_fpFilter!=='all'?_fpFilter:'');
   var body='<div class="fld2"><div class="fld"><label>Subject</label><select id="fp-sub"><option value="">General (no subject)</option>'+subs.map(function(s){return '<option value="'+s+'" '+(sid===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter <span class="muted" style="font-weight:400">(optional)</span></label><select id="fp-ch"></select></div></div>'+
     '<div class="slbl mb8" style="margin-top:4px">Points</div><div id="fp-rows">'+fpRowHTML()+'</div>'+
-    '<button class="btn btn-ghost btn-sm" type="button" onclick="fpAddRow()" style="width:100%;margin-top:2px">'+ICON.plus+' Add another row</button>';
+    '<button class="btn btn-ghost btn-sm" type="button" onclick="fpAddRow()" style="width:100%;margin-top:2px">'+ICON.plus+' Add another row</button>'+
+    '<div class="hint" style="margin-top:11px">Have a list ready? <a href="#" onclick="csvImport(\'flashpoints\');return false;">import a CSV instead</a>.</div>';
   modal({size:'md',title:'Add flashpoints',body:body,
     actions:[{label:'Cancel',kind:'ghost'},{label:'Save all',kind:'primary',onClick:function(){if(saveFlashpoints())return false;return true;}}],
     onOpen:function(){
@@ -2140,6 +2146,78 @@ function csvApply(kind,items){
     items.forEach(function(it){APP.flashpoints.push({id:uid(),subjectId:it.subjectId,chapterIdx:it.chapterIdx,title:it.title,point:it.point,type:it.type,flag:it.flag,pinned:false,date:today(),source:'csv'});n++;});
   }
   return n;
+}
+</script>
+
+<script>
+/* ═══════════ BULK ADD (in-app tables with dropdowns) ═══════════ */
+function bulkLectures(){
+  var subs=activeSubjects();if(!subs.length){toast('Set your group/exemptions first','err');return;}
+  var sid0=(typeof _lecSub!=='undefined'&&_lecSub&&subs.indexOf(_lecSub)>=0)?_lecSub:subs[0];
+  var body='<div class="fld3">'+
+    '<div class="fld"><label>Subject</label><select id="bl-sub">'+subs.map(function(s){return '<option value="'+s+'"'+(s===sid0?' selected':'')+'>'+esc(SYL[s].name)+'</option>';}).join('')+'</select></div>'+
+    '<div class="fld"><label>Chapter</label><select id="bl-ch"></select></div>'+
+    '<div class="fld"><label>Type</label><select id="bl-type"><option value="main">Main lecture</option><option value="revision">Revision lecture</option></select></div>'+
+    '</div>'+
+    '<div class="slbl mb8" style="margin-top:4px">Lectures to add</div><div id="bl-rows" class="bulk-rows"></div>'+
+    '<button class="btn btn-ghost btn-sm" type="button" onclick="bulkAddRow(\'lec\')" style="width:100%">'+ICON.plus+' Add another row</button>'+
+    '<div class="hint" style="margin-top:11px">Adds to the chosen chapter. Change the chapter and add more, or <a href="#" onclick="csvImport(\'lectures\');return false;">import a CSV instead</a>.</div>';
+  modal({size:'md',title:'Add lectures',body:body,
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Add all',kind:'primary',onClick:function(){if(bulkSaveLectures())return false;return true;}}],
+    onOpen:function(){
+      function fillCh(){var s=$('bl-sub').value;$('bl-ch').innerHTML=chapList(s).map(function(c,i){return '<option value="'+i+'">'+(i+1)+'. '+esc(c)+'</option>';}).join('')+'<option value="-1">Misc / Bonus</option>';}
+      $('bl-sub').onchange=fillCh;fillCh();
+      $('bl-rows').innerHTML='';bulkAddRow('lec');bulkAddRow('lec');bulkAddRow('lec');
+    }});
+}
+function bulkTests(){
+  var subs=activeSubjects();if(!subs.length){toast('Set your group/exemptions first','err');return;}
+  var body='<div class="fld"><label>Subject</label><select id="bt-sub">'+subs.map(function(s){return '<option value="'+s+'">'+esc(SYL[s].name)+'</option>';}).join('')+'</select></div>'+
+    '<div class="slbl mb8" style="margin-top:4px">Tests to add</div><div id="bt-rows" class="bulk-rows"></div>'+
+    '<button class="btn btn-ghost btn-sm" type="button" onclick="bulkAddRow(\'test\')" style="width:100%">'+ICON.plus+' Add another row</button>'+
+    '<div class="hint" style="margin-top:11px">Reading/writing minutes use the usual defaults (editable later). For a multi-chapter test use “New test”, or <a href="#" onclick="csvImport(\'tests\');return false;">import a CSV</a>.</div>';
+  modal({size:'md',title:'Add tests',body:body,
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Add all',kind:'primary',onClick:function(){if(bulkSaveTests())return false;return true;}}],
+    onOpen:function(){
+      $('bt-sub').onchange=function(){document.querySelectorAll('#bt-rows .bt-ch').forEach(function(sel){bulkFillTestCh(sel);});};
+      $('bt-rows').innerHTML='';bulkAddRow('test');bulkAddRow('test');
+    }});
+}
+function bulkFillTestCh(sel){var s=$('bt-sub')?$('bt-sub').value:null;if(!s)return;var cur=sel.value;sel.innerHTML=chapList(s).map(function(c,i){return '<option value="'+i+'">'+(i+1)+'. '+esc(c)+'</option>';}).join('');if(cur!=='')sel.value=cur;}
+function bulkAddRow(kind){
+  var r=$(kind==='lec'?'bl-rows':'bt-rows');if(!r)return;
+  if(kind==='lec'){
+    r.insertAdjacentHTML('beforeend','<div class="bulk-row"><input class="bl-l grow" placeholder="Lecture label / topic"><input class="bl-m narrow" type="number" min="1" placeholder="mins"><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.bulk-row\').remove()" title="Remove row">'+ICON.trash+'</button></div>');
+  }else{
+    r.insertAdjacentHTML('beforeend','<div class="bulk-row"><input class="bt-n grow" placeholder="Test name"><select class="bt-ty narrow2"><option value="full">Full</option><option value="chapter">Chapter</option></select><select class="bt-ch grow"></select><input class="bt-mx narrow" type="number" min="1" placeholder="marks"><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'.bulk-row\').remove()" title="Remove row">'+ICON.trash+'</button></div>');
+    var row=r.lastElementChild,ty=row.querySelector('.bt-ty'),ch=row.querySelector('.bt-ch');
+    bulkFillTestCh(ch);
+    function upd(){ch.disabled=(ty.value==='full');ch.style.opacity=ty.value==='full'?'.45':'';}
+    ty.onchange=upd;upd();
+  }
+}
+function bulkSaveLectures(){
+  var sid=$('bl-sub').value,ciV=$('bl-ch').value,ci=ciV===''?0:+ciV,kind=$('bl-type').value,n=0;
+  document.querySelectorAll('#bl-rows .bulk-row').forEach(function(row){
+    var lbl=row.querySelector('.bl-l').value.trim();if(!lbl)return;
+    var m=parseInt(row.querySelector('.bl-m').value,10);
+    APP.lectures.push({id:uid(),subjectId:sid,chapterIdx:ci,label:lbl,lectureNumber:kind==='main'?nextLecNum(sid,ci):null,plannedMin:(!isNaN(m)&&m>0)?m:null,kind:kind,status:'pending',contentDoneMin:0,createdAt:Date.now(),updatedAt:Date.now()});n++;
+  });
+  if(!n){toast('Type at least one lecture label','err');return false;}
+  save(true);toast('Added '+n+' lecture'+(n===1?'':'s'),'ok');showPage(currentPage);return true;
+}
+function bulkSaveTests(){
+  var sid=$('bt-sub').value,n=0,bad=false;
+  document.querySelectorAll('#bt-rows .bulk-row').forEach(function(row){
+    var nm=row.querySelector('.bt-n').value.trim();if(!nm)return;
+    var ty=row.querySelector('.bt-ty').value,ci=null;
+    if(ty==='chapter'){var cv=row.querySelector('.bt-ch').value;if(cv===''){bad=true;return;}ci=+cv;}
+    var def=tfDefaults(ty),mx=parseInt(row.querySelector('.bt-mx').value,10);if(isNaN(mx)||mx<1)mx=def.mx;
+    APP.tests.push({id:uid(),type:ty,source:'',name:nm,subjectId:sid,chapterIdx:ci,chapterIdxs:null,dueDate:null,readingMin:def.rd,testMin:def.tm,maxMarks:mx,attempts:[],createdAt:Date.now(),updatedAt:Date.now()});n++;
+  });
+  if(bad){toast('Select a chapter for each Chapter-type test','err');return false;}
+  if(!n){toast('Type at least one test name','err');return false;}
+  save(true);toast('Added '+n+' test'+(n===1?'':'s'),'ok');showPage(currentPage);return true;
 }
 </script>
 
