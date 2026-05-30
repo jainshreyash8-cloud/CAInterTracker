@@ -583,7 +583,7 @@ function freshState(){
     lectures:[],          // {id,subjectId,chapterIdx(-1=misc),label,lectureNumber,plannedMin,kind,status,contentDoneMin,lastNote,...}
     tests:[],             // {id,type:'full'|'multi'|'chapter',source,name,subjectId,chapterIdx,chapterIdxs,dueDate,readingMin,testMin,maxMarks,attempts:[]}
     flashpoints:[],       // {id,subjectId,chapterIdx,title,point,date,source}
-    finalRev:{rounds:[{id:'r1',len:7},{id:'r2',len:3},{id:'r3',len:1}],buffer:2,order:null}, // consolidated revision plan
+    finalRev:{passes:null,buffer:2}, // consolidated revision plan (per-paper passes built on first open)
     frTrack:{},           // key roundId_sid_idx -> {done:date|null, min, skip, note}
     entries:[],           // TimeEntry spine
     active:null,          // running session
@@ -860,7 +860,7 @@ function finalizeSession(status){
   if(s.activityType==='first-reading'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0)markFirstRead(s.subjectId,s.chapterIdx,s.date);
   if(s.activityType==='revision'&&status==='done'&&s.chapterIdx!=null&&s.chapterIdx>=0){var _r=markNextRevDone(s.subjectId,s.chapterIdx);if(_r)e.payload.revIndex=_r;}
   APP.entries.push(e);
-  if(s._fr){var _fk=frKey(s._fr.roundId,s._fr.sid,s._fr.idx);if(!APP.frTrack[_fk])APP.frTrack[_fk]={};APP.frTrack[_fk].min=(APP.frTrack[_fk].min||0)+(e.elapsedMin||0);if(status==='done')APP.frTrack[_fk].done=s.date;}
+  if(s._fr){var _fk=frKey(s._fr.pass,s._fr.sid,s._fr.idx);if(!APP.frTrack[_fk])APP.frTrack[_fk]={};APP.frTrack[_fk].min=(APP.frTrack[_fk].min||0)+(e.elapsedMin||0);if(status==='done')APP.frTrack[_fk].done=s.date;}
   if(s.lectureId){var l=APP.lectures.find(function(x){return x.id===s.lectureId;});if(l){l.contentDoneMin=(l.contentDoneMin||0)+cm;l.lastNote=note;l.updatedAt=Date.now();if(status==='done'){l.status='done';l.completedAt=Date.now();}else l.status='in-progress';if(s.activityType==='lecture'&&hw){l.homeworkGiven=true;if(hwt)l.homeworkText=hwt;}}}
   APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
 }
@@ -1996,91 +1996,129 @@ function renderDash(){
 .fr-acts{display:flex;gap:3px;flex:0 0 auto}
 .fr-acts .btn-icon{font-family:'JetBrains Mono',monospace;font-weight:700}
 .fr-pct{font-family:'Sora',sans-serif;font-weight:800;font-size:15px;flex:0 0 auto}
+.fr-subhead{margin:12px 0 4px}
+.fr-ov{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;cursor:pointer;background:var(--faint)}
+.fr-ov.sel{border-color:var(--accent)}
+.fr-ov.now{box-shadow:inset 3px 0 0 var(--green)}
+.fre-pass{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px}
+.fre-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.fre-ord{display:flex;flex-direction:column;flex:0 0 auto}
+.fre-ord button{border:none;background:none;color:var(--dim);cursor:pointer;line-height:.9;padding:1px 2px;font-size:10px}
+.fre-ord button:disabled{opacity:.3;cursor:default}
 </style>
 
 <script>
 /* ═══════════ FINAL REVISION (consolidated) ═══════════ */
-var _frRound=0,_frPending=null;
-function frKey(rid,sid,idx){return rid+'_'+sid+'_'+idx;}
-function frRounds(){return (APP.finalRev&&APP.finalRev.rounds)||[];}
-function frSubjOrder(){var subs=activeSubjects();var ord=((APP.finalRev&&APP.finalRev.order)||[]).filter(function(s){return subs.indexOf(s)>=0;});subs.forEach(function(s){if(ord.indexOf(s)<0)ord.push(s);});return ord;}
+var _frViewIdx=null,_frPending=null,_frDraft=null;
+function frKey(pid,sid,idx){return pid+'_'+sid+'_'+idx;}
+function frEnsure(){
+  var fr=APP.finalRev||(APP.finalRev={});
+  if(!fr.passes){var defs=[7,3,1],aps=activePapers().map(function(p){return p.id;});fr.passes=defs.map(function(d,i){var days={};aps.forEach(function(pid){days[pid]=d;});return {id:'fp'+(i+1),days:days,order:aps.slice()};});delete fr.rounds;delete fr.order;}
+  if(fr.buffer==null)fr.buffer=2;
+  return fr;
+}
+function paperById(pid){for(var i=0;i<PAPERS.length;i++)if(PAPERS[i].id===pid)return PAPERS[i];return null;}
+function frPassOrder(ps){var aps=activePapers().map(function(p){return p.id;});var ord=(ps.order||[]).filter(function(p){return aps.indexOf(p)>=0;});aps.forEach(function(p){if(ord.indexOf(p)<0)ord.push(p);});return ord;}
+function frDays(ps,pid){var d=ps.days?ps.days[pid]:null;return d==null?1:d;}
 function frPlan(){
   var exam=APP.cfg.examDate;if(!isDate(exam))return null;
-  var subs=frSubjOrder(),rounds=frRounds(),buffer=(APP.finalRev&&APP.finalRev.buffer)||0;
-  if(!subs.length||!rounds.length)return null;
-  var total=0;rounds.forEach(function(r){total+=Math.max(1,r.len||1)*subs.length;});
+  var fr=frEnsure(),passes=fr.passes||[],buffer=fr.buffer||0,aps=activePapers();
+  if(!aps.length||!passes.length)return null;
+  var total=0;passes.forEach(function(ps){frPassOrder(ps).forEach(function(pid){var d=frDays(ps,pid);if(d>0)total+=d;});});
+  if(total<=0)return null;
   var lastDay=addD(exam,-(buffer+1)),start=addD(lastDay,-(total-1)),blocks=[],cursor=start;
-  rounds.forEach(function(r,ri){subs.forEach(function(sid){var len=Math.max(1,r.len||1);blocks.push({roundId:r.id,roundIdx:ri,sid:sid,start:cursor,end:addD(cursor,len-1),len:len});cursor=addD(cursor,len);});});
+  passes.forEach(function(ps,pi){frPassOrder(ps).forEach(function(pid){var d=frDays(ps,pid);if(d<=0)return;blocks.push({passId:ps.id,passIdx:pi,paperId:pid,start:cursor,end:addD(cursor,d-1),days:d});cursor=addD(cursor,d);});});
   return {start:start,lastDay:lastDay,exam:exam,buffer:buffer,blocks:blocks,total:total,startsInPast:diffD(today(),start)<0,overDays:Math.max(0,diffD(start,today()))};
 }
-function frBlock(plan,rid,sid){if(!plan)return null;for(var i=0;i<plan.blocks.length;i++){if(plan.blocks[i].roundId===rid&&plan.blocks[i].sid===sid)return plan.blocks[i];}return null;}
-function frChapState(rid,sid,idx){var t=APP.frTrack[frKey(rid,sid,idx)]||{};return t.skip?'skip':t.done?'done':'pending';}
-function frRoundStats(rid,sid){var chs=chapList(sid),done=0,skip=0,min=0;chs.forEach(function(cn,i){var st=frChapState(rid,sid,i);if(st==='done')done++;else if(st==='skip')skip++;var t=APP.frTrack[frKey(rid,sid,i)];if(t&&t.min)min+=t.min;});return {total:chs.length,done:done,skip:skip,min:min};}
-function frPrev(roundIdx,sid,idx){if(roundIdx<=0)return null;var pr=frRounds()[roundIdx-1],t=APP.frTrack[frKey(pr.id,sid,idx)];if(!t||(!t.note&&!t.min))return null;return {note:t.note||'',min:t.min||0};}
-function frFirstPending(rid,sid){var chs=chapList(sid);for(var i=0;i<chs.length;i++){if(frChapState(rid,sid,i)==='pending')return i;}return null;}
+function paperChaps(pid){var p=paperById(pid),out=[];if(!p)return out;p.subjects.forEach(function(sid){if(!SYL[sid])return;chapList(sid).forEach(function(cn,idx){out.push({sid:sid,idx:idx,name:cn});});});return out;}
+function frChapState(pid,sid,idx){var t=APP.frTrack[frKey(pid,sid,idx)]||{};return t.skip?'skip':t.done?'done':'pending';}
+function frBlockStats(b){var chs=paperChaps(b.paperId),done=0,skip=0,min=0;chs.forEach(function(ch){var st=frChapState(b.passId,ch.sid,ch.idx);if(st==='done')done++;else if(st==='skip')skip++;var t=APP.frTrack[frKey(b.passId,ch.sid,ch.idx)];if(t&&t.min)min+=t.min;});return {total:chs.length,done:done,skip:skip,min:min};}
+function frPrevPass(passIdx,sid,idx){if(passIdx<=0)return null;var fr=frEnsure();var pp=fr.passes[passIdx-1];if(!pp)return null;var t=APP.frTrack[frKey(pp.id,sid,idx)];if(!t||(!t.note&&!t.min))return null;return {note:t.note||'',min:t.min||0};}
+function frFirstPending(b){var chs=paperChaps(b.paperId);for(var i=0;i<chs.length;i++){if(frChapState(b.passId,chs[i].sid,chs[i].idx)==='pending')return chs[i];}return null;}
 function renderFinalRev(){
   var subs=activeSubjects();
   if(!subs.length){$('pg-finalrev').innerHTML='<div class="pw"><div class="empty"><div class="empty-t">No active subjects</div><div>Set group/exemptions in Settings.</div></div></div>';return;}
   if(!isDate(APP.cfg.examDate)){$('pg-finalrev').innerHTML='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Final Revision</div><div class="sub">Your last-mile revision timetable, built backward from exam day.</div></div></div><div class="empty"><div class="empty-t">Set your exam date first</div><div>The whole plan is laid out backward from it.</div><button class="btn btn-p btn-sm mt12" onclick="frSetExam()">Set exam date</button></div></div>';return;}
-  var rounds=frRounds();if(_frRound>=rounds.length)_frRound=0;
   var plan=frPlan();
-  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Final Revision</div><div class="sub">Full syllabus · '+rounds.length+' round'+(rounds.length===1?'':'s')+' · counted back from '+fmtDate(APP.cfg.examDate).replace(/,? \d{4}/,'')+'.</div></div><button class="btn btn-ghost btn-sm" onclick="frEdit()">'+ICON.edit+' Edit plan</button></div>';
-  if(plan&&plan.startsInPast)h+='<div class="alert al-amber mb12">This plan needs to start <b>'+plan.overDays+' day'+(plan.overDays===1?'':'s')+'</b> before today to finish in time — shorten a round or cut buffer days.</div>';
-  var tb=null;if(plan)for(var i=0;i<plan.blocks.length;i++){if(today()>=plan.blocks[i].start&&today()<=plan.blocks[i].end){tb=plan.blocks[i];break;}}
-  if(tb){var fp=frFirstPending(tb.roundId,tb.sid);
-    h+='<div class="today-due" onclick="_frRound='+tb.roundIdx+';renderFinalRev()"><span class="fr-dot done"></span><div class="f1 sm"><b>Today → Round '+(tb.roundIdx+1)+' · '+esc(SYL[tb.sid].name)+'</b></div>'+(fp!=null?'<button class="btn btn-suc btn-sm" onclick="event.stopPropagation();frRevise(\''+tb.roundId+'\',\''+tb.sid+'\','+fp+')">'+ICON.play+' Revise</button>':'<span class="badge bg-green">round done</span>')+'</div>';
-  }else if(plan&&diffD(today(),plan.start)>0){h+='<div class="today-due"><div class="f1 sm">Plan starts '+fmtDate(plan.start).replace(/,? \d{4}/,'')+' · '+diffD(today(),plan.start)+'d away</div></div>';}
-  h+='<div class="stabs mb14">'+rounds.map(function(r,i){return '<span class="stab'+(i===_frRound?' on':'')+'" onclick="_frRound='+i+';renderFinalRev()">Round '+(i+1)+' · '+r.len+'d</span>';}).join('')+'</div>';
-  var ord=frSubjOrder(),round=rounds[_frRound];
-  h+=round?ord.map(function(sid){return frSubjBlock(round,_frRound,sid,plan);}).join(''):'<div class="empty"><div class="empty-t">No rounds</div><div>Add a round in Edit plan.</div></div>';
+  var h='<div class="pw"><div class="rowb wrap mb16"><div><div class="h1">Final Revision</div><div class="sub">Paper-by-paper plan, counted back from '+fmtDate(APP.cfg.examDate).replace(/,? \d{4}/,'')+'.</div></div><button class="btn btn-ghost btn-sm" onclick="frEdit()">'+ICON.edit+' Edit plan</button></div>';
+  if(!plan||!plan.blocks.length){h+='<div class="empty"><div class="empty-t">No plan yet</div><div>Add a pass and set days per paper.</div><button class="btn btn-p btn-sm mt12" onclick="frEdit()">'+ICON.edit+' Edit plan</button></div></div>';$('pg-finalrev').innerHTML=h;return;}
+  if(plan.startsInPast)h+='<div class="alert al-amber mb12">This plan needs <b>'+plan.overDays+' more day'+(plan.overDays===1?'':'s')+'</b> than you have before the exam — cut a pass, reduce days, or trim buffer.</div>';
+  var todayIdx=-1;for(var i=0;i<plan.blocks.length;i++){if(today()>=plan.blocks[i].start&&today()<=plan.blocks[i].end){todayIdx=i;break;}}
+  if(_frViewIdx==null||_frViewIdx>=plan.blocks.length)_frViewIdx=todayIdx>=0?todayIdx:0;
+  h+=frFocusCard(plan.blocks[_frViewIdx],todayIdx);
+  h+='<div class="slbl" style="margin:18px 0 9px">Full plan</div>'+frOverview(plan,todayIdx);
   h+='</div>';
   $('pg-finalrev').innerHTML=h;
 }
-function frSubjBlock(round,roundIdx,sid,plan){
-  var chs=chapList(sid),st=frRoundStats(round.id,sid),c=subjColor(sid),block=frBlock(plan,round.id,sid);
+function frFocusCard(b,todayIdx){
+  var p=paperById(b.paperId),st=frBlockStats(b),col=subjColor(p.subjects[0]);
   var pct=st.total?Math.round((st.done+st.skip)/st.total*100):0;
-  var win=block?fmtDate(block.start).replace(/,? \d{4}/,'')+'–'+fmtDate(block.end).replace(/,? \d{4}/,''):'';
-  var open=(st.done+st.skip)<st.total;
-  var rows=chs.map(function(cn,idx){
-    var cst=frChapState(round.id,sid,idx),t=APP.frTrack[frKey(round.id,sid,idx)]||{},prev=frPrev(roundIdx,sid,idx);
-    return '<div class="fr-chap"><span class="fr-dot '+cst+'"></span><div class="f1" style="min-width:0">'+
-      '<div class="sm" style="'+(cst==='skip'?'opacity:.6;text-decoration:line-through':'')+'">'+esc(cn)+'</div>'+
-      ((t.min||t.note||prev)?'<div class="fr-meta">'+(t.min?'<span class="mono">'+fmtMin(t.min)+'</span>':'')+(t.note?'<span>'+(t.min?' · ':'')+esc(t.note)+'</span>':'')+(prev?'<span class="fr-prev">'+((t.min||t.note)?' · ':'')+'last round '+(prev.min?fmtMin(prev.min):'\u2014')+(prev.note?': "'+esc(prev.note)+'"':'')+'</span>':'')+'</div>':'')+
-      '</div><div class="fr-acts">'+
-        (cst!=='done'?'<button class="btn btn-icon btn-suc" title="Revise (timer)" onclick="frRevise(\''+round.id+'\',\''+sid+'\','+idx+')">'+ICON.play+'</button>':'')+
-        '<button class="btn btn-icon btn-ghost" title="'+(cst==='done'?'Mark not done':'Mark done')+'" onclick="frToggleDone(\''+round.id+'\',\''+sid+'\','+idx+')">'+(cst==='done'?'\u2713':'\u25cb')+'</button>'+
-        '<button class="btn btn-icon btn-ghost" title="Note / focus" onclick="frNote(\''+round.id+'\',\''+sid+'\','+idx+')">'+ICON.edit+'</button>'+
-        '<button class="btn btn-icon btn-ghost" title="'+(cst==='skip'?'Un-skip':'Skip this round')+'" onclick="frToggleSkip(\''+round.id+'\',\''+sid+'\','+idx+')">'+(cst==='skip'?'+':'\u2013')+'</button>'+
-      '</div></div>';
-  }).join('');
-  return '<details class="tst-card" '+(open?'open':'')+'><summary class="tst-sum"><span class="tst-cv">'+ICON.caret+'</span><div class="tst-ic" style="background:'+c+'22;color:'+c+'">'+ICON.revision+'</div><div class="tst-bd"><div class="tst-nm">'+esc(SYL[sid].name)+'</div><div class="tst-mt">'+(win?win+' · ':'')+st.done+'/'+st.total+' done'+(st.skip?' · '+st.skip+' skip':'')+(st.min?' · '+fmtMin(st.min):'')+'</div></div><span class="fr-pct" style="color:'+c+'">'+pct+'%</span></summary><div class="tst-body" style="padding-top:0">'+rows+'</div></details>';
+  var win=fmtDate(b.start).replace(/,? \d{4}/,'')+'–'+fmtDate(b.end).replace(/,? \d{4}/,'');
+  var isNow=(today()>=b.start&&today()<=b.end),when=isNow?'<span class="badge bg-green">now</span>':(b.end<today()?'<span class="badge bg-gray">past</span>':'<span class="badge bg-gray">upcoming</span>');
+  var fp=frFirstPending(b);
+  var h='<div class="card"><div class="rowb wrap mb6" style="align-items:flex-start"><div><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><span class="badge bg-gray">Pass '+(b.passIdx+1)+'</span><span style="font-size:16px;font-weight:800;color:var(--ink)">'+esc(p.name)+'</span>'+when+'</div><div class="xs muted mono mt4">'+win+' · '+b.days+'d · '+st.done+'/'+st.total+' done'+(st.min?' · '+fmtMin(st.min):'')+'</div></div><span class="fr-pct" style="color:'+col+'">'+pct+'%</span></div>';
+  h+='<div class="dbar-t" style="margin-bottom:12px"><div class="dbar-f" style="width:'+pct+'%;background:'+col+'"></div></div>';
+  if(fp)h+='<button class="btn btn-suc btn-sm" style="margin-bottom:12px" onclick="frRevise(\''+b.passId+'\',\''+fp.sid+'\','+fp.idx+')">'+ICON.play+' Revise next · '+esc(fp.name)+'</button>';
+  p.subjects.forEach(function(sid){if(!SYL[sid])return;if(p.subjects.length>1)h+='<div class="fr-subhead">'+subjChip(sid)+'</div>';chapList(sid).forEach(function(cn,idx){h+=frChapRow(b,sid,idx,cn);});});
+  h+='</div>';
+  return h;
 }
-function frRevise(rid,sid,idx){_frPending={roundId:rid,sid:sid,idx:idx};launchRevision(sid,idx);}
-function frToggleDone(rid,sid,idx){var k=frKey(rid,sid,idx);if(!APP.frTrack[k])APP.frTrack[k]={};var t=APP.frTrack[k];t.done=t.done?null:today();if(t.done)t.skip=false;save(true);renderFinalRev();}
-function frToggleSkip(rid,sid,idx){var k=frKey(rid,sid,idx);if(!APP.frTrack[k])APP.frTrack[k]={};var t=APP.frTrack[k];t.skip=!t.skip;if(t.skip)t.done=null;save(true);renderFinalRev();}
-function frNote(rid,sid,idx){var k=frKey(rid,sid,idx),t=APP.frTrack[k]||{};
-  modal({size:'md',title:'Note · '+chapName(sid,idx),body:'<div class="fld"><label>Focus / takeaway for this chapter</label><textarea id="fr-note" placeholder="e.g. weak on lease classification — give it more time next round">'+esc(t.note||'')+'</textarea><div class="hint">Shows in the next round so you know where to focus and can go faster.</div></div>',
+function frChapRow(b,sid,idx,cn){
+  var cst=frChapState(b.passId,sid,idx),t=APP.frTrack[frKey(b.passId,sid,idx)]||{},prev=frPrevPass(b.passIdx,sid,idx);
+  return '<div class="fr-chap"><span class="fr-dot '+cst+'"></span><div class="f1" style="min-width:0">'+
+    '<div class="sm" style="'+(cst==='skip'?'opacity:.6;text-decoration:line-through':'')+'">'+esc(cn)+'</div>'+
+    ((t.min||t.note||prev)?'<div class="fr-meta">'+(t.min?'<span class="mono">'+fmtMin(t.min)+'</span>':'')+(t.note?'<span>'+(t.min?' · ':'')+esc(t.note)+'</span>':'')+(prev?'<span class="fr-prev">'+((t.min||t.note)?' · ':'')+'last pass '+(prev.min?fmtMin(prev.min):'\u2014')+(prev.note?': "'+esc(prev.note)+'"':'')+'</span>':'')+'</div>':'')+
+    '</div><div class="fr-acts">'+
+      (cst!=='done'?'<button class="btn btn-icon btn-suc" title="Revise (timer)" onclick="frRevise(\''+b.passId+'\',\''+sid+'\','+idx+')">'+ICON.play+'</button>':'')+
+      '<button class="btn btn-icon btn-ghost" title="'+(cst==='done'?'Mark not done':'Mark done')+'" onclick="frToggleDone(\''+b.passId+'\',\''+sid+'\','+idx+')">'+(cst==='done'?'\u2713':'\u25cb')+'</button>'+
+      '<button class="btn btn-icon btn-ghost" title="Note / focus" onclick="frNote(\''+b.passId+'\',\''+sid+'\','+idx+')">'+ICON.edit+'</button>'+
+      '<button class="btn btn-icon btn-ghost" title="'+(cst==='skip'?'Un-skip':'Skip')+'" onclick="frToggleSkip(\''+b.passId+'\',\''+sid+'\','+idx+')">'+(cst==='skip'?'+':'\u2013')+'</button>'+
+    '</div></div>';
+}
+function frOverview(plan,todayIdx){
+  return plan.blocks.map(function(b,i){
+    var p=paperById(b.paperId),st=frBlockStats(b),pct=st.total?Math.round((st.done+st.skip)/st.total*100):0;
+    return '<div class="fr-ov'+(i===_frViewIdx?' sel':'')+(i===todayIdx?' now':'')+'" onclick="_frViewIdx='+i+';renderFinalRev()"><span class="badge bg-gray">P'+(b.passIdx+1)+'</span><span class="f1 sm fw6" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.name)+'</span>'+(i===todayIdx?'<span class="badge bg-green">today</span>':'')+'<span class="xs mono muted">'+fmtDate(b.start).replace(/,? \d{4}/,'')+'</span><span class="xs mono" style="min-width:36px;text-align:right;color:'+(pct===100?'var(--green)':'var(--dim)')+'">'+pct+'%</span></div>';
+  }).join('');
+}
+function frRevise(pid,sid,idx){_frPending={pass:pid,sid:sid,idx:idx};launchRevision(sid,idx);}
+function frToggleDone(pid,sid,idx){var k=frKey(pid,sid,idx);if(!APP.frTrack[k])APP.frTrack[k]={};var t=APP.frTrack[k];t.done=t.done?null:today();if(t.done)t.skip=false;save(true);renderFinalRev();}
+function frToggleSkip(pid,sid,idx){var k=frKey(pid,sid,idx);if(!APP.frTrack[k])APP.frTrack[k]={};var t=APP.frTrack[k];t.skip=!t.skip;if(t.skip)t.done=null;save(true);renderFinalRev();}
+function frNote(pid,sid,idx){var k=frKey(pid,sid,idx),t=APP.frTrack[k]||{};
+  modal({size:'md',title:'Note · '+chapName(sid,idx),body:'<div class="fld"><label>Focus / takeaway</label><textarea id="fr-note" placeholder="e.g. weak on lease classification — more time next pass">'+esc(t.note||'')+'</textarea><div class="hint">Shows in the next pass so you know where to focus and can go faster.</div></div>',
     actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){if(!APP.frTrack[k])APP.frTrack[k]={};APP.frTrack[k].note=$('fr-note').value.trim();save(true);renderFinalRev();}}]});
 }
 function frSetExam(){modal({title:'Exam date',body:'<div class="fld"><label>First exam date</label><input type="date" id="fr-exam" value="'+(APP.cfg.examDate||'')+'"></div>',actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){var d=$('fr-exam').value;if(!isDate(d)){toast('Pick a date','err');return true;}APP.cfg.examDate=d;save(true);renderFinalRev();}}]});}
 function frEdit(){
-  var fr=APP.finalRev;
-  function rowsHTML(){return fr.rounds.map(function(r,i){return '<div class="row mb8" style="gap:8px;align-items:center" data-ri="'+i+'"><span class="sm fw6" style="min-width:64px">Round '+(i+1)+'</span><input type="number" class="fr-len" min="1" value="'+r.len+'" style="width:80px"><span class="xs muted">days/subject</span><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'[data-ri]\').remove()" title="Remove">'+ICON.trash+'</button></div>';}).join('');}
-  modal({size:'md',title:'Edit revision plan',body:
-    '<div class="fld"><label>Exam date</label><input type="date" id="fre-exam" value="'+(APP.cfg.examDate||'')+'"></div>'+
-    '<div class="slbl mb8">Rounds — days per subject in each</div><div id="fre-rounds">'+rowsHTML()+'</div>'+
-    '<button class="btn btn-ghost btn-sm mb12" type="button" onclick="frEditAddRow()" style="width:100%">'+ICON.plus+' Add round</button>'+
-    '<div class="fld"><label>Buffer days before exam <span class="muted" style="font-weight:400">(rest/light)</span></label><input type="number" id="fre-buf" min="0" value="'+(fr.buffer||0)+'" style="width:90px"></div>'+
-    '<div class="hint">Each round covers every subject. Combined papers (Tax = IT+GST, FM+SM) show as two subjects, since faculties differ. Dates run backward from the exam.</div>',
-    actions:[{label:'Cancel',kind:'ghost'},{label:'Save plan',kind:'primary',onClick:function(){
-      var ex=$('fre-exam').value;if(ex&&!isDate(ex)){toast('Bad date','err');return true;}if(ex)APP.cfg.examDate=ex;
-      var rs=[];document.querySelectorAll('#fre-rounds [data-ri]').forEach(function(row,i){var v=parseInt(row.querySelector('.fr-len').value,10);rs.push({id:'r'+(i+1),len:(!isNaN(v)&&v>0)?v:1});});
-      if(!rs.length){toast('Add at least one round','err');return true;}
-      APP.finalRev.rounds=rs;var b=parseInt($('fre-buf').value,10);APP.finalRev.buffer=(!isNaN(b)&&b>=0)?b:0;
-      if(_frRound>=rs.length)_frRound=0;save(true);renderFinalRev();
-    }}]});
+  var fr=frEnsure();
+  _frDraft={passes:JSON.parse(JSON.stringify(fr.passes)),buffer:fr.buffer};
+  modal({size:'md',title:'Edit revision plan',
+    body:'<div class="fld2"><div class="fld"><label>Exam date</label><input type="date" id="fre-exam" value="'+(APP.cfg.examDate||'')+'"></div><div class="fld"><label>Buffer days</label><input type="number" id="fre-buf" min="0" value="'+(fr.buffer||0)+'"></div></div><div class="slbl mb8">Passes · days per paper</div><div id="fre-body"></div><button class="btn btn-ghost btn-sm" type="button" onclick="frAddPass()" style="width:100%;margin-top:6px">'+ICON.plus+' Add pass</button><div class="hint mt8">Each pass covers every paper for the days you set. Combined papers (Tax = IT+GST, FM+SM) are one block. Arrows reorder papers within that pass; set 0 to skip a paper.</div>',
+    actions:[{label:'Cancel',kind:'ghost'},{label:'Save plan',kind:'primary',onClick:function(){return frEditSave();}}],
+    onOpen:frEditRender});
 }
-function frEditAddRow(){var w=$('fre-rounds');if(!w)return;var i=w.children.length;var d=document.createElement('div');d.className='row mb8';d.style.cssText='gap:8px;align-items:center';d.setAttribute('data-ri',i);d.innerHTML='<span class="sm fw6" style="min-width:64px">Round '+(i+1)+'</span><input type="number" class="fr-len" min="1" value="3" style="width:80px"><span class="xs muted">days/subject</span><button class="btn btn-icon btn-ghost" type="button" onclick="this.closest(\'[data-ri]\').remove()" title="Remove">'+ICON.trash+'</button>';w.appendChild(d);}
+function frEditRender(){
+  var aps=activePapers();
+  $('fre-body').innerHTML=_frDraft.passes.map(function(ps,pi){
+    var ord=(ps.order||[]).filter(function(p){return aps.some(function(a){return a.id===p;});});aps.forEach(function(a){if(ord.indexOf(a.id)<0)ord.push(a.id);});ps.order=ord;
+    var rows=ord.map(function(pid,oi){var p=paperById(pid),d=(ps.days&&ps.days[pid]!=null)?ps.days[pid]:1;
+      return '<div class="fre-row"><span class="fre-ord"><button type="button" onclick="frMove('+pi+','+oi+',-1)"'+(oi===0?' disabled':'')+'>\u25b2</button><button type="button" onclick="frMove('+pi+','+oi+',1)"'+(oi===ord.length-1?' disabled':'')+'>\u25bc</button></span><span class="f1 sm">'+esc(p.name)+'</span><input type="number" min="0" value="'+d+'" onchange="frSetDays('+pi+',\''+pid+'\',this.value)" style="width:58px"><span class="xs muted">d</span></div>';
+    }).join('');
+    return '<div class="fre-pass"><div class="rowb mb6"><span class="slbl">Pass '+(pi+1)+'</span>'+(_frDraft.passes.length>1?'<button class="btn btn-icon btn-ghost" type="button" onclick="frRemovePass('+pi+')" title="Remove pass">'+ICON.trash+'</button>':'')+'</div>'+rows+'</div>';
+  }).join('');
+}
+function frMove(pi,oi,dir){var ord=_frDraft.passes[pi].order,ni=oi+dir;if(ni<0||ni>=ord.length)return;var tmp=ord[oi];ord[oi]=ord[ni];ord[ni]=tmp;frEditRender();}
+function frSetDays(pi,pid,v){var n=parseInt(v,10);if(isNaN(n)||n<0)n=0;if(!_frDraft.passes[pi].days)_frDraft.passes[pi].days={};_frDraft.passes[pi].days[pid]=n;}
+function frAddPass(){var aps=activePapers().map(function(p){return p.id;}),days={};aps.forEach(function(p){days[p]=1;});_frDraft.passes.push({id:'fp'+Date.now().toString(36),days:days,order:aps.slice()});frEditRender();}
+function frRemovePass(pi){_frDraft.passes.splice(pi,1);frEditRender();}
+function frEditSave(){
+  var ex=$('fre-exam').value;if(ex&&!isDate(ex)){toast('Bad date','err');return true;}
+  if(!_frDraft.passes.length){toast('Add at least one pass','err');return true;}
+  if(ex)APP.cfg.examDate=ex;
+  var b=parseInt($('fre-buf').value,10);_frDraft.buffer=(!isNaN(b)&&b>=0)?b:0;
+  APP.finalRev.passes=_frDraft.passes;APP.finalRev.buffer=_frDraft.buffer;
+  _frViewIdx=null;save(true);renderFinalRev();return false;
+}
 </script>
 
 <script>
