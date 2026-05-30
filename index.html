@@ -413,12 +413,6 @@ body.theme-light .t-display{color:var(--green)}
 .fp-acts .on-pin .ico{fill:color-mix(in srgb,var(--accent) 30%,transparent)}
 .fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
 .fp-ty{max-width:128px;padding:6px 8px}
-.csv-guide{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0;background:var(--faint);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.csv-guide th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);padding:8px 10px;background:var(--hover);border-bottom:1px solid var(--border)}
-.csv-guide td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--dim);line-height:1.45}
-.csv-guide td.k{font-weight:700;color:var(--ink);white-space:nowrap}
-.csv-guide td.eg{font-family:'JetBrains Mono',monospace;color:var(--ink2,var(--dim))}
-.csv-guide tr:last-child td{border-bottom:none}
 /* ════ DASHBOARD ════ */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
 .dash-grid>div{min-width:0}
@@ -1984,23 +1978,50 @@ var CSV_SPEC={
       {key:'flag',label:'Star?',note:'Optional — yes to star it',eg:'yes',aliases:['star','starred','important','key']}
     ]}
 };
-function csvGuide(fields){
-  return '<table class="csv-guide"><thead><tr><th>Column</th><th>What goes here</th><th>Example</th></tr></thead><tbody>'+
-    fields.map(function(f){return '<tr><td class="k">'+esc(f.label)+'</td><td>'+esc(f.note)+'</td><td class="eg">'+esc(f.eg)+'</td></tr>';}).join('')+
-    '</tbody></table>';
-}
 function csvImport(kind){
-  _csvKind=kind;_csvParsed=null;var sp=CSV_SPEC[kind];
-  var body='<div class="alert al-blue">'+esc(sp.intro)+' Download the template, fill it in Google Sheets / Numbers / Excel, save as CSV, then upload it here.</div>'+
-    csvGuide(sp.fields)+
-    '<div class="row wrap" style="gap:8px;margin:14px 0 4px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
-    '<label class="btn btn-sm btn-p" style="cursor:pointer">'+ICON.upload+' Choose filled CSV<input type="file" accept=".csv,text/csv,text/plain" id="csv-file" style="display:none"></label></div>'+
-    '<div id="csv-prev" class="alert al-dim sm">No file chosen yet.</div>';
+  _csvKind=kind;_csvParsed=null;var sp=CSV_SPEC[kind];var subs=activeSubjects();
+  var opts=subs.map(function(s){return '<option value="'+s+'">'+esc(SYL[s].name)+'</option>';}).join('');
+  if(kind==='flashpoints')opts+='<option value="">General / no subject</option>';
+  if(kind!=='chapters')opts+='<option value="__all">All subjects (I\'ll type names myself)</option>';
+  var body='<div class="alert al-blue">'+esc(sp.intro)+'</div>'+
+    '<div class="fld"><label>Subject for this template</label><select id="csv-subj">'+opts+'</select><div class="hint">The downloaded file lists this subject\'s chapters with numbers, so you never type a chapter name — just the number. All the how-to notes live inside the file too.</div></div>'+
+    '<div class="row wrap" style="gap:8px;margin:2px 0 4px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
+    '<label class="btn btn-sm btn-p" style="cursor:pointer">'+ICON.upload+' Upload filled CSV<input type="file" accept=".csv,text/csv,text/plain" id="csv-file" style="display:none"></label></div>'+
+    '<div id="csv-prev" class="alert al-dim sm">Pick a subject, download, fill it in, then upload it back here.</div>';
   modal({size:'md',title:sp.title,body:body,
     actions:[{label:'Close',kind:'ghost'},{label:'Import',kind:'primary',onClick:function(){if(csvDoImport())return false;return true;}}],
     onOpen:function(){$('csv-file').onchange=function(){if(this.files&&this.files[0])csvReadFile(this.files[0]);};}});
 }
-function csvTemplate(kind){var sp=CSV_SPEC[kind];var header=sp.fields.map(function(f){return f.label;});var sample=sp.fields.map(function(f){return f.eg;});dlFile(sp.file,[header,sample].map(function(r){return r.map(csvField).join(',');}).join('\r\n'),'text/csv');}
+function cmt(t){return '"# '+(''+t).replace(/"/g,'""')+'"';}
+function csvSampleRow(kind,code){
+  if(kind==='lectures')return [code,'1','main','1','EXAMPLE — edit or delete this row','62'];
+  if(kind==='chapters')return [code,'EXAMPLE — type your new chapter name'];
+  if(kind==='tests')return ['EXAMPLE — edit or delete','full','MTP',code,'','','15','180','100'];
+  if(kind==='flashpoints')return [code,'1','EXAMPLE — key term','the point, formula or trap goes here','concept','yes'];
+  return [];
+}
+function csvTemplate(kind){
+  var sp=CSV_SPEC[kind],sv=$('csv-subj')?$('csv-subj').value:'';
+  var sid=(sv&&sv!=='__all'&&SYL[sv])?sv:'';
+  var code=sid?SYL[sid].short:(activeSubjects()[0]?SYL[activeSubjects()[0]].short:'AA');
+  var lines=[];
+  lines.push(cmt('CA Tracker  —  '+sp.unit+' import  —  '+(sid?SYL[sid].name+' ('+SYL[sid].short+')':'all subjects')));
+  lines.push(cmt('Type one '+sp.unit+' per row UNDER the header row below. Lines that start with # are just notes — they are ignored when you upload.'));
+  if(!sid||kind==='flashpoints')lines.push(cmt('Subject = a code from: '+activeSubjects().map(function(s){return SYL[s].short;}).join('  ·  ')));
+  if(sid&&kind!=='chapters'){
+    lines.push(cmt('Chapter = type the NUMBER (or the exact name) from this list:'));
+    var parts=chapList(sid).map(function(cn,i){return (i+1)+' = '+cn;});
+    for(var i=0;i<parts.length;i+=3)lines.push(cmt('     '+parts.slice(i,i+3).join('     ·     ')));
+  }
+  if(kind==='lectures')lines.push(cmt('Type = main  or  revision      Length = minutes (optional)      Lecture no. = optional'));
+  if(kind==='tests')lines.push(cmt('Type = full (whole subject) / chapter (one) / multi (2+ chapters separated by ;)      Due date = YYYY-MM-DD (optional)      mins & marks optional'));
+  if(kind==='flashpoints')lines.push(cmt('Type = formula / trap / concept (optional)      Star = yes to flag it (optional)'));
+  if(kind==='chapters')lines.push(cmt('List the chapter names you want to add (existing ones are skipped — nothing is deleted).'));
+  lines.push(sp.fields.map(function(f){return f.label;}).map(csvField).join(','));
+  lines.push(csvSampleRow(kind,code).map(csvField).join(','));
+  var fn=sp.unit+'s'+(sid?'-'+SYL[sid].short.toLowerCase():'')+'.csv';
+  dlFile(fn,lines.join('\r\n'),'text/csv');
+}
 function csvReadFile(file){
   var r=new FileReader();
   r.onload=function(){try{_csvParsed=csvPreview(_csvKind,csvParse(''+r.result));}catch(e){_csvParsed=null;}csvRenderPrev();};
@@ -2061,13 +2082,15 @@ function csvTruthy(s){return /^(y|yes|true|1|x|★|\*)$/i.test((''+(s||'')).trim
 /* ── per-kind validation → builds an apply() closure ── */
 function csvPreview(kind,rows){
   var sp=CSV_SPEC[kind],cols=sp.fields.map(function(f){return f.key;});
-  if(!rows.length)return {ok:0,skip:0,errors:['File is empty'],apply:function(){return 0;}};
+  rows=rows.filter(function(r){return !(r.length&&(''+(r[0]||'')).trim().charAt(0)==='#');});
+  if(!rows.length)return {ok:0,skip:0,errors:['File is empty (only notes/header found)'],apply:function(){return 0;}};
   var map=csvHeaderMap(sp.fields,rows[0]),data=map?rows.slice(1):rows;
   var errors=[],items=[],skip=0;
   function valOf(row,c){var ix=map?map[c]:cols.indexOf(c);return (ix>=0&&ix<row.length)?(''+row[ix]).trim():'';}
   var seenChap={}; // for chapters dedupe within batch
   data.forEach(function(row,ri){
     if(row.every(function(c){return (''+c).trim()==='';}))return;
+    if(row.join(' ').indexOf('EXAMPLE — ')>=0)return;
     var ln=ri+(map?2:1);
     function v(c){return valOf(row,c);}
     if(kind==='chapters'){
