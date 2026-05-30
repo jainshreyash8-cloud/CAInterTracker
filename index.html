@@ -169,7 +169,7 @@ body.theme-light .bg-accent{background:color-mix(in srgb,var(--green) 16%,transp
 <style>
 /* ════ SUBJECT TABS ════ */
 .stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.stab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:11px;font-weight:600;font-family:'Instrument Sans',sans-serif;display:inline-flex;align-items:center;gap:7px}
+.stab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:11px;font-weight:600;font-family:'Instrument Sans',sans-serif;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
 .stab:hover{border-color:var(--dim);color:var(--ink)}
 /* ════ PROGRESS ════ */
 .pbar{height:6px;background:var(--track);border-radius:99px;overflow:hidden}
@@ -389,8 +389,6 @@ body.theme-light .t-display{color:var(--green)}
 </style>
 <style>
 /* ════ FLASHPOINTS ════ */
-.stabs{display:flex;flex-wrap:wrap;gap:6px}
-.stab{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--faint);color:var(--dim);font-size:12px;font-weight:600;cursor:pointer}
 .stab.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:transparent}
 .fp-subhdr{margin:18px 0 8px;display:flex;align-items:center;gap:8px}
 .fp-subhdr:first-of-type{margin-top:4px}
@@ -905,7 +903,7 @@ function renderSession(){
   if(APP.active){renderRunning();return;}
   if(_sStep==='config'&&_sPick){renderConfig();return;}
   _sStep='pick';_sPick=null;
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Start a session</div><div class="sub">Pick an activity — date &amp; time fill in automatically.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete()">'+ICON.bolt+' Quick-complete a past session</button></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Start a session</div><div class="sub">Select an activity — date &amp; time fill in automatically.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete()">'+ICON.bolt+' Quick-complete a past session</button></div>';
   h+='<div class="card"><div class="slbl mb12">Activity</div><div class="act-grid">';
   Object.keys(ACT).forEach(function(k){var a=ACT[k];if(a.pick===false)return;h+='<div class="act-card '+(a.on?'':'dis')+'" '+(a.on?'onclick="pickAct(\''+k+'\')"':'')+'><div class="act-ico">'+ICON[a.icon]+'</div><div class="act-lbl">'+a.label+'</div><div class="act-sub">'+esc(a.desc)+'</div></div>';});
   h+='</div></div></div>';
@@ -923,7 +921,7 @@ function renderConfig(){
   var isQ=_sPick.activity==='questions';
   if(isQ){if(_sPick.qSource==null)_sPick.qSource=QSOURCES[0];if(_sPick.qMixed==null)_sPick.qMixed=true;}
   var verb=kind==='main'?'watching':kind==='reading'?'reading':isQ?'practising':'revising';
-  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Pick what you\'re '+verb+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
+  var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">'+a.label+'</div><div class="sub">Select what you\'re '+verb+', then start.</div></div><button class="btn btn-ghost btn-sm" onclick="sessReset()">← Change activity</button></div>';
   h+='<div class="card mb12"><div class="slbl mb12">What are you studying?</div>';
   h+='<div class="fld2"><div class="fld"><label>Subject</label><select id="cf-sub">'+subs.map(function(s){return '<option value="'+s+'" '+(_sPick.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div>';
   if(isQ){
@@ -935,7 +933,7 @@ function renderConfig(){
       var lk=_sPick.activity==='lecture'?'main':'revision';
       var hasLec=_sPick.chapterIdx!=null&&APP.lectures.some(function(l){return l.subjectId===_sPick.subjectId&&l.chapterIdx===_sPick.chapterIdx&&l.kind===lk&&l.status!=='done';});
       var addBtn=(_sPick.chapterIdx!=null&&!hasLec)?'<button type="button" class="btn btn-sm btn-suc" style="margin-top:9px" onclick="configAddLec()">'+ICON.plus+' Add a '+(lk==='revision'?'revision ':'')+'lecture to this chapter</button>':'';
-      h+='<div class="fld"><label>'+(lk==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(lk)+'</select><div class="hint">'+(lk==='main'?'Choose a lecture you added to this chapter — or add one right here.':'Pick an added revision lecture, leave it ad-hoc, or add one here.')+'</div>'+addBtn+'</div>';
+      h+='<div class="fld"><label>'+(lk==='main'?'Lecture':'Revision lecture')+'</label><select id="cf-lec" '+(_sPick.chapterIdx==null?'disabled':'')+'>'+lecOptions(lk)+'</select><div class="hint">'+(lk==='main'?'Choose a lecture you added to this chapter — or add one right here.':'Select an added revision lecture, leave it ad-hoc, or add one here.')+'</div>'+addBtn+'</div>';
     }
     else if(_sPick.activity==='first-reading')h+='<div class="hint">Reading is tracked at the chapter level. Each calendar day you read this chapter becomes one chunk that schedules its own revisions.</div>';
     else h+='<div class="hint">Revising this chapter. Finishing this session as Complete ticks off its next scheduled revision (if first reading is done).</div>';
@@ -1567,7 +1565,19 @@ function resetChap(sid){confirmDlg('Reset to ICAI default chapters?',function(){
 function renderHelp(){
   $('pg-help').innerHTML='<div class="pw" style="max-width:780px;margin:0 auto"><div class="h1 mb16">Help</div>'+
   '<div class="alert al-blue">The full tracker is here — Today, Session (lectures, first reading, revision, questions, revision-lectures), Syllabus, Revisions, Tests, Final Revision, Flashpoints, Dashboard and Timeline all work. Final Revision builds a backward-from-exam timetable and revising a chapter from it logs a real session.</div>'+
-  '<div class="card mb10"><div class="slbl mb10">Works now</div><ul style="padding-left:18px;line-height:1.9;font-size:13px"><li><b>Lectures</b> — added inside each chapter; main + revision lectures; computed totals; per-subject completion due date; Misc/Bonus chapter</li><li><b>Session</b> — pick a lecture, live or pomodoro timer (breaks don\'t count as study time), pause/resume, fullscreen, end as Complete or In-progress with "where I stopped" note + content-min</li><li><b>Quick-complete</b> — log past sessions; blocks time overlaps</li><li><b>Syllabus</b> — per-chapter mastery: first-read status, confidence stars, notes, revision dots</li><li><b>Revisions</b> — "review yesterday" nudge + spaced 1/7/30/60/90 chapter revisions, launched queue-first</li><li><b>Tests</b> — full-syllabus &amp; chapterwise mocks with a real reading + writing countdown; Complete to record marks, Abort still logs your time</li><li><b>Final Revision</b> — set rounds (days/subject) + buffer; auto-builds a backward-from-exam timetable; tick chapters per round (logs a revision session); notes &amp; time carry to the next round</li><li><b>Today</b> — bento stats, expandable exam plan, resume strip, today\'s sessions</li><li><b>Timeline</b> — every session on a day &times; hour grid</li><li><b>Settings</b> — theme (dark/light), width, profile, exemptions, Gist sync, pomodoro, revision offsets, chapter editor, backup</li></ul></div>'+
+  '<div class="card mb10"><div class="slbl mb10">Works now</div><ul style="padding-left:18px;line-height:1.9;font-size:13px">'+
+  '<li><b>Lectures</b> — added inside each chapter; main + revision lectures; daily-target card (watch X/day to finish by date); bulk-add with dropdowns or CSV import</li>'+
+  '<li><b>Session</b> — select a lecture, live or pomodoro timer (breaks don\'t count as study time), pause/resume, fullscreen, end as Complete or In-progress. If a chapter has no lectures yet, an inline Add button appears right there.</li>'+
+  '<li><b>Quick-log</b> — log past sessions from any tab; blocks time overlaps</li>'+
+  '<li><b>Syllabus</b> — per-chapter mastery: first-read status, confidence stars, revision dots, notes. Each chapter shows a flashpoint count chip — tap to view all, or add the first one.</li>'+
+  '<li><b>Revisions</b> — "review yesterday" nudge + spaced R1–R5 chapter revisions, launched queue-first</li>'+
+  '<li><b>Tests</b> — full-syllabus &amp; chapterwise mocks with a real reading + writing countdown; bulk-add or CSV import; Complete to record marks later, Abort still logs your time</li>'+
+  '<li><b>Final Revision</b> — set passes (days/paper) + buffer; auto-builds a backward-from-exam timetable; tick chapters per pass; notes &amp; time carry to the next pass</li>'+
+  '<li><b>Flashpoints</b> — chapter-grouped collapsible list; single star flag; type tags (Formula/Trap/Concept); pin to top; search; CSV export/import</li>'+
+  '<li><b>Today</b> — bento stats, expandable exam plan, resume strip, today\'s sessions</li>'+
+  '<li><b>Timeline</b> — every session on a day &times; hour grid; click a block for details</li>'+
+  '<li><b>Settings</b> — theme (dark/light), width, profile, exemptions, Gist sync, pomodoro, revision offsets, chapter editor, backup</li>'+
+  '</ul></div>'+
   '<div class="card mb10"><div class="slbl mb10">Cloud sync (across devices)</div><ol style="padding-left:18px;line-height:1.9;font-size:13px"><li>Open <a href="https://github.com/settings/tokens/new?scopes=gist&description=CA+Tracker" target="_blank">github.com/settings/tokens/new</a>, tick only <b>gist</b>, generate, copy token (ghp_…)</li><li>Settings → Cloud sync → paste → Connect (a private gist is created)</li><li>New device: Settings → Restore → paste same token + the gist id</li></ol><div class="alert al-amber mt10">Token lives in this browser only. Use a gist-scope-only token.</div></div>'+
   '</div>';
 }
