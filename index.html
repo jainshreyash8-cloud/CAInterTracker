@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<!--
+  CA Inter Tracker
+  Built by Shreyash Jain — github.com/jainshreyash8-cloud/CAInterTracker
+  © 2026 Shreyash Jain. All rights reserved.
+  You may use this for personal study. Redistribution or reposting without
+  attribution to the original author is not permitted.
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -281,9 +288,13 @@ body.theme-light .t-display{color:var(--green)}
 
 <style>
 /* ════ ANIMATIONS & TRANSITIONS ════ */
-/* Page slide-in */
+/* Page slide-in — direction-aware via JS setting data-dir on body */
 @keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pgInRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes pgInLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
 .pg.on{animation:pgIn .22s cubic-bezier(.25,.46,.45,.94)}
+body[data-nav="fwd"] .pg.on{animation:pgInRight .22s cubic-bezier(.25,.46,.45,.94)}
+body[data-nav="bwd"] .pg.on{animation:pgInLeft .22s cubic-bezier(.25,.46,.45,.94)}
 
 /* Nav pill is handled via JS — see movePill() */
 
@@ -291,8 +302,20 @@ body.theme-light .t-display{color:var(--green)}
 .bc{transition:transform .18s cubic-bezier(.25,.46,.45,.94),box-shadow .18s}
 .bc:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
 
-/* Button press feedback */
+/* Bento stagger on page enter */
+@keyframes bcIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.bento .bc{opacity:0;animation:bcIn .32s cubic-bezier(.25,.46,.45,.94) forwards}
+.bento .bc:nth-child(1){animation-delay:.04s}
+.bento .bc:nth-child(2){animation-delay:.09s}
+.bento .bc:nth-child(3){animation-delay:.14s}
+.bento .bc:nth-child(4){animation-delay:.19s}
+.bento .bc:nth-child(5){animation-delay:.24s}
+
+/* Button press + ripple */
+.btn{position:relative;overflow:hidden}
 .btn:active:not(:disabled){transform:scale(.96)}
+@keyframes ripple{from{transform:scale(0);opacity:.35}to{transform:scale(3.5);opacity:0}}
+.btn-ripple{position:absolute;border-radius:50%;background:currentColor;pointer-events:none;animation:ripple .5s ease-out forwards;width:60px;height:60px;margin:-30px}
 
 /* Star / flag toggle pop */
 @keyframes starPop{0%{transform:scale(1)}40%{transform:scale(1.45)}70%{transform:scale(.9)}100%{transform:scale(1)}}
@@ -304,12 +327,15 @@ body.theme-light .t-display{color:var(--green)}
 @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.45}}
 .syl-dot.d-due{animation:dotPulse 1.8s ease-in-out infinite}
 
-/* Toast slide-in (override the existing translateX with a nicer spring) */
+/* Toast — spring from right with scale */
 @keyframes tin{from{opacity:0;transform:translateX(24px) scale(.96)}to{opacity:1;transform:none}}
+/* Toast leave */
+@keyframes tout{from{opacity:1;transform:none;max-height:60px}to{opacity:0;transform:translateX(12px);max-height:0;margin-bottom:0}}
 
-/* Modal enter */
-@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
-.modal-box{animation:modalIn .2s cubic-bezier(.25,.46,.45,.94)}
+/* Modal — spring up from below */
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(12px)}to{opacity:1;transform:none}}
+@keyframes modalOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.95) translateY(8px)}}
+.modal-box{animation:modalIn .2s cubic-bezier(.34,1.2,.64,1)}
 .modal-ov{animation:fade .15s ease}
 
 /* Fullscreen overlay – circular reveal from the button origin */
@@ -319,9 +345,16 @@ body.theme-light .t-display{color:var(--green)}
 #fso.show{opacity:1;pointer-events:auto;animation:fsReveal .42s cubic-bezier(.4,0,.2,1) forwards}
 #fso.hiding{animation:fsCollapse .32s cubic-bezier(.4,0,.2,1) forwards}
 
-/* Details/summary carets (already have transform transition; add body fade) */
+/* Chapter expand body — smooth */
 .syl-body{animation:pgIn .18s ease}
 .tst-body{animation:pgIn .18s ease}
+
+/* Card rows — stagger on list appear */
+@keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.srow{animation:rowIn .18s ease both}
+.srow:nth-child(1){animation-delay:.02s}.srow:nth-child(2){animation-delay:.05s}
+.srow:nth-child(3){animation-delay:.08s}.srow:nth-child(4){animation-delay:.11s}
+.srow:nth-child(5){animation-delay:.14s}
 
 /* Lecture row hover */
 .lec{transition:background .14s,border-color .14s,transform .1s}
@@ -335,16 +368,21 @@ body.theme-light .t-display{color:var(--green)}
 .act-card{transition:transform .14s,border-color .14s,box-shadow .14s,opacity .14s}
 .act-card:hover:not(.dis){transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.2)}
 
-/* Timeline block already has hover; add smooth color transition */
+/* Timeline block */
 .tl-blk{transition:transform .12s,box-shadow .12s,opacity .12s}
 
 /* Resume card hover */
 .resume{transition:border-color .15s,box-shadow .15s}
 .resume:hover{border-color:var(--amber);box-shadow:0 0 0 1px color-mix(in srgb,var(--amber) 25%,transparent)}
 
-/* Sync dot spin on syncing */
+/* Sync dot spin */
 @keyframes spin{to{transform:rotate(360deg)}}
 .s-ing{animation:spin .9s linear infinite!important}
+
+/* Subject stab active — spring scale */
+.stab{transform-origin:center}
+.stab.active-bounce{animation:stabPop .22s cubic-bezier(.34,1.56,.64,1)}
+@keyframes stabPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 
 /* ════ MOBILE ════ */
 /* Topbar: hide "by Shreyash Jain" sub-label on very small screens */
@@ -784,7 +822,7 @@ function bnumHTML(parts){return parts.map(function(p){return '<span class="bn-v"
 
 <script>
 /* ═══════════ TOAST + MODAL ═══════════ */
-function toast(msg,type){var e=document.createElement('div');e.className='toast'+(type==='ok'?' toast-ok':type==='err'?' toast-err':'');e.textContent=msg;$('toast-root').appendChild(e);setTimeout(function(){e.style.transition='opacity .25s';e.style.opacity='0';setTimeout(function(){e.remove();},250);},type==='err'?4200:2400);}
+function toast(msg,type){var e=document.createElement('div');e.className='toast'+(type==='ok'?' toast-ok':type==='err'?' toast-err':'');e.textContent=msg;$('toast-root').appendChild(e);var delay=type==='err'?4200:2400;setTimeout(function(){e.style.animation='tout .28s ease forwards';setTimeout(function(){e.remove();},280);},delay);}
 function modal(o){
   var sz=o.size==='md'?'modal-md':'';
   var acts='';
@@ -927,7 +965,14 @@ function movePill(){
   pill.style.width=br.width+'px';
   pill.style.transform='translateX('+left+'px)';
 }
-function showPage(p){currentPage=p;document.querySelectorAll('#nav .nb').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});movePill();document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id==='pg-'+p);});
+/* direction-aware nav: track order index */
+var _NAV_ORDER=(function(){var o={};document.querySelectorAll('#nav .nb').forEach(function(b,i){o[b.dataset.p]=i;});return o;})();
+var _lastNavIdx=0;
+function showPage(p){currentPage=p;
+  var ni=_NAV_ORDER[p]||0;
+  document.body.dataset.nav=ni>_lastNavIdx?'fwd':ni<_lastNavIdx?'bwd':'';
+  _lastNavIdx=ni;
+  document.querySelectorAll('#nav .nb').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});movePill();document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id==='pg-'+p);});
   ({today:renderToday,session:renderSession,lectures:renderLectures,timeline:renderTimeline,settings:renderSettings,help:renderHelp,
     syllabus:renderSyllabus,
     revisions:renderRevisions,
@@ -1526,25 +1571,26 @@ function renderRevisions(){
 
 <script>
 /* ═══════════ QUICK COMPLETE ═══════════ */
+var _qcPre={};
 function quickComplete(pre){
-  pre=pre||{};var subs=activeSubjects();
+  _qcPre=pre||{};var subs=activeSubjects();
   modal({size:'md',title:'Quick-complete a past session',
     body:'<div class="alert al-blue">For sessions done before/without the live timer. Times can\'t overlap an existing session.</div>'+
-      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(pre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(pre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(pre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option><option value="first-reading" '+(pre.activity==='first-reading'?'selected':'')+'>First Reading</option><option value="revision" '+(pre.activity==='revision'?'selected':'')+'>Revision</option></select></div></div>'+
+      '<div class="fld2"><div class="fld"><label>Date</label><input type="date" id="qc-d" value="'+(_qcPre.date||today())+'"></div><div class="fld"><label>Activity</label><select id="qc-a"><option value="lecture" '+(_qcPre.activity==='lecture'?'selected':'')+'>Lecture</option><option value="revision-lecture" '+(_qcPre.activity==='revision-lecture'?'selected':'')+'>Revision Lecture</option><option value="first-reading" '+(_qcPre.activity==='first-reading'?'selected':'')+'>First Reading</option><option value="revision" '+(_qcPre.activity==='revision'?'selected':'')+'>Revision</option></select></div></div>'+
       '<div class="fld3"><div class="fld"><label>Start</label><input type="time" id="qc-s" value="09:00"></div><div class="fld"><label>End</label><input type="time" id="qc-e" value="10:00"></div><div class="fld"><label>Status</label><select id="qc-st"><option value="done">Done</option><option value="inprogress">In progress</option></select></div></div>'+
-      '<div class="fld2"><div class="fld"><label>Subject</label><select id="qc-sub"><option value="">— select —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(pre.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="qc-ch" disabled><option>select subject</option></select></div></div>'+
+      '<div class="fld2"><div class="fld"><label>Subject</label><select id="qc-sub"><option value="">— select —</option>'+subs.map(function(s){return '<option value="'+s+'" '+(_qcPre.subjectId===s?'selected':'')+'>'+SYL[s].name+'</option>';}).join('')+'</select></div><div class="fld"><label>Chapter</label><select id="qc-ch" disabled><option>select subject</option></select></div></div>'+
       '<div class="fld dn" id="qc-lw"><label>Lecture (optional)</label><select id="qc-lec"><option value="">— none —</option></select></div>'+
       '<div class="fld"><label>What did you cover?</label><textarea id="qc-n" placeholder="e.g. reached till operating lease"></textarea></div>',
     actions:[{label:'Cancel',kind:'ghost'},{label:'Log session',kind:'primary',onClick:function(c){if(submitQC())c();return true;}}],
     onOpen:function(){
-      function fillCh(){var sid=$('qc-sub').value,ch=$('qc-ch');if(!sid){ch.disabled=true;ch.innerHTML='<option>select subject</option>';return;}ch.disabled=false;ch.innerHTML='<option value="">— select —</option>'+chapList(sid).map(function(c,i){return '<option value="'+i+'" '+(pre.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join('');fillLec();}
-      function fillLec(){var a=$('qc-a').value,sid=$('qc-sub').value,ci=$('qc-ch').value;if(a!=='lecture'||!sid||ci===''){$('qc-lw').classList.add('dn');return;}var ls=APP.lectures.filter(function(l){return l.kind==='main'&&l.subjectId===sid&&l.chapterIdx===+ci;});$('qc-lw').classList.remove('dn');$('qc-lec').innerHTML='<option value="">— none —</option>'+ls.map(function(l){return '<option value="'+l.id+'">'+esc(l.label||'Lecture')+'</option>';}).join('');}
+      function fillCh(){var sid=$('qc-sub').value,ch=$('qc-ch');if(!sid){ch.disabled=true;ch.innerHTML='<option>select subject</option>';return;}ch.disabled=false;ch.innerHTML='<option value="">— select —</option>'+chapList(sid).map(function(c,i){return '<option value="'+i+'" '+(_qcPre.chapterIdx===i?'selected':'')+'>'+esc(c)+'</option>';}).join('');fillLec();}
+      function fillLec(){var a=$('qc-a').value,sid=$('qc-sub').value,ci=$('qc-ch').value;if(a!=='lecture'||!sid||ci===''){$('qc-lw').classList.add('dn');return;}var ls=APP.lectures.filter(function(l){return l.kind==='main'&&l.subjectId===sid&&l.chapterIdx===+ci;});$('qc-lw').classList.remove('dn');$('qc-lec').innerHTML='<option value="">— none —</option>'+ls.map(function(l){return '<option value="'+l.id+'" '+(_qcPre.lectureId===l.id?'selected':'')+'>'+esc(l.label||'Lecture')+'</option>';}).join('');}
       $('qc-sub').onchange=fillCh;$('qc-ch').onchange=fillLec;$('qc-a').onchange=fillLec;
-      if(pre.subjectId)fillCh();
+      if(_qcPre.subjectId)fillCh();
     }});
 }
 function submitQC(){
-  var d=$('qc-d').value,a=$('qc-a').value,st=$('qc-s').value,en=$('qc-e').value,status=$('qc-st').value,sid=$('qc-sub').value,ci=$('qc-ch').value,lid=$('qc-lec')?$('qc-lec').value:'',n=$('qc-n').value.trim();
+  var d=$('qc-d').value,a=$('qc-a').value,st=$('qc-s').value,en=$('qc-e').value,status=$('qc-st').value,sid=$('qc-sub').value,ci=$('qc-ch').value,lid=($('qc-lec')&&$('qc-lec').value)||_qcPre.lectureId||'',n=$('qc-n').value.trim();
   if(!isDate(d)){toast('Invalid date','err');return false;}
   if(!st||!en){toast('Enter start and end time','err');return false;}
   if(!sid){toast('Select a subject','err');return false;}
@@ -1627,7 +1673,7 @@ function chapBlock(sid,ci,cn,col,misc){
 }
 function lecRow(l){
   var b=l.status==='done'?'<span class="badge bg-green">done</span>':l.status==='in-progress'?'<span class="badge bg-amber">'+(l.plannedMin?Math.round((l.contentDoneMin||0)/l.plannedMin*100):0)+'%</span>':'<span class="badge bg-gray">pending</span>';
-  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.kind==='main'&&l.status!=='done'&&l.plannedMin&&_curPace?' · ~'+fmtMin(Math.round(Math.max(0,l.plannedMin-(l.contentDoneMin||0))*_curPace))+' at your pace':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="quickComplete({activity:\''+(l.kind==='revision'?'revision-lecture':'lecture')+'\',subjectId:\''+l.subjectId+'\',chapterIdx:'+l.chapterIdx+'})" title="Quick-log">'+ICON.bolt+'</button><button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
+  return '<div class="lec'+(l.kind==='revision'?' rev':'')+'"><div class="lec-ic" style="color:'+(l.kind==='revision'?'var(--purple);border-color:color-mix(in srgb,var(--purple) 30%,transparent)':'var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)')+'">'+ICON[l.kind==='revision'?'revlec':'lecture']+'</div><div class="lec-body"><div class="lec-title"'+(l.kind==='revision'?' style="color:var(--purple)"':'')+'>'+(l.lectureNumber&&l.kind==='main'?'L'+l.lectureNumber+' · ':'')+esc(l.label||'Lecture')+'</div>'+(l.status==='in-progress'&&l.lastNote?'<div class="lec-where">stopped: '+esc(l.lastNote)+'</div>':'')+'<div class="lec-meta">'+(l.plannedMin?fmtMin(l.plannedMin):'no duration')+(l.status==='in-progress'?' · '+fmtMin(l.contentDoneMin||0)+' done':'')+(l.kind==='main'&&l.status!=='done'&&l.plannedMin&&_curPace?' · ~'+fmtMin(Math.round(Math.max(0,l.plannedMin-(l.contentDoneMin||0))*_curPace))+' at your pace':'')+(l.homeworkGiven?' · HW':'')+'</div></div>'+b+'<div class="lec-acts">'+(l.status!=='done'?'<button class="btn btn-icon btn-suc" onclick="resumeLec(\''+l.id+'\')" title="Start">'+ICON.play+'</button>':'')+'<button class="btn btn-icon btn-ghost" onclick="quickComplete({activity:\''+(l.kind==='revision'?'revision-lecture':'lecture')+'\',subjectId:\''+l.subjectId+'\',chapterIdx:'+l.chapterIdx+',lectureId:\''+l.id+'\'})" title="Quick-log">'+ICON.bolt+'</button><button class="btn btn-icon btn-ghost" onclick="editLec(\''+l.id+'\')">'+ICON.edit+'</button><button class="btn btn-icon btn-ghost" onclick="delLec(\''+l.id+'\')">'+ICON.trash+'</button></div></div>';
 }
 function editDue(sid){modal({title:'Lecture completion target — '+SYL[sid].name,body:'<div class="fld"><label>Finish all lectures by</label><input type="date" id="du-d" value="'+(APP.subjectDue[sid]||'')+'"><div class="hint">Your target to finish all lectures for this subject. Shows a countdown on the Lectures tab.</div></div>',actions:[{label:'Clear',kind:'ghost',onClick:function(){delete APP.subjectDue[sid];save(true);renderLectures();}},{label:'Save',kind:'primary',onClick:function(){var d=$('du-d').value;if(d&&!isDate(d)){toast('Invalid date','err');return true;}if(d)APP.subjectDue[sid]=d;else delete APP.subjectDue[sid];save(true);renderLectures();}}]});}
 </script>
@@ -1681,7 +1727,7 @@ function renderSettings(){
   h+='<div class="card mb10"><div class="slbl mb12">Chapters</div><div class="sub mb10">Default = ICAI. Customize per subject if your faculty splits differently.</div><div id="se-ch"></div></div>';
   // data
   h+='<div class="card mb10"><div class="slbl mb12">Data</div><div class="row wrap" style="gap:8px"><button class="btn btn-sm" onclick="exportJSON()">Export backup</button><label class="btn btn-sm" style="cursor:pointer">Import backup<input type="file" accept="application/json" id="se-imp" style="display:none"></label><button class="btn btn-dan btn-sm" onclick="nukeAll()">Reset all data</button></div></div>';
-  h+='<div class="xs muted mono tc mt12">Tracker · CA Inter · v'+VERSION+'</div></div>';
+  h+='<div class="xs muted mono tc mt12">Tracker · CA Inter · v'+VERSION+' · Built by Shreyash Jain · <a href="https://github.com/jainshreyash8-cloud/CAInterTracker" target="_blank" style="color:var(--dim)">github</a></div></div>';
   $('pg-settings').innerHTML=h;wireSettings();
 }
 function wireSettings(){
@@ -2652,6 +2698,8 @@ window.addEventListener('keydown',function(e){if(e.key==='Escape'){if($('fso')&&
 function persistNow(){if(APP&&APP.active){APP.active._lastSaved=0;}if(APP)save(true);}
 window.addEventListener('pagehide',persistNow);
 window.addEventListener('resize',function(){movePill&&movePill();});
+/* Button ripple */
+document.addEventListener('click',function(ev){var b=ev.target.closest('.btn');if(!b||b.disabled)return;var r=b.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top,s=document.createElement('span');s.className='btn-ripple';s.style.left=x+'px';s.style.top=y+'px';b.appendChild(s);setTimeout(function(){s.remove();},520);});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')persistNow();});
 init();
 </script>
