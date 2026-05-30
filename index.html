@@ -1397,6 +1397,12 @@ function renderLectures(){
   _curPace=(contentMain>0&&watchedMain>0)?watchedMain/contentMain:null;
   var remLec=mains.filter(function(l){return l.status!=='done';}).length;
   var due=APP.subjectDue[sid];var dleft=due?diffD(today(),due):null;
+  // daily target card: watch X/day to finish remaining content by the due date
+  var dtBig,dtSub;
+  if(!due){dtBig='<span class="bn-v" style="font-size:26px">set</span>';dtSub='tap to set a target date';}
+  else if(remain<=0){if(remLec>0){dtBig='<span class="bn-v">'+remLec+'</span><span class="bn-u">lec</span>';dtSub='set lecture durations for a target';}else{dtBig='<span class="bn-v" style="font-size:26px">done</span>';dtSub='all lectures finished';}}
+  else if(dleft<=0){dtBig='<span class="bn-v" style="font-size:22px">past due</span>';dtSub=Math.abs(dleft)+'d overdue · tap to adjust';}
+  else{var watchRem=_curPace!=null?remain*_curPace:remain;var perDay=Math.max(1,Math.ceil(watchRem/dleft));dtBig=bnumHTML(fmtMinParts(perDay))+'<span class="bn-u">/day</span>';dtSub='to finish by '+fmtDate(due).replace(/ \d{4}/,'')+' · '+dleft+'d left';}
   var h='<div class="pw"><div class="rowb wrap mb20"><div><div class="h1">Lectures</div><div class="sub">Lectures live inside their chapter. Add them as you receive them.</div></div><button class="btn btn-ghost btn-sm" onclick="quickComplete({activity:\'lecture\'})">'+ICON.bolt+' Quick-log lecture</button></div>';
   // subject tabs
   h+='<div class="stabs">'+subs.map(function(s){var on=s===sid,col=subjColor(s);return '<button class="stab" style="'+(on?'background:'+col+';border-color:'+col+';color:#0E0E0E':'')+'" onclick="_lecSub=\''+s+'\';renderLectures()"><span class="sdot" style="background:'+(on?'#0E0E0E':col)+'"></span>'+SYL[s].short+'</button>';}).join('')+'</div>';
@@ -1405,7 +1411,7 @@ function renderLectures(){
     '<div class="bc bc-neutral"><span class="blbl">Lectures done</span><div class="bnum"><span class="bn-v">'+doneN+'</span><span class="bn-u">/ '+mains.length+'</span></div><span class="bsub">'+mains.filter(function(l){return l.status==='in-progress';}).length+' in progress</span></div>'+
     '<div class="bc bc-accent"><span class="blbl">Watched</span><div class="bnum">'+bnumHTML(fmtMinParts(watched))+'</div><span class="bsub">'+(totPlan?'of ~'+fmtMin(totPlan)+' added':'add planned mins')+'</span></div>'+
     '<div class="bc bc-amber"><span class="blbl">Actually remaining</span><div class="bnum">'+bnumHTML(fmtMinParts(remain))+'</div><span class="bsub">'+mains.filter(function(l){return l.status!=='done';}).length+' lectures left</span></div>'+
-    '<div class="bc bc-neutral exam-card" onclick="editDue(\''+sid+'\')" style="cursor:pointer"><span class="blbl">Finish all by '+ICON.edit+'</span><div class="bnum"><span class="bn-v" style="font-size:26px">'+(due?fmtDate(due).replace(/ \d{4}/,''):'set')+'</span></div><span class="bsub">'+(dleft!=null?(dleft>=0?dleft+' days left':Math.abs(dleft)+'d overdue'):'tap to set due date')+'</span></div>'+
+    '<div class="bc bc-neutral exam-card" onclick="editDue(\''+sid+'\')" style="cursor:pointer"><span class="blbl">Daily target '+ICON.edit+'</span><div class="bnum">'+dtBig+'</div><span class="bsub">'+dtSub+'</span></div>'+
   '</div>';
   if(mains.length){var projTxt=_curPace!=null?fmtMin(Math.round(remain*_curPace)):'—';
     h+='<div class="card mb16"><div class="rowb mb8"><span class="slbl">Your pace &amp; projection</span>'+(_curPace!=null?'<span class="badge bg-accent">'+_curPace.toFixed(2)+'\u00d7 content time</span>':'<span class="badge bg-gray">need data</span>')+'</div>'+
