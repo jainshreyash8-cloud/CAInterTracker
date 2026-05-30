@@ -6,7 +6,7 @@
 <title>Tracker · CA Inter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ════ THEME TOKENS ════ */
 body.theme-dark{
@@ -1401,7 +1401,7 @@ function submitQC(){
   var sMin=hm2min(st),eMin=hm2min(en);if(eMin<sMin)eMin+=1440;var dur=eMin-sMin;
   if(dur<=0){toast('End must be after start','err');return false;}
   var ov=findOverlap(d,sMin,eMin,null);
-  if(ov){toast('Overlaps an existing session ('+ov.startTime+'–'+ov.endTime+'). Pick a clear slot.','err');return false;}
+  if(ov){toast('Overlaps an existing session ('+ov.startTime+'–'+ov.endTime+'). Choose a clear time slot.','err');return false;}
   var e={id:uid(),createdAt:Date.now(),updatedAt:Date.now(),date:d,startTime:st,endTime:en,elapsedMin:dur,pauseMin:0,activityType:a,subjectId:sid,chapterIdx:+ci,lectureId:lid||null,status:status,mode:'quick',contentMin:dur,coveredNote:n,payload:{}};
   APP.entries.push(e);
   if(a==='first-reading'&&status==='done'&&(+ci)>=0)markFirstRead(sid,+ci,d);
@@ -1821,7 +1821,7 @@ function quickTest(id){
     onOpen:function(){function setMx(){var t=APP.tests.find(function(x){return x.id===$('qt-t').value;});if(t)$('qt-mx').value=t.maxMarks;}$('qt-t').onchange=setMx;setMx();}});
 }
 function submitQuickTest(){
-  var t=APP.tests.find(function(x){return x.id===$('qt-t').value;});if(!t){toast('Pick a test','err');return false;}
+  var t=APP.tests.find(function(x){return x.id===$('qt-t').value;});if(!t){toast('Select a test','err');return false;}
   var d=$('qt-d').value,st=$('qt-s').value,en=$('qt-e').value;
   if(!isDate(d)){toast('Invalid date','err');return false;}
   if(!st||!en){toast('Enter start and end','err');return false;}
@@ -1904,8 +1904,6 @@ function fpExport(){
   dlFile('flashpoints.csv',rows.map(function(r){return r.map(csvField).join(',');}).join('\r\n'),'text/csv');
   toast('Exported '+(rows.length-1)+' flashpoint'+(rows.length-1===1?'':'s'),'ok');
 }
-function csvField(v){v=(v==null?'':''+v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
-function dlFile(name,text,mime){try{var isCsv=/csv/.test(mime||'');var data=isCsv?'\uFEFF'+text:text;var blob=new Blob([data],{type:(mime||'text/plain')+';charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);}catch(e){toast('Download failed','err');}}
 function openFlashpoints(sid,ci){_fpFilter=(sid&&SYL[sid])?sid:'all';_fpFlagged=false;_fpSearch='';_fpOpenChap=sid+'_'+((ci!=null&&ci>=0)?ci:'none');showPage('flashpoints');}
 function fpSearchInput(v){_fpSearch=v;_fpOpenChap=null;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
 function setFp(sid){_fpFilter=sid;_fpOpenChap=null;renderFlashpoints();}
@@ -1961,8 +1959,10 @@ function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoin
 </script>
 
 <script>
-/* ═══════════ CSV IMPORT (lectures / chapters / tests / flashpoints) ═══════════ */
+/* ═══════════ CSV IMPORT (lectures / tests / flashpoints) ═══════════ */
 var _csvKind=null,_csvParsed=null;
+function csvField(v){v=(v==null?'':''+v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function dlFile(name,text,mime){try{var isCsv=/csv/.test(mime||'');var data=isCsv?'\uFEFF'+text:text;var blob=new Blob([data],{type:(mime||'text/plain')+';charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);}catch(e){toast('Download failed','err');}}
 var CSV_SPEC={
   lectures:{title:'Import lectures',file:'lectures-template.csv',unit:'lecture',intro:'One row per lecture. Each lecture sits inside a chapter.',
     fields:[
@@ -2004,7 +2004,7 @@ function csvImport(kind){
     '<div class="fld"><label>Subject for this template</label><select id="csv-subj">'+opts+'</select><div class="hint">The downloaded file lists this subject\'s chapters with numbers, so you never type a chapter name — just the number. All the how-to notes live inside the file too.</div></div>'+
     '<div class="row wrap" style="gap:8px;margin:2px 0 4px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
     '<label class="btn btn-sm btn-p" style="cursor:pointer">'+ICON.upload+' Upload filled CSV<input type="file" accept=".csv,text/csv,text/plain" id="csv-file" style="display:none"></label></div>'+
-    '<div id="csv-prev" class="alert al-dim sm">Pick a subject, download, fill it in, then upload it back here.</div>';
+    '<div id="csv-prev" class="alert al-dim sm">Select a subject, download, fill it in, then upload it back here.</div>';
   modal({size:'md',title:sp.title,body:body,
     actions:[{label:'Close',kind:'ghost'},{label:'Import',kind:'primary',onClick:function(){if(csvDoImport())return false;return true;}}],
     onOpen:function(){$('csv-file').onchange=function(){if(this.files&&this.files[0])csvReadFile(this.files[0]);};}});
@@ -2457,7 +2457,7 @@ function frNote(pid,sid,idx){var k=frKey(pid,sid,idx),t=APP.frTrack[k]||{};
   modal({size:'md',title:'Note · '+chapName(sid,idx),body:'<div class="fld"><label>Focus / takeaway</label><textarea id="fr-note" placeholder="e.g. weak on lease classification — more time next pass">'+esc(t.note||'')+'</textarea><div class="hint">Shows in the next pass so you know where to focus and can go faster.</div></div>',
     actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){if(!APP.frTrack[k])APP.frTrack[k]={};APP.frTrack[k].note=$('fr-note').value.trim();save(true);renderFinalRev();}}]});
 }
-function frSetExam(){modal({title:'Exam date',body:'<div class="fld"><label>First exam date</label><input type="date" id="fr-exam" value="'+(APP.cfg.examDate||'')+'"></div>',actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){var d=$('fr-exam').value;if(!isDate(d)){toast('Pick a date','err');return true;}APP.cfg.examDate=d;save(true);renderFinalRev();}}]});}
+function frSetExam(){modal({title:'Exam date',body:'<div class="fld"><label>First exam date</label><input type="date" id="fr-exam" value="'+(APP.cfg.examDate||'')+'"></div>',actions:[{label:'Cancel',kind:'ghost'},{label:'Save',kind:'primary',onClick:function(){var d=$('fr-exam').value;if(!isDate(d)){toast('Select a valid date','err');return true;}APP.cfg.examDate=d;save(true);renderFinalRev();}}]});}
 function frEdit(){
   var fr=frEnsure();
   _frDraft={passes:JSON.parse(JSON.stringify(fr.passes)),buffer:fr.buffer};
