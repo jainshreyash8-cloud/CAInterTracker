@@ -1998,10 +1998,14 @@ function renderDash(){
 .fr-pct{font-family:'Sora',sans-serif;font-weight:800;font-size:15px;flex:0 0 auto}
 .fr-subhead{margin:12px 0 4px}
 .fr-ov{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;cursor:pointer;background:var(--faint)}
-.fr-ov.sel{border-color:var(--accent)}
-.fr-ov.now{box-shadow:inset 3px 0 0 var(--green)}
+.fr-ov.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--faint))}
+.fr-ov.now{background:color-mix(in srgb,var(--green) 13%,var(--faint));border-color:color-mix(in srgb,var(--green) 32%,transparent)}
 .fre-pass{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px}
-.fre-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.fre-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;background:var(--faint);border:1px solid var(--border);border-radius:8px;padding:6px 9px}
+.fre-row.drag{opacity:.4}
+.fre-row.dragover{border-color:var(--accent);box-shadow:0 -2px 0 var(--accent)}
+.fre-grip{cursor:grab;color:var(--dim);font-size:13px;line-height:1;letter-spacing:-3px;flex:0 0 auto;user-select:none}
+.fre-grip:active{cursor:grabbing}
 .fre-ord{display:flex;flex-direction:column;flex:0 0 auto}
 .fre-ord button{border:none;background:none;color:var(--dim);cursor:pointer;line-height:.9;padding:1px 2px;font-size:10px}
 .fre-ord button:disabled{opacity:.3;cursor:default}
@@ -2102,12 +2106,17 @@ function frEditRender(){
   $('fre-body').innerHTML=_frDraft.passes.map(function(ps,pi){
     var ord=(ps.order||[]).filter(function(p){return aps.some(function(a){return a.id===p;});});aps.forEach(function(a){if(ord.indexOf(a.id)<0)ord.push(a.id);});ps.order=ord;
     var rows=ord.map(function(pid,oi){var p=paperById(pid),d=(ps.days&&ps.days[pid]!=null)?ps.days[pid]:1;
-      return '<div class="fre-row"><span class="fre-ord"><button type="button" onclick="frMove('+pi+','+oi+',-1)"'+(oi===0?' disabled':'')+'>\u25b2</button><button type="button" onclick="frMove('+pi+','+oi+',1)"'+(oi===ord.length-1?' disabled':'')+'>\u25bc</button></span><span class="f1 sm">'+esc(p.name)+'</span><input type="number" min="0" value="'+d+'" onchange="frSetDays('+pi+',\''+pid+'\',this.value)" style="width:58px"><span class="xs muted">d</span></div>';
+      return '<div class="fre-row" draggable="true" ondragstart="frDragStart(event,'+pi+','+oi+')" ondragover="frDragOver(event,'+pi+',this)" ondragleave="this.classList.remove(\'dragover\')" ondrop="frDrop(event,'+pi+','+oi+')" ondragend="frDragEnd()"><span class="fre-grip" title="Drag to reorder">\u22ee\u22ee</span><span class="f1 sm">'+esc(p.name)+'</span><input type="number" min="0" value="'+d+'" onchange="frSetDays('+pi+',\''+pid+'\',this.value)" style="width:54px"><span class="xs muted">d</span><span class="fre-ord"><button type="button" onclick="frMove('+pi+','+oi+',-1)"'+(oi===0?' disabled':'')+'>\u25b2</button><button type="button" onclick="frMove('+pi+','+oi+',1)"'+(oi===ord.length-1?' disabled':'')+'>\u25bc</button></span></div>';
     }).join('');
     return '<div class="fre-pass"><div class="rowb mb6"><span class="slbl">Pass '+(pi+1)+'</span>'+(_frDraft.passes.length>1?'<button class="btn btn-icon btn-ghost" type="button" onclick="frRemovePass('+pi+')" title="Remove pass">'+ICON.trash+'</button>':'')+'</div>'+rows+'</div>';
   }).join('');
 }
 function frMove(pi,oi,dir){var ord=_frDraft.passes[pi].order,ni=oi+dir;if(ni<0||ni>=ord.length)return;var tmp=ord[oi];ord[oi]=ord[ni];ord[ni]=tmp;frEditRender();}
+var _frDrag=null;
+function frDragStart(ev,pi,oi){_frDrag={pi:pi,oi:oi};if(ev.dataTransfer){ev.dataTransfer.effectAllowed='move';try{ev.dataTransfer.setData('text/plain',String(oi));}catch(e){}}var r=ev.target&&ev.target.closest?ev.target.closest('.fre-row'):null;if(r)setTimeout(function(){r.classList.add('drag');},0);}
+function frDragOver(ev,pi,el){if(_frDrag&&_frDrag.pi===pi){ev.preventDefault();if(ev.dataTransfer)ev.dataTransfer.dropEffect='move';if(el)el.classList.add('dragover');}}
+function frDrop(ev,pi,oi){ev.preventDefault();if(!_frDrag||_frDrag.pi!==pi){_frDrag=null;return;}var ord=_frDraft.passes[pi].order,from=_frDrag.oi;_frDrag=null;if(from===oi)return;var it=ord.splice(from,1)[0];ord.splice(oi,0,it);frEditRender();}
+function frDragEnd(){_frDrag=null;var rows=document.querySelectorAll('.fre-row');for(var i=0;i<rows.length;i++){rows[i].classList.remove('drag','dragover');}}
 function frSetDays(pi,pid,v){var n=parseInt(v,10);if(isNaN(n)||n<0)n=0;if(!_frDraft.passes[pi].days)_frDraft.passes[pi].days={};_frDraft.passes[pi].days[pid]=n;}
 function frAddPass(){var aps=activePapers().map(function(p){return p.id;}),days={};aps.forEach(function(p){days[p]=1;});_frDraft.passes.push({id:'fp'+Date.now().toString(36),days:days,order:aps.slice()});frEditRender();}
 function frRemovePass(pi){_frDraft.passes.splice(pi,1);frEditRender();}
