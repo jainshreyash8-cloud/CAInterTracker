@@ -2001,9 +2001,9 @@ function csvImport(kind){
 }
 function cmt(t){return '"# '+(''+t).replace(/"/g,'""')+'"';}
 function csvSampleRow(kind,code){
-  if(kind==='lectures')return [code,'1','main','1','EXAMPLE — edit or delete this row','62'];
-  if(kind==='tests')return ['EXAMPLE — edit or delete','full','MTP',code,'','','15','180','100'];
-  if(kind==='flashpoints')return [code,'1','EXAMPLE — key term','the point, formula or trap goes here','concept','yes'];
+  if(kind==='lectures')return [code,'1','main','1','DELETE THIS EXAMPLE ROW (or edit it)','62'];
+  if(kind==='tests')return ['DELETE THIS EXAMPLE ROW (or edit it)','full','MTP',code,'','','15','180','100'];
+  if(kind==='flashpoints')return [code,'1','DELETE THIS EXAMPLE ROW','the point, formula or trap goes here','concept','yes'];
   return [];
 }
 function csvTemplate(kind){
@@ -2045,7 +2045,7 @@ function csvDoImport(){
   if(!_csvParsed.ok){toast('Nothing valid to import','err');return false;}
   var n=_csvParsed.apply();save(true);
   toast('Imported '+n+' '+_csvKind,'ok');
-  ({lectures:renderLectures,tests:renderTests,flashpoints:renderFlashpoints}[_csvKind]||function(){})();
+  showPage(currentPage);
   return true;
 }
 /* ── parsing + matching helpers ── */
@@ -2091,10 +2091,11 @@ function csvPreview(kind,rows){
   if(!rows.length)return {ok:0,skip:0,errors:['File is empty (only notes/header found)'],apply:function(){return 0;}};
   var map=csvHeaderMap(sp.fields,rows[0]),data=map?rows.slice(1):rows;
   var errors=[],items=[],skip=0;
+  if(!map)errors.push('Header row not recognized — reading columns in template order ('+sp.fields.map(function(f){return f.label;}).join(', ')+'). Use the downloaded template to be safe.');
   function valOf(row,c){var ix=map?map[c]:cols.indexOf(c);return (ix>=0&&ix<row.length)?(''+row[ix]).trim():'';}
   data.forEach(function(row,ri){
     if(row.every(function(c){return (''+c).trim()==='';}))return;
-    if(row.join(' ').indexOf('EXAMPLE — ')>=0)return;
+    if(row.join(' ').indexOf('DELETE THIS EXAMPLE ROW')>=0)return;
     var ln=ri+(map?2:1);
     function v(c){return valOf(row,c);}
     if(kind==='lectures'){
