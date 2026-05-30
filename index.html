@@ -841,12 +841,34 @@ function confirmDlg(msg,onYes,o){o=o||{};modal({title:o.title||'Confirm',body:'<
 var _cloudT=null,_cloudBusy=false,_cloudDirty=false;
 function save(now){
   if(!APP)return;APP.meta.savedAt=Date.now();
-  try{localStorage.setItem(STORE_KEY,JSON.stringify(APP));}
-  catch(e){if(e&&(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'))toast('Storage full — export a backup from Settings.','err');}
-  if(GTOKEN&&GID){if(_cloudT)clearTimeout(_cloudT);_cloudT=setTimeout(syncToCloud,now?150:2200);}
+  var json=JSON.stringify(APP);
+  try{
+    localStorage.setItem(STORE_KEY,json);
+    // Write a backup copy so load() can recover from a corrupt primary write
+    // Use a short try so a quota on the backup doesn't block the primary save
+    try{localStorage.setItem(STORE_KEY+'_bak',json);}catch(e2){}
+    // Warn when localStorage is getting full (estimate: 5MB limit)
+    try{var used=json.length*2,pct=Math.round(used/5000000*100);if(pct>85&&!save._warnedQuota){save._warnedQuota=true;toast('Storage '+pct+'% full — export a backup from Settings.','err');}}catch(e3){}
+  }
+  catch(e){if(e&&(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED')){toast('Storage full — export a backup from Settings.','err');}}
+  if(GTOKEN&&GID){_cloudDirty=true;if(_cloudT)clearTimeout(_cloudT);_cloudT=setTimeout(syncToCloud,now?150:2200);}
 }
 function load(){
-  try{var raw=localStorage.getItem(STORE_KEY);if(raw){APP=mergeDefault(JSON.parse(raw),freshState());return true;}}catch(e){}
+  try{
+    var raw=localStorage.getItem(STORE_KEY);
+    if(raw){
+      var parsed=JSON.parse(raw);
+      // Sanity check: if the stored data has no cfg or no setupDone flag, it may be
+      // a corrupt/partial write. Merge with freshState but do NOT clobber if it looks valid.
+      if(parsed&&parsed.cfg){
+        APP=mergeDefault(parsed,freshState());
+        return true;
+      }
+    }
+  }catch(e){
+    // localStorage read/parse failed — try to recover via a backup key
+    try{var bk=localStorage.getItem(STORE_KEY+'_bak');if(bk){var p2=JSON.parse(bk);if(p2&&p2.cfg){APP=mergeDefault(p2,freshState());toast('Loaded from backup copy','ok');return true;}}}catch(e2){}
+  }
   APP=freshState();return false;
 }
 function mergeDefault(l,f){Object.keys(f).forEach(function(k){if(l[k]==null)l[k]=f[k];else if(typeof f[k]==='object'&&!Array.isArray(f[k])){Object.keys(f[k]).forEach(function(s){if(l[k][s]===undefined)l[k][s]=f[k][s];});}});return l;}
@@ -892,7 +914,23 @@ async function syncFromCloud(silent){
       var byId={};(APP.entries||[]).forEach(function(e){byId[e.id]=e;});
       var merged=(APP.entries||[]).slice();
       (cloud.entries||[]).forEach(function(e){if(!byId[e.id])merged.push(e);else if((e.updatedAt||0)>(byId[e.id].updatedAt||0)){var i=merged.findIndex(function(x){return x.id===e.id;});if(i>=0)merged[i]=e;}});
-      ['cfg','chapters','subjectDue','lectures','tests','flashpoints','finalRev','frTrack'].forEach(function(k){if(cloud[k]!==undefined)APP[k]=cloud[k];});
+      // Never overwrite cfg if local has setupDone=true but cloud does not
+      // Never overwrite while a session or test is actively running
+      var localSetup=APP.cfg&&APP.cfg.setupDone;
+      ['cfg','chapters','subjectDue','lectures','tests','flashpoints','finalRev','frTrack'].forEach(function(k){
+        if(cloud[k]===undefined)return;
+        if(k==='cfg'){
+          if(!APP.active&&!APP.activeTest){
+            // deep-merge cfg: keep local values for keys cloud doesn't have
+            var merged2=Object.assign({},cloud[k]);
+            // always preserve setupDone=true once set locally
+            if(localSetup)merged2.setupDone=true;
+            APP.cfg=merged2;
+          }
+        }else{
+          APP[k]=cloud[k];
+        }
+      });
       APP.entries=merged;APP.meta.lastSyncAt=Date.now();delete APP._ts;save(true);
     }
     syncUI('ok');if(!silent)toast('Synced from cloud','ok');return true;
@@ -2695,7 +2733,14 @@ function frEditSave(){
 <script>
 /* ═══════════ BOOT ═══════════ */
 window.addEventListener('keydown',function(e){if(e.key==='Escape'){if($('fso')&&$('fso').classList.contains('show'))closeFS();else if($('modal-root').innerHTML)$('modal-root').innerHTML='';}if(e.key===' '&&APP&&APP.active&&(currentPage==='session'||($('fso')&&$('fso').classList.contains('show')))){e.preventDefault();if(APP.active.paused)resumeSession();else pauseSession();}});
-function persistNow(){if(APP&&APP.active){APP.active._lastSaved=0;}if(APP)save(true);}
+function persistNow(){
+  if(!APP)return;
+  if(APP.active){APP.active._lastSaved=0;}
+  if(APP.activeTest){APP.activeTest._lastSaved=0;}
+  save(true);
+  // If a cloud push was pending, fire it immediately instead of letting the timeout lapse
+  if(GTOKEN&&GID&&_cloudDirty){if(_cloudT)clearTimeout(_cloudT);_cloudT=null;syncToCloud();}
+}
 window.addEventListener('pagehide',persistNow);
 window.addEventListener('resize',function(){movePill&&movePill();});
 /* Button ripple */
