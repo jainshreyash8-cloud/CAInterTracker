@@ -196,3 +196,24 @@ v2 had 3 "phases"; this build has NO phases at all. The only leftover wording ("
 
 ### Suggested-but-not-built (awaiting user pick)
 Data insights: projected exam-readiness %, per-subject pace, best study time-of-day, consistency/streak analytics, test score trend, revision-overdue load. Flashpoints: tags/types (formula/trap/concept), pin-to-top, "quiz me" shuffle, export.
+
+
+
+## Final Revision (consolidated) tab — BUILT 2026-05-30 (commit `feat(final-revision): consolidated revision planner tab`, on `main`)
+
+New nav tab **"Final Rev"** (`pg-finalrev`, route `finalrev:renderFinalRev`). Replaces the old "phase 3" idea.
+
+- **Config** `APP.finalRev = {rounds:[{id,len}], buffer, order}` (default 3 rounds 7/3/1 days-per-subject, buffer 2). User edits rounds (add/remove + days each) + buffer via `frEdit`. Exam date = `cfg.examDate` (set via `frSetExam`/`frEdit`).
+- **Schedule = computed, never stored** (`frPlan`): total = Σ(round.len × #subjects); lastStudyDay = exam − (buffer+1); start = lastStudyDay − (total−1); blocks laid forward per round→subject. Combined papers appear as separate subjects (it/gst, fm/sm) since faculties differ — so no fractional-day split. `startsInPast`/`overDays` → amber "doesn't fit" warning.
+- **Tracking** `APP.frTrack[roundId_sid_idx] = {done:date|null, min, skip, note}`. A chapter row has Revise (▶), done toggle (○/✓), note, skip (–/+). **Revise launches a real revision session** via `frRevise`→`launchRevision`; `beginRev` tags `APP.active._fr={roundId,sid,idx}`; `finalizeSession` then adds `elapsedMin` to `frTrack.min` and sets `done` on status==='done' (time-is-schema; shows on Timeline as normal `revision`).
+- **Carry-forward**: each chapter shows previous round's time + note (`frPrev`) so later rounds go faster.
+- **Today guidance**: in-tab `today-due` strip "Today → Round X · Subject" + Revise (first pending chapter). (Not yet added to the Today tab itself — possible follow-up.)
+- UI reuses `.tst-card` collapsible blocks (one per subject) + `.stabs` round tabs + new `.fr-*` chapter rows.
+- Added `finalRev`,`frTrack` to freshState + cloud-merge list.
+
+### Still open / not done from the broader discussion
+- **CSV import** (lectures/flashpoints/tests/chapters) — agreed, NOT built yet.
+- **Syllabus ↔ flashpoint link** (chapter shows flashpoint count + ＋) — agreed, NOT built yet.
+- **Flashpoints redesign to chapter-grouped collapsible list** (+ ★ binary flag, type tag, pin, export) — agreed earlier, NOT built yet (current flashpoints = card grid + post-hoc 2-dot importance).
+- **Lectures card 4 → "Daily target"** (watch X/day to hit due date; tap still sets date) — agreed, NOT built yet.
+- Dashboard insights (readiness/trend/debt/best-time/pace-on-dashboard) — **scrapped by user.**
