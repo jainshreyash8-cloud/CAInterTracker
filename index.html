@@ -413,6 +413,12 @@ body.theme-light .t-display{color:var(--green)}
 .fp-acts .on-pin .ico{fill:color-mix(in srgb,var(--accent) 30%,transparent)}
 .fp-rowx{border:1px solid var(--border);border-radius:9px;padding:9px 10px;margin-bottom:9px;background:var(--faint)}
 .fp-ty{max-width:128px;padding:6px 8px}
+.csv-guide{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0;background:var(--faint);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.csv-guide th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);padding:8px 10px;background:var(--hover);border-bottom:1px solid var(--border)}
+.csv-guide td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--dim);line-height:1.45}
+.csv-guide td.k{font-weight:700;color:var(--ink);white-space:nowrap}
+.csv-guide td.eg{font-family:'JetBrains Mono',monospace;color:var(--ink2,var(--dim))}
+.csv-guide tr:last-child td{border-bottom:none}
 /* ════ DASHBOARD ════ */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;margin-top:12px}
 .dash-grid>div{min-width:0}
@@ -1884,7 +1890,7 @@ function fpExport(){
   toast('Exported '+(rows.length-1)+' flashpoint'+(rows.length-1===1?'':'s'),'ok');
 }
 function csvField(v){v=(v==null?'':''+v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
-function dlFile(name,text,mime){try{var blob=new Blob([text],{type:(mime||'text/plain')+';charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);}catch(e){toast('Download failed','err');}}
+function dlFile(name,text,mime){try{var isCsv=/csv/.test(mime||'');var data=isCsv?'\uFEFF'+text:text;var blob=new Blob([data],{type:(mime||'text/plain')+';charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);}catch(e){toast('Download failed','err');}}
 function openFlashpoints(sid,ci){_fpFilter=(sid&&SYL[sid])?sid:'all';_fpFlagged=false;_fpSearch='';_fpOpenChap=sid+'_'+((ci!=null&&ci>=0)?ci:'none');showPage('flashpoints');}
 function fpSearchInput(v){_fpSearch=v;_fpOpenChap=null;renderFlashpoints();var el=$('fp-search');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}}
 function setFp(sid){_fpFilter=sid;_fpOpenChap=null;renderFlashpoints();}
@@ -1942,31 +1948,59 @@ function delFP(id){confirmDlg('Delete this flashpoint?',function(){APP.flashpoin
 /* ═══════════ CSV IMPORT (lectures / chapters / tests / flashpoints) ═══════════ */
 var _csvKind=null,_csvParsed=null;
 var CSV_SPEC={
-  lectures:{title:'Import lectures',file:'lectures-template.csv',cols:['subject','chapter','type','number','label','plannedMin'],
-    sample:[['AA','AS 19 – Leases','main','1','Operating lease — intro','62'],['AA','AS 19 – Leases','main','2','Finance lease accounting','48'],['LAW','2','revision','','Quick recap','30']],
-    hint:'subject = code or name (AA, LAW…). chapter = name or number — blank goes to Misc/Bonus. type = main or revision. number & plannedMin are optional.'},
-  chapters:{title:'Import chapters',file:'chapters-template.csv',cols:['subject','chapter'],
-    sample:[['AA','My faculty chapter 1'],['AA','My faculty chapter 2'],['LAW','My faculty chapter 1']],
-    hint:'Adds chapters (in file order) to a subject. Chapters that already exist (same name) are skipped — nothing is deleted.'},
-  tests:{title:'Import tests',file:'tests-template.csv',cols:['name','type','source','subject','chapters','dueDate','readingMin','testMin','maxMarks'],
-    sample:[['MTP Series 1','full','MTP','AA','','2026-07-10','15','180','100'],['Leases + EPS','multi','','AA','AS 19 – Leases; AS 20 – Earnings Per Share','','0','120','50'],['Cash Flow test','chapter','','AA','AS 3 – Cash Flow Statement','','0','60','30']],
-    hint:'type = full / multi / chapter. subject = code or name. chapters: blank for full · one for chapter · 2+ separated by ";" for multi (name or number). dueDate optional (YYYY-MM-DD). reading/test/max minutes optional — sensible defaults fill in.'},
-  flashpoints:{title:'Import flashpoints',file:'flashpoints-template.csv',cols:['subject','chapter','title','point','type','flag'],
-    sample:[['AA','AS 19 – Leases','Finance vs operating','Risks & rewards transfer = finance lease','concept','yes'],['IT','Capital Gains','Indexation','Use CII; not for STCG','formula','no']],
-    hint:'subject & chapter optional (blank = general / no chapter). type = formula / trap / concept (optional). flag = yes/no.'}
+  lectures:{title:'Import lectures',file:'lectures-template.csv',unit:'lecture',intro:'One row per lecture. Each lecture sits inside a chapter.',
+    fields:[
+      {key:'subject',label:'Subject',note:'Subject code or full name',eg:'AA',aliases:['sub']},
+      {key:'chapter',label:'Chapter',note:'Chapter name or number. Blank = Misc / Bonus',eg:'AS 19 – Leases',aliases:['chap','ch']},
+      {key:'type',label:'Type',note:'main or revision',eg:'main',aliases:['kind']},
+      {key:'number',label:'Lecture no.',note:'Optional — auto-numbered if blank',eg:'1',aliases:['no','num','lectureno','lecture']},
+      {key:'label',label:'Topic / label',note:'Short name for the lecture',eg:'Operating lease — intro',aliases:['topic','title','name']},
+      {key:'plannedMin',label:'Length (mins)',note:'Optional — lecture length',eg:'62',aliases:['length','mins','minutes','duration','time']}
+    ]},
+  chapters:{title:'Import chapters',file:'chapters-template.csv',unit:'chapter',intro:'One row per chapter. Adds to a subject in the order listed. Existing names are skipped — nothing is deleted.',
+    fields:[
+      {key:'subject',label:'Subject',note:'Subject code or full name',eg:'AA',aliases:['sub']},
+      {key:'chapter',label:'Chapter name',note:'The chapter title',eg:'My faculty chapter 1',aliases:['chap','ch','name']}
+    ]},
+  tests:{title:'Import tests',file:'tests-template.csv',unit:'test',intro:'One row per test. Minutes & marks are optional — sensible defaults fill in.',
+    fields:[
+      {key:'name',label:'Test name',note:'What you call it',eg:'MTP Series 1',aliases:['testname','title']},
+      {key:'type',label:'Type',note:'full, multi or chapter',eg:'full',aliases:['kind']},
+      {key:'source',label:'Source',note:'Optional — MTP / Model / PYP (full tests)',eg:'MTP',aliases:['src']},
+      {key:'subject',label:'Subject',note:'Subject code or full name',eg:'AA',aliases:['sub']},
+      {key:'chapters',label:'Chapter(s)',note:'Blank for full · one for chapter · 2+ split by ; for multi',eg:'AS 19 – Leases; AS 20 – EPS',aliases:['chapter','chap','ch']},
+      {key:'dueDate',label:'Due date',note:'Optional — YYYY-MM-DD',eg:'2026-07-10',aliases:['due','date']},
+      {key:'readingMin',label:'Reading mins',note:'Optional',eg:'15',aliases:['reading','read']},
+      {key:'testMin',label:'Writing mins',note:'Optional',eg:'180',aliases:['testmin','writing','test']},
+      {key:'maxMarks',label:'Max marks',note:'Optional',eg:'100',aliases:['marks','max','total']}
+    ]},
+  flashpoints:{title:'Import flashpoints',file:'flashpoints-template.csv',unit:'flashpoint',intro:'One row per point. Subject & chapter are optional.',
+    fields:[
+      {key:'subject',label:'Subject',note:'Optional — code or name (blank = general)',eg:'AA',aliases:['sub']},
+      {key:'chapter',label:'Chapter',note:'Optional — name or number',eg:'AS 19 – Leases',aliases:['chap','ch']},
+      {key:'title',label:'Title',note:'Key term / heading',eg:'Finance vs operating',aliases:['term','heading','head','name']},
+      {key:'point',label:'Point / note',note:'The point, formula or trap',eg:'Risks & rewards transfer = finance lease',aliases:['note','detail','content','body','text']},
+      {key:'type',label:'Type',note:'Optional — formula / trap / concept',eg:'concept',aliases:['kind','tag']},
+      {key:'flag',label:'Star?',note:'Optional — yes to star it',eg:'yes',aliases:['star','starred','important','key']}
+    ]}
 };
+function csvGuide(fields){
+  return '<table class="csv-guide"><thead><tr><th>Column</th><th>What goes here</th><th>Example</th></tr></thead><tbody>'+
+    fields.map(function(f){return '<tr><td class="k">'+esc(f.label)+'</td><td>'+esc(f.note)+'</td><td class="eg">'+esc(f.eg)+'</td></tr>';}).join('')+
+    '</tbody></table>';
+}
 function csvImport(kind){
   _csvKind=kind;_csvParsed=null;var sp=CSV_SPEC[kind];
-  var body='<div class="alert al-blue">'+esc(sp.hint)+'</div>'+
-    '<div class="row wrap" style="gap:8px;margin-bottom:12px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
-    '<label class="btn btn-sm btn-p" style="cursor:pointer">'+ICON.upload+' Choose CSV file<input type="file" accept=".csv,text/csv,text/plain" id="csv-file" style="display:none"></label></div>'+
-    '<div class="xs mono muted mb8">Columns: '+sp.cols.join(', ')+'</div>'+
-    '<div id="csv-prev" class="alert al-dim sm">Download the template, fill it in a spreadsheet, export as CSV, then choose it here.</div>';
+  var body='<div class="alert al-blue">'+esc(sp.intro)+' Download the template, fill it in Google Sheets / Numbers / Excel, save as CSV, then upload it here.</div>'+
+    csvGuide(sp.fields)+
+    '<div class="row wrap" style="gap:8px;margin:14px 0 4px"><button class="btn btn-sm" type="button" onclick="csvTemplate(\''+kind+'\')">'+ICON.download+' Download template</button>'+
+    '<label class="btn btn-sm btn-p" style="cursor:pointer">'+ICON.upload+' Choose filled CSV<input type="file" accept=".csv,text/csv,text/plain" id="csv-file" style="display:none"></label></div>'+
+    '<div id="csv-prev" class="alert al-dim sm">No file chosen yet.</div>';
   modal({size:'md',title:sp.title,body:body,
     actions:[{label:'Close',kind:'ghost'},{label:'Import',kind:'primary',onClick:function(){if(csvDoImport())return false;return true;}}],
     onOpen:function(){$('csv-file').onchange=function(){if(this.files&&this.files[0])csvReadFile(this.files[0]);};}});
 }
-function csvTemplate(kind){var sp=CSV_SPEC[kind];var rows=[sp.cols].concat(sp.sample);dlFile(sp.file,rows.map(function(r){return r.map(csvField).join(',');}).join('\r\n'),'text/csv');}
+function csvTemplate(kind){var sp=CSV_SPEC[kind];var header=sp.fields.map(function(f){return f.label;});var sample=sp.fields.map(function(f){return f.eg;});dlFile(sp.file,[header,sample].map(function(r){return r.map(csvField).join(',');}).join('\r\n'),'text/csv');}
 function csvReadFile(file){
   var r=new FileReader();
   r.onload=function(){try{_csvParsed=csvPreview(_csvKind,csvParse(''+r.result));}catch(e){_csvParsed=null;}csvRenderPrev();};
@@ -2002,10 +2036,16 @@ function csvParse(text){
   if(cur!==''||row.length){row.push(cur);rows.push(row);}
   return rows;
 }
-function csvHeaderMap(cols,headerRow){
-  var low=headerRow.map(function(c){return (''+c).trim().toLowerCase();});
-  if(!cols.some(function(c){return low.indexOf(c.toLowerCase())>=0;}))return null;
-  var map={};cols.forEach(function(c){map[c]=low.indexOf(c.toLowerCase());});return map;
+function csvNorm(s){return (''+s).toLowerCase().replace(/\([^)]*\)/g,'').replace(/[^a-z0-9]/g,'');}
+function csvHeaderMap(fields,headerRow){
+  var norm=headerRow.map(csvNorm),map={},used={},recognized=0;
+  fields.forEach(function(f){
+    var matchers=[f.key].concat(f.aliases||[]).map(csvNorm),found=-1,i,m;
+    for(i=0;i<norm.length;i++){if(used[i])continue;if(norm[i]&&matchers.indexOf(norm[i])>=0){found=i;break;}}
+    if(found<0)for(i=0;i<norm.length;i++){if(used[i]||!norm[i])continue;for(m=0;m<matchers.length;m++){var mm=matchers[m];if(mm.length>=3&&(norm[i].indexOf(mm)===0||mm.indexOf(norm[i])===0)){found=i;break;}}if(found>=0)break;}
+    if(found>=0){map[f.key]=found;used[found]=1;recognized++;}else map[f.key]=-1;
+  });
+  return recognized>0?map:null;
 }
 function csvSubject(str){var s=(''+(str||'')).trim().toLowerCase();if(!s)return '';var found=null;Object.keys(SYL).forEach(function(sid){if(found)return;if(sid===s||SYL[sid].short.toLowerCase()===s||SYL[sid].name.toLowerCase()===s)found=sid;});return found;}
 function csvChapter(sid,str){
@@ -2020,9 +2060,9 @@ function csvChapter(sid,str){
 function csvTruthy(s){return /^(y|yes|true|1|x|★|\*)$/i.test((''+(s||'')).trim());}
 /* ── per-kind validation → builds an apply() closure ── */
 function csvPreview(kind,rows){
-  var sp=CSV_SPEC[kind],cols=sp.cols;
+  var sp=CSV_SPEC[kind],cols=sp.fields.map(function(f){return f.key;});
   if(!rows.length)return {ok:0,skip:0,errors:['File is empty'],apply:function(){return 0;}};
-  var map=csvHeaderMap(cols,rows[0]),data=map?rows.slice(1):rows;
+  var map=csvHeaderMap(sp.fields,rows[0]),data=map?rows.slice(1):rows;
   var errors=[],items=[],skip=0;
   function valOf(row,c){var ix=map?map[c]:cols.indexOf(c);return (ix>=0&&ix<row.length)?(''+row[ix]).trim():'';}
   var seenChap={}; // for chapters dedupe within batch
