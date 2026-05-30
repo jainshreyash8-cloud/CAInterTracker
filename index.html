@@ -169,7 +169,7 @@ body.theme-light .bg-accent{background:color-mix(in srgb,var(--green) 16%,transp
 <style>
 /* ════ SUBJECT TABS ════ */
 .stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.stab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:11px;font-weight:600;font-family:'Instrument Sans',sans-serif;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.stab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:11px;font-weight:600;font-family:'Instrument Sans',sans-serif;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:color .15s,border-color .15s,background .15s}
 .stab:hover{border-color:var(--dim);color:var(--ink)}
 /* ════ PROGRESS ════ */
 .pbar{height:6px;background:var(--track);border-radius:99px;overflow:hidden}
@@ -276,6 +276,125 @@ body.theme-light .t-display{color:var(--green)}
 .stub{padding:70px 24px;text-align:center}
 .stub-t{font-family:'Sora',sans-serif;font-size:30px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
 .stub-s{font-size:13px;color:var(--dim);max-width:420px;margin:0 auto;line-height:1.6}
+</style>
+
+<style>
+/* ════ ANIMATIONS & TRANSITIONS ════ */
+/* Page slide-in */
+@keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.pg.on{animation:pgIn .22s cubic-bezier(.25,.46,.45,.94)}
+
+/* Nav tab active indicator */
+.nb{position:relative;overflow:hidden}
+.nb::after{content:'';position:absolute;bottom:0;left:50%;right:50%;height:2px;background:var(--accent);border-radius:2px 2px 0 0;transition:left .2s,right .2s}
+.nb.on::after{left:12%;right:12%}
+
+/* Bento card lift on hover */
+.bc{transition:transform .18s cubic-bezier(.25,.46,.45,.94),box-shadow .18s}
+.bc:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+
+/* Button press feedback */
+.btn:active:not(:disabled){transform:scale(.96)}
+
+/* Star / flag toggle pop */
+@keyframes starPop{0%{transform:scale(1)}40%{transform:scale(1.45)}70%{transform:scale(.9)}100%{transform:scale(1)}}
+.fp-star.pop{animation:starPop .28s cubic-bezier(.25,.46,.45,.94)}
+.syl-star{transition:color .12s,transform .12s}
+.syl-star:active{transform:scale(1.4)}
+
+/* Revision dot pulse when due today */
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.syl-dot.d-due{animation:dotPulse 1.8s ease-in-out infinite}
+
+/* Toast slide-in (override the existing translateX with a nicer spring) */
+@keyframes tin{from{opacity:0;transform:translateX(24px) scale(.96)}to{opacity:1;transform:none}}
+
+/* Modal enter */
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.modal-box{animation:modalIn .2s cubic-bezier(.25,.46,.45,.94)}
+.modal-ov{animation:fade .15s ease}
+
+/* Fullscreen overlay – animated enter/exit via opacity + scale */
+#fso{opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s cubic-bezier(.25,.46,.45,.94);transform:scale(1.03)}
+#fso.show{opacity:1;pointer-events:auto;transform:scale(1)}
+
+/* Details/summary carets (already have transform transition; add body fade) */
+.syl-body{animation:pgIn .18s ease}
+.tst-body{animation:pgIn .18s ease}
+
+/* Lecture row hover */
+.lec{transition:background .14s,border-color .14s,transform .1s}
+.lec:hover{transform:translateX(2px)}
+
+/* Flashpoint row hover */
+.fp-row{transition:background .12s}
+.fp-row:hover{background:var(--hover)}
+
+/* Act card hover lift */
+.act-card{transition:transform .14s,border-color .14s,box-shadow .14s,opacity .14s}
+.act-card:hover:not(.dis){transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.2)}
+
+/* Timeline block already has hover; add smooth color transition */
+.tl-blk{transition:transform .12s,box-shadow .12s,opacity .12s}
+
+/* Resume card hover */
+.resume{transition:border-color .15s,box-shadow .15s}
+.resume:hover{border-color:var(--amber);box-shadow:0 0 0 1px color-mix(in srgb,var(--amber) 25%,transparent)}
+
+/* Sync dot spin on syncing */
+@keyframes spin{to{transform:rotate(360deg)}}
+.s-ing{animation:spin .9s linear infinite!important}
+
+/* ════ MOBILE ════ */
+/* Topbar: hide "by Shreyash Jain" sub-label on very small screens */
+@media(max-width:480px){
+  .brand-by{display:none}
+  .brand-name{font-size:17px}
+  .top{padding:0 12px;gap:10px}
+  .top-right{gap:9px}
+  .tb-timer span:not(.tb-dot){font-size:9px}
+  #tb-days,#tb-streak{display:none}
+}
+/* Nav buttons: slightly smaller + touch-friendly */
+@media(max-width:720px){
+  .nb{padding:6px 9px;font-size:10px}
+}
+/* Session time column: shrink on phone */
+@media(max-width:520px){
+  .stime{width:80px;font-size:9px}
+  .sdur{font-size:11px}
+  .srow{gap:9px;padding:10px 12px}
+  .srow-ic{width:26px;height:26px}
+  /* Bento b3 → 2-col before going to 1 */
+  .b3{grid-template-columns:1fr 1fr}
+  /* Lecture row actions stack nicer */
+  .lec-acts{gap:2px}
+  /* Chapter header: truncate chapter name more aggressively */
+  .chap-name{font-size:12px}
+  /* Syllabus summary: wrap meta below title */
+  .syl-ci{display:flex;flex-direction:column;gap:2px}
+  /* Syllabus stars: slightly smaller on phone */
+  .syl-star{font-size:13px}
+  /* Stab wrapping already works; make them a bit smaller */
+  .stab{padding:6px 10px;font-size:10px}
+  /* Revision field inputs slightly narrower label */
+  .revfld input{width:50px}
+  /* Modal: full-screen on mobile */
+  .modal-box{border-radius:14px 14px 0 0;max-height:88vh}
+  .modal-ov{align-items:flex-end;padding:0}
+  /* Bulk-row wraps already; ensure narrow inputs don't collapse */
+  .bulk-row .narrow{width:72px}
+  .bulk-row .narrow2{width:90px}
+}
+@media(max-width:380px){
+  .b3{grid-template-columns:1fr}
+  .bn-v{font-size:36px}
+  .bn-u{font-size:14px}
+}
+/* Full-width layout on mobile always */
+@media(max-width:640px){
+  body.layout-padded .pw{padding:14px 12px 56px;max-width:100%}
+}
 </style>
 
 
@@ -889,9 +1008,9 @@ function finalizeSession(status){
   APP.active=null;stopTimerLoop();$('tb-timer').classList.add('dn');_sStep='pick';_sPick=null;save(true);toast(status==='done'?'Logged · complete':'Logged · resume anytime','ok');showPage('today');
 }
 /* ═══════════ FULLSCREEN ═══════════ */
-function ensureFS(){if($('fso'))return;var d=document.createElement('div');d.id='fso';d.style.cssText='position:fixed;inset:0;background:#000;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px';d.innerHTML='<div class="t-phase" id="fs-sub"></div><div class="t-display" id="fs-big" style="font-size:min(22vw,170px)">00:00:00</div><div class="pomo-ph" id="fs-pomo"></div><div class="t-ref" id="fs-ref"></div><div class="sctrl" id="fs-ctrl"></div>';document.body.appendChild(d);}
-function openFS(){if(!APP.active)return;ensureFS();var s=APP.active;$('fso').style.display='flex';$('fso').classList.add('show');$('fs-sub').textContent=ACT[s.activityType].label+' · '+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+chapName(s.subjectId,s.chapterIdx);$('fs-ref').textContent=s.referenceMin>0?'Reference: '+fmtMin(s.referenceMin):'';fsControls();paintTimer(s);}
-function closeFS(){if($('fso')){$('fso').classList.remove('show');$('fso').style.display='none';}}
+function ensureFS(){if($('fso'))return;var d=document.createElement('div');d.id='fso';d.style.cssText='position:fixed;inset:0;background:#000;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px';d.innerHTML='<div class="t-phase" id="fs-sub"></div><div class="t-display" id="fs-big" style="font-size:min(22vw,170px)">00:00:00</div><div class="pomo-ph" id="fs-pomo"></div><div class="t-ref" id="fs-ref"></div><div class="sctrl" id="fs-ctrl"></div>';document.body.appendChild(d);}
+function openFS(){if(!APP.active)return;ensureFS();var s=APP.active;$('fso').classList.add('show');$('fs-sub').textContent=ACT[s.activityType].label+' · '+(SYL[s.subjectId]?SYL[s.subjectId].short:'')+' · '+chapName(s.subjectId,s.chapterIdx);$('fs-ref').textContent=s.referenceMin>0?'Reference: '+fmtMin(s.referenceMin):'';fsControls();paintTimer(s);}
+function closeFS(){if($('fso')){$('fso').classList.remove('show');}}
 function fsControls(){var s=APP.active;if(!s||!$('fs-ctrl'))return;$('fs-ctrl').innerHTML=(s.paused?'<button class="btn btn-suc" onclick="resumeSession()">'+ICON.play+' Resume</button>':'<button class="btn btn-warn" onclick="pauseSession()">'+ICON.pause+' Pause</button>')+'<button class="btn btn-suc" onclick="endSession(\'done\')">Complete</button><button class="btn btn-warn" onclick="endSession(\'inprogress\')">End · in progress</button><button class="btn btn-ghost" onclick="closeFS()">Exit fullscreen</button><button class="btn btn-dan" onclick="endSession(\'cancel\')">Cancel</button>';}
 </script>
 
@@ -1895,7 +2014,7 @@ function fpRow(f,showLoc){
     '<button class="btn btn-icon btn-ghost" onclick="editFP(\''+f.id+'\')" title="Edit">'+ICON.edit+'</button>'+
     '<button class="btn btn-icon btn-ghost" onclick="delFP(\''+f.id+'\')" title="Delete">'+ICON.trash+'</button></div></div>';
 }
-function fpToggleFlag(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.flag=!f.flag;f.updatedAt=Date.now();save(true);renderFlashpoints();}
+function fpToggleFlag(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.flag=!f.flag;f.updatedAt=Date.now();save(true);renderFlashpoints();setTimeout(function(){var el=document.querySelector('.fp-star[onclick*="\''+id+'\'"]');if(el){el.classList.add('pop');setTimeout(function(){el.classList.remove('pop');},300);}},10);}
 function fpTogglePin(id){var f=APP.flashpoints.find(function(x){return x.id===id;});if(!f)return;f.pinned=!f.pinned;f.updatedAt=Date.now();save(true);renderFlashpoints();}
 function fpTypeOpts(sel){return ['','formula','trap','concept'].map(function(t){return '<option value="'+t+'"'+(sel===t?' selected':'')+'>'+(t===''?'— type —':t.charAt(0).toUpperCase()+t.slice(1))+'</option>';}).join('');}
 function fpExport(){
